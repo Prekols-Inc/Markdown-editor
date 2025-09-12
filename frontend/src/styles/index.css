@@ -1,3 +1,4 @@
+/* reset */
 *,
 *::before,
 *::after {
@@ -21,8 +22,41 @@ body,
   height: 100%;
 }
 
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* options-бар */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.tab {
+  padding: 0.6rem 1.1rem;
+  font-size: 0.9rem;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.tab:hover {
+  background: #f3f4f6;
+}
+
+.tab.active {
+  border-bottom-color: #2563eb;
+  font-weight: 600;
+}
+
 /* редактор */
 .editor {
+  flex: 1;
   width: 100%;
   height: 100%;
   padding: 1rem;
@@ -35,7 +69,18 @@ body,
   background-color: #fafafa;
 }
 
-/* превью */
+/* Options text area */
+.options-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.options-wrapper .editor {
+  flex: 1;
+  border-right: none;
+}
+
 .preview {
   overflow-y: auto;
   padding: 1rem 1.25rem;
@@ -70,6 +115,7 @@ body,
   border-radius: 6px;
 }
 .preview code { font-family: ui-monospace, monospace; }
+
 .preview blockquote {
   margin: 1.25rem 0;
   padding: 1rem 1.25rem;
@@ -80,6 +126,14 @@ body,
   color: #374151;
   line-height: 1.6;
 }
-.preview ul { padding-left: 1.2rem; margin: 0.6rem 0; }
-.preview li { margin: 0.3rem 0; }
+
 .preview a { color: #0366d6; }
+
+/* ====== ошибки JSON в Options ====== */
+.error {
+  padding: 0.25rem 0.75rem;
+  background: #fef2f2;
+  border-top: 1px solid #fca5a5;
+  color: #dc2626;
+  font-size: 0.85rem;
+}

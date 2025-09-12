@@ -2,17 +2,15 @@ import { useMemo } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
-marked.setOptions({
-  breaks: false,
-  gfm: true,
-  headerIds: false
-});
-
-export default function MarkdownPreview({ markdown }) {
+export default function MarkdownPreview({ markdown, options = {} }) {
   const html = useMemo(() => {
-    const raw = marked.parse(markdown);
-    return DOMPurify.sanitize(raw);
-  }, [markdown]);
+    try {
+      const raw = marked.parse(markdown, options);
+      return DOMPurify.sanitize(raw);
+    } catch (e) {
+      return `<pre style="color:red;">Render error: ${e.message}</pre>`;
+    }
+  }, [markdown, options]);
 
   return (
     <div
