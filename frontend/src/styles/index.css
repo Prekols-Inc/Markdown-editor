@@ -1,0 +1,85 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* макет */
+.app-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100%;
+}
+
+/* редактор */
+.editor {
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  border: none;
+  border-right: 1px solid #ddd;
+  resize: none;
+  outline: none;
+  background-color: #fafafa;
+}
+
+/* превью */
+.preview {
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+}
+
+/* списки */
+.preview ol,
+.preview ul {
+  padding-left: 1.5rem;
+  margin: 0.8rem 0;
+  list-style-position: outside;
+}
+
+.preview li {
+  margin: 0.35rem 0;
+  line-height: 1.45;
+}
+
+.preview ol li::marker,
+.preview ul li::marker {
+  font-weight: 600;
+  color: #2563eb;
+}
+
+/* стиль Markdown */
+.preview h1 { font-size: 1.8rem; margin-bottom: 0.6rem; }
+.preview h2 { font-size: 1.5rem; margin: 1rem 0 0.5rem; }
+.preview pre {
+  background: #f3f3f3;
+  padding: 0.8rem;
+  overflow: auto;
+  border-radius: 6px;
+}
+.preview code { font-family: ui-monospace, monospace; }
+.preview blockquote {
+  margin: 1.25rem 0;
+  padding: 1rem 1.25rem;
+  border-left: 4px solid #3b82f6;
+  background: #f5f7fa;
+  border-radius: 0.5rem;
+  font-style: italic;
+  color: #374151;
+  line-height: 1.6;
+}
+.preview ul { padding-left: 1.2rem; margin: 0.6rem 0; }
+.preview li { margin: 0.3rem 0; }
+.preview a { color: #0366d6; }
