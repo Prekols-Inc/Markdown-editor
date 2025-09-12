@@ -26,6 +26,7 @@ body,
   overflow-y: auto;
   background: #fafafa;
 }
+.sidebar.collapsed .btn:not(.secondary) { display: none; }
 
 /* файл/папка */
 .fs-item {
@@ -41,6 +42,7 @@ body,
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.4rem 0.8rem;
   border-bottom: 1px solid #ddd;

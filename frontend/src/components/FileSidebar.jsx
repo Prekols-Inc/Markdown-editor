@@ -1,80 +1,95 @@
 import { useEffect, useState } from 'react';
-import { fileOpen, directoryOpen, fileSave } from 'browser-fs-access';
+import { directoryOpen } from 'browser-fs-access';
+
 
 export default function FileSidebar({
   current,
   onOpenFile,
   onSave,
   unsaved,
-  setUnsaved
+  setUnsaved,
+  collapsed,
+  onToggle
 }) {
   const [dirHandle, setDirHandle] = useState(null);
-  const [entries, setEntries] = useState([]);
+  const [entries,   setEntries]   = useState([]);
 
   /* выбрать папку */
   async function openFolder() {
     try {
       const handle = await directoryOpen({ id: 'md-dir', recursive: true });
       setDirHandle(handle);
-    } catch (_) { }
+    } catch {}
   }
 
-  /* читаем список md-файлов */
+  /* прочитать .md-файлы */
   useEffect(() => {
-    if (!dirHandle?.values) return;
-    (async () => {
-        const tmp = [];
-        const iterable = dirHandle.values ? dirHandle.values() : dirHandle;
+    if (!dirHandle) return;
 
-        for await (const entry of iterable) {
-            const fileLike = entry.kind === 'file' ? await entry.getFile() : entry;
-            if (fileLike && /\.(md|markdown|txt)$/i.test(fileLike.name)) {
-                tmp.push({ source: entry, file: fileLike });
-            }
-        }
-        setEntries(tmp);
+    (async () => {
+      const iterable = dirHandle.values ? dirHandle.values() : dirHandle;
+      const list = [];
+
+      for await (const entry of iterable) {
+        const file = entry.kind === 'file' ? await entry.getFile() : entry;
+        if (/\\.(md|markdown|txt)$/i.test(file.name)) list.push({ source: entry, file });
+      }
+      setEntries(list);
     })();
   }, [dirHandle]);
 
-  /* выбрать файл из списка */
+  /* клик по файлу */
   async function clickFile(item) {
     const file = 'getFile' in item.source ? await item.source.getFile() : item.file;
-    const text = await file.text();
-    onOpenFile(text, item.source);
+    onOpenFile(await file.text(), item.source);
     setUnsaved(false);
   }
 
-  /* сохранить */
-  async function handleSave(format) {
-    await onSave(format);
+  /* сохранение */
+  async function handleSave(ext) {
+    await onSave(ext);
     setUnsaved(false);
   }
 
   return (
-    <div className="sidebar">
+    <aside
+      className={collapsed ? 'sidebar collapsed' : 'sidebar'}
+      style={{ width: collapsed ? 48 : 260 }}
+    >
+      {/* toolbar */}
       <div className="toolbar">
-        <button onClick={openFolder}>Open Folder</button>
-        <button disabled={!current} onClick={() => handleSave('md')}>
-          Save .md
+        {/* кнопка-стрелка (видна всегда) */}
+        <button
+          className="btn secondary"
+          onClick={onToggle}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          style={{ width: 32 }}
+        >
+          {collapsed ? '»' : '«'}
         </button>
-        <button disabled={!current} onClick={() => handleSave('html')}>
-          Save .html
-        </button>
+
+        {/* остальные действия показываем в развёрнутом виде */}
+        {!collapsed && (
+          <>
+            <button className="btn" onClick={openFolder}>Open&nbsp;Folder</button>
+            <button className="btn" disabled={!current} onClick={() => handleSave('md')}>Save&nbsp;.md</button>
+            <button className="btn" disabled={!current} onClick={() => handleSave('html')}>Save&nbsp;.html</button>
+          </>
+        )}
       </div>
 
-      {entries.map((e) => (
+      {/* писок файлов */}
+      {!collapsed && entries.map(e => (
         <div
-            key={e.file.name}
-            className={
-                'fs-item' + (current?.name === e.file.name ? ' active' : '')
-          }
+          key={e.file.name}
+          className={'fs-item' + (current?.name === e.file.name ? ' active' : '')}
           title={e.file.name}
           onClick={() => clickFile(e)}
         >
-            {e.file.name}
-            {unsaved && current?.name === e.file.name && '  ●'}
+          {e.file.name}
+          {unsaved && current?.name === e.file.name && ' ●'}
         </div>
       ))}
-    </div>
+    </aside>
   );
 }

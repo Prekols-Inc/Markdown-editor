@@ -24,6 +24,8 @@ const DEFAULT_OPTIONS = {
 };
 
 export default function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const toggleSidebar = () => setSidebarOpen(o => !o);
   /* Markdown */
   const [markdown, setMarkdown] = useState(
     () => localStorage.getItem('md-draft') ?? DEFAULT_MD
@@ -99,15 +101,19 @@ export default function App() {
   );
 
   return (
-    <div className="app-grid">
-      {/* Sidebar with file explorer */}
-      <FileSidebar
-        current={fileHandle}
-        onOpenFile={handleOpenFile}
-        onSave={handleSave}
-        unsaved={unsaved}
-        setUnsaved={setUnsaved}
-      />
+  <div
+    className="app-grid"
+    style={{ gridTemplateColumns: `${sidebarOpen ? 260 : 48}px 1fr 1fr` }}
+  >
+    <FileSidebar
+      current={fileHandle}
+      onOpenFile={handleOpenFile}
+      onSave={handleSave}
+      unsaved={unsaved}
+      setUnsaved={setUnsaved}
+      collapsed={!sidebarOpen}
+      onToggle={toggleSidebar}
+    />
 
       {/* Tabs + editors */}
       <div className="left-panel">
