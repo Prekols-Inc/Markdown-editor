@@ -15,11 +15,42 @@ body,
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-/* макет */
 .app-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 220px 1fr 1fr;
   height: 100%;
+}
+
+.sidebar {
+  border-right: 1px solid #ddd;
+  overflow-y: auto;
+  background: #fafafa;
+}
+
+/* файл/папка */
+.fs-item {
+  padding: 0.4rem 0.8rem 0.4rem 1rem;
+  cursor: pointer;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.fs-item:hover { background: #e5e7eb; }
+.fs-item.active { background: #dbeafe; font-weight: 600; }
+
+.toolbar {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border-bottom: 1px solid #ddd;
+  background: #fff;
+}
+
+.toolbar select,
+.toolbar button {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.85rem;
 }
 
 .left-panel {
@@ -129,7 +160,7 @@ body,
 
 .preview a { color: #0366d6; }
 
-/* ====== ошибки JSON в Options ====== */
+/* ошибки JSON в Options */
 .error {
   padding: 0.25rem 0.75rem;
   background: #fef2f2;
