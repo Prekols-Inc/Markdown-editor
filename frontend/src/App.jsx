@@ -26,18 +26,15 @@ const DEFAULT_OPTIONS = {
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const toggleSidebar = () => setSidebarOpen(o => !o);
-  /* Markdown */
   const [markdown, setMarkdown] = useState(
     () => localStorage.getItem('md-draft') ?? DEFAULT_MD
   );
 
-  // автосохранение черновика
   useEffect(() => {
     const id = setTimeout(() => localStorage.setItem('md-draft', markdown), 400);
     return () => clearTimeout(id);
   }, [markdown]);
 
-  /* Options */
   const [options, setOptions] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem('md-options'));
@@ -55,10 +52,8 @@ export default function App() {
     localStorage.setItem('md-options', JSON.stringify(obj));
   }, []);
 
-  /* Tabs */
   const [tab, setTab] = useState('markdown');
 
-  /* File handling */
   const [fileHandle, setFileHandle] = useState(null);
   const [unsaved, setUnsaved] = useState(false);
 
@@ -115,7 +110,6 @@ export default function App() {
       onToggle={toggleSidebar}
     />
 
-      {/* Tabs + editors */}
       <div className="left-panel">
         <div className="tabs">
           <button
@@ -142,7 +136,6 @@ export default function App() {
         )}
       </div>
 
-      {/* Preview */}
       <MarkdownPreview markdown={markdown} options={options} />
     </div>
   );

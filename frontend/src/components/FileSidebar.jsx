@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { directoryOpen } from 'browser-fs-access';
-
+import { directoryOpen, fileOpen } from 'browser-fs-access';
 
 export default function FileSidebar({
   current,
@@ -8,44 +7,48 @@ export default function FileSidebar({
   onSave,
   unsaved,
   setUnsaved,
-  collapsed,
+  collapsed = false,
   onToggle
 }) {
   const [dirHandle, setDirHandle] = useState(null);
   const [entries,   setEntries]   = useState([]);
 
-  /* выбрать папку */
   async function openFolder() {
     try {
       const handle = await directoryOpen({ id: 'md-dir', recursive: true });
       setDirHandle(handle);
-    } catch {}
+    } catch {
+      try {
+        const file = await fileOpen({
+          id: 'md-single',
+          mimeTypes: ['text/markdown', 'text/plain'],
+          extensions: ['.md', '.markdown', '.txt']
+        });
+        setDirHandle([file]);
+      } catch {}
+    }
   }
 
-  /* прочитать .md-файлы */
   useEffect(() => {
     if (!dirHandle) return;
 
     (async () => {
       const iterable = dirHandle.values ? dirHandle.values() : dirHandle;
       const list = [];
-
       for await (const entry of iterable) {
         const file = entry.kind === 'file' ? await entry.getFile() : entry;
-        if (/\\.(md|markdown|txt)$/i.test(file.name)) list.push({ source: entry, file });
+        if (/\.(md|markdown|txt)$/i.test(file.name)) list.push({ source: entry, file });
       }
       setEntries(list);
     })();
   }, [dirHandle]);
 
-  /* клик по файлу */
   async function clickFile(item) {
     const file = 'getFile' in item.source ? await item.source.getFile() : item.file;
     onOpenFile(await file.text(), item.source);
     setUnsaved(false);
   }
 
-  /* сохранение */
   async function handleSave(ext) {
     await onSave(ext);
     setUnsaved(false);
@@ -56,29 +59,25 @@ export default function FileSidebar({
       className={collapsed ? 'sidebar collapsed' : 'sidebar'}
       style={{ width: collapsed ? 48 : 260 }}
     >
-      {/* toolbar */}
       <div className="toolbar">
-        {/* кнопка-стрелка (видна всегда) */}
         <button
           className="btn secondary"
-          onClick={onToggle}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           style={{ width: 32 }}
+          onClick={onToggle}
+          title={collapsed ? 'Expand' : 'Collapse'}
         >
           {collapsed ? '»' : '«'}
         </button>
 
-        {/* остальные действия показываем в развёрнутом виде */}
         {!collapsed && (
           <>
-            <button className="btn" onClick={openFolder}>Open&nbsp;Folder</button>
-            <button className="btn" disabled={!current} onClick={() => handleSave('md')}>Save&nbsp;.md</button>
-            <button className="btn" disabled={!current} onClick={() => handleSave('html')}>Save&nbsp;.html</button>
+            <button className="btn" onClick={openFolder}>Open Folder</button>
+            <button className="btn" disabled={!current} onClick={() => handleSave('md')}>Save .md</button>
+            <button className="btn" disabled={!current} onClick={() => handleSave('html')}>Save .html</button>
           </>
         )}
       </div>
 
-      {/* писок файлов */}
       {!collapsed && entries.map(e => (
         <div
           key={e.file.name}
