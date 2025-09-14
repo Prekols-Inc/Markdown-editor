@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "axios": "^1.12.2",
     "browser-fs-access": "^0.38.0",
     "dompurify": "^3.0.5",
     "lucide-react": "^0.544.0",

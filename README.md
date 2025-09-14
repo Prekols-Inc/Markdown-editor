@@ -13,7 +13,10 @@ cd frontend
 # 2. Install dependencies
 npm install
 
-# 3. Start the dev server
+# 3. Add VITE_AUTH_API_BASE_URL env variable in frontend/.env file
+# Example: VITE_AUTH_API_BASE_URL=http://localhost:8080
+
+# 4. Start the dev server
 npm run dev
 ```
 ---
