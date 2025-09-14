@@ -1,23 +1,41 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/LoginPage.css';
+import API from '../API';
 
 export default function LoginPage({ onLogin }) {
     const [formData, setFormData] = useState({ username: '', password: '' });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
     const navigate = useNavigate();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (formData.username === 'admin' && formData.password === 'password') {
-            onLogin();
-            navigate('/editor');
-        } else {
-            alert('Неверный логин или пароль');
+        setLoading(true);
+        setError('');
+
+        try {
+            const response = await API.post('/v1/login', formData);
+            if (response.status == 200) {
+                onLogin();
+                navigate('/editor');
+            } else {
+                console.log("error");
+                setError(response.data.message || 'Неверный логин или пароль');
+            }
+        } catch (err) {
+            if (err.response) {
+                setError(err.response.data.message || `Ошибка: ${err.response.status}`);
+            } else {
+                setError(err.message || 'Ошибка сети');
+            }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -43,7 +61,11 @@ export default function LoginPage({ onLogin }) {
                     required
                 />
 
-                <button type="submit">Войти</button>
+                {error && <p className="error">{error}</p>}
+
+                <button type="submit" disabled={loading}>
+                    {loading ? 'Входим...' : 'Войти'}
+                </button>
             </form>
         </div>
     );
