@@ -13,6 +13,8 @@ export default function FileSidebar({
   const [dirHandle, setDirHandle] = useState(null);
   const [entries,   setEntries]   = useState([]);
 
+
+  /* Open folder */
   async function openFolder() {
     try {
       const handle = await directoryOpen({ id: 'md-dir', recursive: true });
@@ -28,6 +30,19 @@ export default function FileSidebar({
       } catch {}
     }
   }
+
+  /* Open single file */
+  async function openSingleFile() {
+    try {
+    const file = await fileOpen({
+    id: 'md-single',
+    mimeTypes: ['text/markdown', 'text/plain'],
+    extensions: ['.md', '.markdown', '.txt']
+    });
+    onOpenFile(await file.text(), file);
+    setUnsaved(false);
+    } catch {}
+    }
 
   useEffect(() => {
     if (!dirHandle) return;
@@ -49,6 +64,7 @@ export default function FileSidebar({
     setUnsaved(false);
   }
 
+  /* save */
   async function handleSave(ext) {
     await onSave(ext);
     setUnsaved(false);
@@ -72,6 +88,7 @@ export default function FileSidebar({
         {!collapsed && (
           <>
             <button className="btn" onClick={openFolder}>Open Folder</button>
+            <button className="btn" onClick={openSingleFile}>Open File</button>
             <button className="btn" disabled={!current} onClick={() => handleSave('md')}>Save .md</button>
             <button className="btn" disabled={!current} onClick={() => handleSave('html')}>Save .html</button>
           </>
