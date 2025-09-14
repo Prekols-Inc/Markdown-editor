@@ -41,6 +41,12 @@ export default function FileSidebar({
     });
     onOpenFile(await file.text(), file);
     setUnsaved(false);
+    setEntries(list => {
+      const exists = list.some(e => e.file.name === file.name);
+      if (exists) return list;
+      return [...list, { source: file, file }];
+    });
+    setDirHandle(null);
     } catch {}
     }
 
