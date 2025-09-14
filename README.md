@@ -16,7 +16,6 @@ npm install
 # 3. Start the dev server
 npm run dev
 ```
-
 ---
 
 ### Auth service
