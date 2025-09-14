@@ -30,11 +30,36 @@ body,
 
 /* file/folder */
 .fs-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 0.4rem 0.8rem 0.4rem 1rem;
   cursor: pointer;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+}
+
+/* file name */
+.fs-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Cross button */
+.fs-close {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1.35rem;
+  line-height: 1;
+  padding: 0 0.4rem;
+  color: #6b7280;
+}
+.fs-close:hover {
+  color: #ef4444;
 }
 
 .fs-item:hover { background: #e5e7eb; }

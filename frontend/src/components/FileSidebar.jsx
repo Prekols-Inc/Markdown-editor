@@ -108,8 +108,23 @@ export default function FileSidebar({
           title={e.file.name}
           onClick={() => clickFile(e)}
         >
-          {e.file.name}
-          {unsaved && current?.name === e.file.name && ' ●'}
+          <span
+            className="fs-name"
+            title={e.file.name}
+            onClick={() => clickFile(e)}
+          >
+            {e.file.name}
+            {unsaved && current?.name === e.file.name && ' ●'}
+          </span>
+          <button
+            className="fs-close"
+            title="Remove from sidebar"
+            onClick={() =>
+              setEntries(list => list.filter(x => x.file.name !== e.file.name))
+            }
+          >
+            ×
+          </button>
         </div>
       ))}
     </aside>
