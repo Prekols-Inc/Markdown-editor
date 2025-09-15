@@ -10,7 +10,7 @@ go mod tidy
 go build -o ${AUTH_SERVICE_NAME} .
 ./${AUTH_SERVICE_NAME} >> ${AUTH_SERVICE_NAME}.log 2>&1 & 
 
-echo "Starting storage service..."
+echo "Starting storage service..."  
 cd ../backend
 go mod tidy
 go build -o ${BACKEND_SERVICE_NAME} .

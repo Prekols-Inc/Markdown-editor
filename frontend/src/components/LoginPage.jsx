@@ -20,7 +20,7 @@ export default function LoginPage({ onLogin }) {
         setError('');
 
         try {
-            const response = await API.post('/v1/login', formData);
+            const response = await API.AUTH.post('/v1/login', formData);
             if (response.status == 200) {
                 onLogin();
                 navigate('/editor');
