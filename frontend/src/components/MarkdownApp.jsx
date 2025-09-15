@@ -4,7 +4,7 @@ import FileSidebar from './FileSidebar';
 import OptionsEditor from './OptionsEditor';
 import MarkdownPreview from './MarkdownPreview';
 import { marked } from 'marked';
-import { fileSave } from 'browser-fs-access';
+import API from '../API';
 
 const DEFAULT_MD = `# Marked - Markdown Parser
 
@@ -26,9 +26,8 @@ const DEFAULT_OPTIONS = {
 export default function App() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const toggleSidebar = () => setSidebarOpen(o => !o);
-    const [markdown, setMarkdown] = useState(
-        () => localStorage.getItem('md-draft') ?? DEFAULT_MD
-    );
+
+    const [markdown, setMarkdown] = useState(() => localStorage.getItem('md-draft') ?? DEFAULT_MD);
 
     useEffect(() => {
         const id = setTimeout(() => localStorage.setItem('md-draft', markdown), 400);
@@ -69,27 +68,31 @@ export default function App() {
 
     const handleSave = useCallback(
         async (format) => {
+            if (!fileHandle) return;
+
             try {
-                let blob;
-                if (format === 'md') {
-                    blob = new Blob([markdown], { type: 'text/markdown' });
-                } else {
-                    const html = marked.parse(markdown, options);
-                    blob = new Blob([html], { type: 'text/html' });
+                let content = markdown;
+                let filename = fileHandle.name;
+
+                if (format !== 'md') {
+                    content = marked.parse(markdown, options);
+                    filename = filename.replace(/\.(md|markdown|txt)$/i, `.${format}`);
                 }
 
-                await fileSave(
-                    blob,
-                    {
-                        fileName: fileHandle?.name
-                            ? fileHandle.name.replace(/\.(md|markdown|txt)$/i, `.${format}`)
-                            : `untitled.${format}`,
-                        extensions: [`.${format}`],
-                    },
-                    fileHandle
-                );
+                // Формируем FormData для сервера
+                const formData = new FormData();
+                const blob = new Blob([content], { type: format === 'md' ? 'text/markdown' : 'text/html' });
+                formData.append('file', blob);
+                formData.append('filename', filename);
+
+                await API.STORAGE.post('/upload', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+
                 setUnsaved(false);
-            } catch (_) {
+            } catch (err) {
+                console.error('Ошибка сохранения файла', err);
+                alert('Ошибка при сохранении файла');
             }
         },
         [markdown, options, fileHandle]
@@ -127,7 +130,10 @@ export default function App() {
                 </div>
 
                 {tab === 'markdown' ? (
-                    <MarkdownEditor value={markdown} onChange={setMarkdown} />
+                    <MarkdownEditor
+                        value={markdown}
+                        onChange={(text) => { setMarkdown(text); setUnsaved(true); }}
+                    />
                 ) : (
                     <OptionsEditor
                         value={JSON.stringify(options, null, 2)}
@@ -140,4 +146,3 @@ export default function App() {
         </div>
     );
 }
-

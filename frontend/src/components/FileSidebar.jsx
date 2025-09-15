@@ -25,12 +25,15 @@ export default function FileSidebar({
   const clickFile = async (item) => {
     try {
       const response = await API.STORAGE.get(`/download/${encodeURIComponent(item.name)}`);
-      // response.data — это текст файла
       onOpenFile(response.data, { name: item.name });
       setUnsaved(false);
     } catch (err) {
       console.error('Ошибка загрузки файла', err);
     }
+  };
+
+  const removeEntry = (name) => {
+    setEntries(list => list.filter(x => x.name !== name));
   };
 
   useEffect(() => {
@@ -52,10 +55,9 @@ export default function FileSidebar({
           {collapsed ? '»' : '«'}
         </button>
 
-        {!collapsed && (
+        {!collapsed && current && (
           <>
-            <button className="btn" disabled={!current} onClick={() => handleSave('md')}>Save .md</button>
-            <button className="btn" disabled={!current} onClick={() => handleSave('html')}>Save .html</button>
+            <button className="btn" onClick={() => onSave('md')} disabled={!current}>Save .md</button>
           </>
         )}
       </div>
@@ -65,7 +67,6 @@ export default function FileSidebar({
           key={e.name}
           className={'fs-item' + (current?.name === e.name ? ' active' : '')}
           title={e.name}
-          onClick={() => clickFile(e)}
         >
           <span
             className="fs-name"
@@ -78,9 +79,7 @@ export default function FileSidebar({
           <button
             className="fs-close"
             title="Remove from sidebar"
-            onClick={() =>
-              setEntries(list => list.filter(x => x.name !== e.name))
-            }
+            onClick={() => removeEntry(e.name)}
           >
             ×
           </button>
