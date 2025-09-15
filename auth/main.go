@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	PORT        = ":8080"
+	PORT        = ":8000"
 	USERNAME    = "admin"
 	PASSWORD    = "password"
 	RSP_MSG_KEY = "message"
@@ -24,7 +24,7 @@ func main() {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowAllOrigins:  true,
 		AllowMethods:     []string{"POST", "GET", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
