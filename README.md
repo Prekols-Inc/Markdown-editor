@@ -19,6 +19,10 @@ npm install
 # 4. Start the dev server
 npm run dev
 ```
+
+Admin credentials:
+- Username: `admin`
+- Password: `password`
 ---
 
 ### Auth service
