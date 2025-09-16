@@ -54,19 +54,19 @@ func TestLoginHandler(t *testing.T) {
 	}{
 		{
 			name:         "Valid login",
-			requestBody:  LoginRequest{Username: "admin", Password: "password"},
+			requestBody:  LoginRequest{Username: USERNAME, Password: PASSWORD},
 			expectedCode: http.StatusOK,
 			expectedMsg:  "login successful",
 		},
 		{
 			name:         "Invalid login",
-			requestBody:  LoginRequest{Username: "invalid login", Password: "password"},
+			requestBody:  LoginRequest{Username: "invalid login", Password: PASSWORD},
 			expectedCode: http.StatusUnauthorized,
 			expectedMsg:  "invalid username or password",
 		},
 		{
 			name:         "Invalid password",
-			requestBody:  LoginRequest{Username: "admin", Password: "invalid password"},
+			requestBody:  LoginRequest{Username: USERNAME, Password: "invalid password"},
 			expectedCode: http.StatusUnauthorized,
 			expectedMsg:  "invalid username or password",
 		},
