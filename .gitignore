@@ -23,3 +23,5 @@ pnpm-debug.log*
 *.code-workspace
 *.sublime-project
 *.sublime-workspace
+
+backend/db/storage/*
