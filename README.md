@@ -41,3 +41,10 @@ go run .
 ```
 
 ---
+## Tests
+### Test auth service
+```bash
+cd auth
+
+go test
+```
