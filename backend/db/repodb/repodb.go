@@ -8,9 +8,11 @@ import (
 )
 
 var ErrFileNotFound = errors.New("file not found")
+var ErrFileExists = errors.New("file already exists")
 
 type FileRepository interface {
 	Save(filename string, data []byte) error
+	Create(filename string, data []byte) error
 	Get(filename string) ([]byte, error)
 	Delete(filename string) error
 	GetList() ([]string, error)
@@ -28,8 +30,40 @@ func NewLocalFileRepo(basePath string) (*LocalFileRepo, error) {
 	return &LocalFileRepo{basePath: basePath}, nil
 }
 
+func IsFileExists(path string) (bool, error) {
+	if _, err := os.Stat(path); err != nil {
+		fmt.Println(err.Error())
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
+}
+
 func (l *LocalFileRepo) Save(filename string, data []byte) error {
 	path := filepath.Join(l.basePath, filename)
+	ex, err := IsFileExists(path)
+	if err != nil {
+		return err
+	}
+	if !ex {
+		return ErrFileNotFound
+	}
+	return os.WriteFile(path, data, 0644)
+}
+
+func (l *LocalFileRepo) Create(filename string, data []byte) error {
+	path := filepath.Join(l.basePath, filename)
+	ex, err := IsFileExists(path)
+	if err != nil {
+		return err
+	}
+	if ex {
+		return ErrFileExists
+	}
 	return os.WriteFile(path, data, 0644)
 }
 
