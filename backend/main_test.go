@@ -112,7 +112,7 @@ func TestSaveFile(t *testing.T) {
 	err = writer.Close()
 	assert.NoError(t, err)
 
-	req, err := http.NewRequest("PUT", "/file/:filename", body)
+	req, err := http.NewRequest("PUT", "/file/"+testFilename, body)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
@@ -157,7 +157,7 @@ func TestSaveFileNotFound(t *testing.T) {
 	err = writer.Close()
 	assert.NoError(t, err)
 
-	req, err := http.NewRequest("PUT", "/file/:filename", body)
+	req, err := http.NewRequest("PUT", "/file/"+noExistsFile, body)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 

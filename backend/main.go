@@ -56,7 +56,7 @@ func main() {
 }
 
 func getFile(c *gin.Context) (*File, error) {
-	file, header, err := c.Request.FormFile("file")
+	file, _, err := c.Request.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File not provided"})
 		return nil, err
@@ -69,9 +69,10 @@ func getFile(c *gin.Context) (*File, error) {
 		return nil, err
 	}
 
-	filename := c.PostForm("filename")
+	filename := c.Param("filename")
 	if filename == "" {
-		filename = header.Filename
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Filename not provided"})
+		return nil, err
 	}
 
 	return NewFile(filename, fileBytes), nil
