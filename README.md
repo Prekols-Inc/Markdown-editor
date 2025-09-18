@@ -25,6 +25,13 @@ Admin credentials:
 - Password: `password`
 ---
 
+###  Backend
+
+```bash
+cd backend
+go run main.go
+```
+
 ### Auth service
 
 > Prerequisites: **Go ≥ 1.23**.
@@ -42,6 +49,12 @@ go run .
 
 ---
 ## Tests
+### Test backend
+```bash
+cd backend
+go test -v
+```
+
 ### Test auth service
 ```bash
 cd auth

@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	PORT    = "1234"
-	DB_PATH = "db/storage"
+	DEFAULT_PORT = "1234"
+	DEFAULT_HOST = "localhost"
+	DB_PATH      = "db/storage"
 )
 
 type File struct {
@@ -29,7 +30,8 @@ func NewFile(name string, bytes []byte) *File {
 }
 
 func main() {
-	port := flag.String("port", PORT, "Port to run the server on")
+	port := flag.String("port", DEFAULT_PORT, "Port to run the server on")
+	host := flag.String("host", DEFAULT_HOST, "Host to run the server on")
 	flag.Parse()
 
 	if err := validatePort(*port); err != nil {
@@ -59,7 +61,7 @@ func main() {
 		deleteFileHandler(c, repo)
 	})
 
-	serverAddr := fmt.Sprintf(":%s", *port)
+	serverAddr := fmt.Sprintf("%s:%s", *host, *port)
 	if err := router.Run(serverAddr); err != nil {
 		panic(fmt.Sprintf("Failed to run server: %v", err))
 	}

@@ -1,7 +1,8 @@
 name: CI/CD Pipeline
 
 env:
-  APP_PORT: 1234
+  BACKEND_HOST: localhost
+  BACKEND_PORT: 1234
 
 on:
   push:
@@ -64,13 +65,13 @@ jobs:
 
       - name: Start application
         run: |
-          ./app --port=$APP_PORT &
+          ./app --host=$BACKEND_HOST --port=$BACKEND_PORT &
           echo $! > app.pid
           sleep 3
 
       - name: Test health endpoint
         run: |
-          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$APP_PORT/health)
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://$BACKEND_HOST:$BACKEND_PORT/health)
           
           if [ "$status_code" -ne 200 ]; then
             echo "Health check failed: HTTP $status_code"
@@ -83,3 +84,44 @@ jobs:
             kill $(cat app.pid) 2>/dev/null || true
             rm -f app.pid
           fi
+
+  test-auth-service:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./auth
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Golang
+      uses: actions/setup-go@v6
+      with:
+        go-version: v1.24.0
+        cache: true
+
+    - name: Run tests
+      run: go test -v
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    needs: test-auth-service
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install frontend dependencies
+      run: npm install
+
+    - name: Build frontend
+      run: npm run dev
