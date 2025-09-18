@@ -1,0 +1,31 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, ci/cd]
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  test_backend:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Golang
+      uses: actions/setup-go@v6
+      with:
+        go-version: stable
+
+    - name: Install golangci-lint
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: v1.55.2
+
+    - name: Run linter
+      run: golangci-lint run ./... --timeout=2m
+
+    - name: Run tests
+      working-directory: ./backend
+      run: go test -v
