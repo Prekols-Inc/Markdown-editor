@@ -2,9 +2,12 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"time"
 
 	"backend/db/repodb"
 
@@ -12,7 +15,7 @@ import (
 )
 
 const (
-	PORT    = ":1234"
+	PORT    = "1234"
 	DB_PATH = "db/storage"
 )
 
@@ -26,33 +29,65 @@ func NewFile(name string, bytes []byte) *File {
 }
 
 func main() {
-	router := gin.Default()
+	port := flag.String("port", PORT, "Port to run the server on")
+	flag.Parse()
+
+	if err := validatePort(*port); err != nil {
+		panic(fmt.Sprintf("Invalid port: %v\n", err))
+	}
 
 	repo, err := repodb.NewLocalFileRepo(DB_PATH)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create file repository: %v", err))
 	}
 
+	router := gin.Default()
+	router.GET("/health", healthHandler)
 	router.GET("/files", func(c *gin.Context) {
-		getAllFiles(c, repo)
+		getAllFilesHandler(c, repo)
 	})
 	router.GET("/file/:filename", func(c *gin.Context) {
-		downloadFile(c, repo)
+		downloadFileHandler(c, repo)
 	})
 	router.POST("/file/:filename", func(c *gin.Context) {
-		uploadFile(c, repo)
+		uploadFileHandler(c, repo)
 	})
 	router.PUT("/file/:filename", func(c *gin.Context) {
-		editFile(c, repo)
+		editFileHandler(c, repo)
 	})
 	router.DELETE("/file/:filename", func(c *gin.Context) {
-		deleteFile(c, repo)
+		deleteFileHandler(c, repo)
 	})
 
-	if err := router.Run(PORT); err != nil {
+	serverAddr := fmt.Sprintf(":%s", *port)
+	if err := router.Run(serverAddr); err != nil {
 		panic(fmt.Sprintf("Failed to run server: %v", err))
 	}
-	fmt.Printf("Server started on %s\n", PORT)
+	fmt.Printf("Server started on %s\n", serverAddr)
+}
+
+func validatePort(portStr string) error {
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return fmt.Errorf("Port must be a number")
+	}
+
+	if port < 1 || port > 65535 {
+		return fmt.Errorf("Port must be between 1 and 65535")
+	}
+
+	if port <= 1023 {
+		return fmt.Errorf("Port %d is a system port and requires root privileges", port)
+	}
+
+	return nil
+}
+
+func healthHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status": "healthy",
+		"time":   time.Now(),
+	})
 }
 
 func getFile(c *gin.Context) (*File, error) {
@@ -78,7 +113,7 @@ func getFile(c *gin.Context) (*File, error) {
 	return NewFile(filename, fileBytes), nil
 }
 
-func uploadFile(c *gin.Context, repo repodb.FileRepository) {
+func uploadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	file, err := getFile(c)
 	if err != nil {
 		return
@@ -95,7 +130,7 @@ func uploadFile(c *gin.Context, repo repodb.FileRepository) {
 	})
 }
 
-func editFile(c *gin.Context, repo repodb.FileRepository) {
+func editFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	file, err := getFile(c)
 	if err != nil {
 		return
@@ -116,7 +151,7 @@ func editFile(c *gin.Context, repo repodb.FileRepository) {
 	})
 }
 
-func downloadFile(c *gin.Context, repo repodb.FileRepository) {
+func downloadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	filename := c.Param("filename")
 
 	bytes, err := repo.Get(filename)
@@ -134,7 +169,7 @@ func downloadFile(c *gin.Context, repo repodb.FileRepository) {
 	c.Data(http.StatusOK, "application/octet-stream", bytes)
 }
 
-func deleteFile(c *gin.Context, repo repodb.FileRepository) {
+func deleteFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	filename := c.Param("filename")
 
 	if err := repo.Delete(filename); err != nil {
@@ -148,7 +183,7 @@ func deleteFile(c *gin.Context, repo repodb.FileRepository) {
 	})
 }
 
-func getAllFiles(c *gin.Context, repo repodb.FileRepository) {
+func getAllFilesHandler(c *gin.Context, repo repodb.FileRepository) {
 	fileNames, err := repo.GetList()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load file list: " + err.Error()})

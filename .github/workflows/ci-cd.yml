@@ -1,5 +1,8 @@
 name: CI/CD Pipeline
 
+env:
+  APP_PORT: 1234
+
 on:
   push:
     branches: [main, ci/cd]
@@ -7,7 +10,7 @@ on:
     branches: ["*"]
 
 jobs:
-  test_backend:
+  test-backend:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -17,6 +20,7 @@ jobs:
       uses: actions/setup-go@v6
       with:
         go-version: v1.24.0
+        cache: true
 
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v6
@@ -28,3 +32,46 @@ jobs:
     - name: Run tests
       working-directory: ./backend
       run: go test -v
+
+    - name: Build application
+      run: go build -o app .
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: go-backend
+        path: app
+
+  backend-health-check:
+    runs-on: ubuntu-latest
+    needs: test-backend
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: go-backend
+
+      - name: Make binary executable
+        run: chmod +x app
+
+      - name: Start application
+        run: |
+          ./app --port=$APP_PORT &
+          echo $! > app.pid
+          sleep 3
+
+      - name: Test health endpoint
+        run: |
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:APP_PORT/health)
+          
+          if [ "$status_code" -ne 200 ]; then
+            echo "Health check failed: HTTP $status_code"
+            exit 1
+          fi
+
+      - name: Stop application
+        run: |
+          if [ -f app.pid ]; then
+            kill $(cat app.pid) 2>/dev/null || true
+            rm -f app.pid
+          fi

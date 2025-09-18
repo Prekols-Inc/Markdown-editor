@@ -21,19 +21,19 @@ func setupTestRouter(repo repodb.FileRepository) *gin.Engine {
 	router := gin.Default()
 
 	router.GET("/files", func(c *gin.Context) {
-		getAllFiles(c, repo)
+		getAllFilesHandler(c, repo)
 	})
 	router.GET("/file/:filename", func(c *gin.Context) {
-		downloadFile(c, repo)
+		downloadFileHandler(c, repo)
 	})
 	router.POST("/file/:filename", func(c *gin.Context) {
-		uploadFile(c, repo)
+		uploadFileHandler(c, repo)
 	})
 	router.PUT("/file/:filename", func(c *gin.Context) {
-		editFile(c, repo)
+		editFileHandler(c, repo)
 	})
 	router.DELETE("/file/:filename", func(c *gin.Context) {
-		deleteFile(c, repo)
+		deleteFileHandler(c, repo)
 	})
 
 	return router
