@@ -1,12 +1,5 @@
 name: CI/CD Pipeline
 
-env:
-  BACKEND_HOST: localhost
-  BACKEND_PORT: 1234
-
-  FRONTEND_HOST: localhost
-  FRONTEND_PORT: 5173
-
 on:
   push:
     branches: [main, ci/cd]
@@ -57,36 +50,51 @@ jobs:
     needs: test-backend
 
     steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: go-backend
-          path: ./backend
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Make binary executable
-        run: chmod +x app
+    - name: Load .env file
+      uses: falti/dotenv-action@v1
+      with:
+        path: .env
 
-      - name: Start application
-        run: |
-          ./app --host=$BACKEND_HOST --port=$BACKEND_PORT &
-          echo $! > app.pid
-          sleep 3
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: go-backend
+        path: ./backend
 
-      - name: Test health endpoint
-        run: |
-          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://$BACKEND_HOST:$BACKEND_PORT/health)
-          
-          if [ "$status_code" -ne 200 ]; then
-            echo "Health check failed: HTTP $status_code"
-            exit 1
+    - name: Make binary executable
+      run: chmod +x app
+
+    - name: Start application
+      run: |
+        ./app --host=$BACKEND_HOST --port=$BACKEND_PORT &
+        echo $! > app.pid
+        sleep 7
+
+    - name: Check backend health with retry
+      run: |
+        for i in {1..5}; do
+          echo "Attempt $i"
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:1234/health || echo "000")
+          if [ "$status_code" -eq 200 ]; then
+            echo "Health check passed"
+            exit 0
+          else
+            echo "Health check attempt $i failed: HTTP $status_code"
+            sleep 3
           fi
+        done
+        echo "Health check failed after 5 attempts"
+        exit 1
 
-      - name: Stop application
-        run: |
-          if [ -f app.pid ]; then
-            kill $(cat app.pid) 2>/dev/null || true
-            rm -f app.pid
-          fi
+    - name: Stop application
+      run: |
+        if [ -f app.pid ]; then
+          kill $(cat app.pid) 2>/dev/null || true
+          rm -f app.pid
+        fi
 
   test-auth-service:
     runs-on: ubuntu-latest
@@ -176,6 +184,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Load .env file
+      uses: falti/dotenv-action@v1
+      with:
+        path: .env
 
     - name: Deploy with Docker Compose
       run: |

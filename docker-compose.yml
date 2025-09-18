@@ -5,7 +5,7 @@ services:
     image: ${DOCKERHUB_USERNAME}/markdown-backend:latest
     container_name: markdown-backend
     environment:
-      PORT: 1234
+      PORT: ${BACKEND_PORT}
     ports:
       - "${PORT}:${PORT}"
     networks:
@@ -22,7 +22,7 @@ services:
     image: ${DOCKERHUB_USERNAME}/markdown-auth:latest
     container_name: markdown-auth
     environment:
-      PORT: 8080
+      PORT: ${AUTH_PORT}
     ports:
       - "${PORT}:${PORT}"
     networks:
@@ -39,7 +39,7 @@ services:
     image: ${DOCKERHUB_USERNAME}/markdown-frontend:latest
     container_name: markdown-frontend
     environment:
-      PORT: 5173
+      PORT: ${FRONTEND_PORT}
     ports: 
       - "${PORT}:${PORT}"
     depends_on:
