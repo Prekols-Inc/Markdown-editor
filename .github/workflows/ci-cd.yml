@@ -4,6 +4,9 @@ env:
   BACKEND_HOST: localhost
   BACKEND_PORT: 1234
 
+  FRONTEND_HOST: localhost
+  FRONTEND_PORT: 5173
+
 on:
   push:
     branches: [main, ci/cd]
@@ -109,7 +112,6 @@ jobs:
     defaults:
       run:
         working-directory: ./frontend
-    needs: test-auth-service
 
     steps:
     - name: Checkout code
@@ -166,3 +168,28 @@ jobs:
         file: ./frontend/Dockerfile
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-frontend:latest
+
+  test-docker-compose:
+    runs-on: ubuntu-latest
+    needs: build-and-push-docker-images
+  
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy with Docker Compose
+      run: |
+        docker compose down --remove-orphans
+        docker compose up -d --pull always
+
+    - name: Verify deployment
+      run: |
+        sleep 15
+        docker compose ps
+        if [ $(docker compose ps --services --filter "status=running" | grep -c 'markdown-backend\|markdown-frontend\|markdown-auth') -ne 3 ]; then
+          echo "Not all services are running"
+          docker compose logs --tail=50
+          exit 1
+        fi
+        curl -f http://localhost:${BACKEND_PORT}/health || exit 1
+        curl -f http://localhost:${FRONTEND_PORT} || exit 1
