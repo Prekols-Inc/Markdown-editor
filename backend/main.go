@@ -2,22 +2,21 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
 	"backend/db/repodb"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 const (
-	DEFAULT_PORT = "1234"
-	DEFAULT_HOST = "localhost"
-	DB_PATH      = "db/storage"
+	DB_PATH = "db/storage"
 )
 
 type File struct {
@@ -30,11 +29,14 @@ func NewFile(name string, bytes []byte) *File {
 }
 
 func main() {
-	port := flag.String("port", DEFAULT_PORT, "Port to run the server on")
-	host := flag.String("host", DEFAULT_HOST, "Host to run the server on")
-	flag.Parse()
+	err := godotenv.Load("../.env")
+	if err != nil {
+		panic(fmt.Sprintf("Error loading .env file: %v", err))
+	}
+	port := os.Getenv("BACKEND_PORT")
+	host := os.Getenv("BACKEND_HOST")
 
-	if err := validatePort(*port); err != nil {
+	if err := validatePort(port); err != nil {
 		panic(fmt.Sprintf("Invalid port: %v\n", err))
 	}
 
@@ -61,7 +63,7 @@ func main() {
 		deleteFileHandler(c, repo)
 	})
 
-	serverAddr := fmt.Sprintf("%s:%s", *host, *port)
+	serverAddr := fmt.Sprintf("%s:%s", host, port)
 	if err := router.Run(serverAddr); err != nil {
 		panic(fmt.Sprintf("Failed to run server: %v", err))
 	}
@@ -71,15 +73,15 @@ func main() {
 func validatePort(portStr string) error {
 	port, err := strconv.Atoi(portStr)
 	if err != nil {
-		return fmt.Errorf("Port must be a number")
+		return fmt.Errorf("port must be a number")
 	}
 
 	if port < 1 || port > 65535 {
-		return fmt.Errorf("Port must be between 1 and 65535")
+		return fmt.Errorf("port must be between 1 and 65535")
 	}
 
 	if port <= 1023 {
-		return fmt.Errorf("Port %d is a system port and requires root privileges", port)
+		return fmt.Errorf("port %d is a system port and requires root privileges", port)
 	}
 
 	return nil
