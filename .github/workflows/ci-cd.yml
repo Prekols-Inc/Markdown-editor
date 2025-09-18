@@ -16,15 +16,14 @@ jobs:
     - name: Setup Golang
       uses: actions/setup-go@v6
       with:
-        go-version: stable
+        go-version: v1.24.0
 
-    - name: Install golangci-lint
-      uses: golangci/golangci-lint-action@v8
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v6
       with:
-        version: v1.55.2
-
-    - name: Run linter
-      run: golangci-lint run ./... --timeout=2m
+        version: v1.64.7
+        working-directory: ./backend
+        args: --timeout=2m
 
     - name: Run tests
       working-directory: ./backend
