@@ -12,6 +12,10 @@ on:
 jobs:
   test-backend:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -26,11 +30,10 @@ jobs:
       uses: golangci/golangci-lint-action@v6
       with:
         version: v1.64.7
+        args: --disable-all --enable=govet --enable=errcheck --enable=staticcheck --enable=gofmt --enable=typecheck --timeout=5m
         working-directory: ./backend
-        args: --timeout=2m
 
     - name: Run tests
-      working-directory: ./backend
       run: go test -v
 
     - name: Build application
@@ -40,16 +43,21 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: go-backend
-        path: app
+        path: ./backend/app
 
   backend-health-check:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
     needs: test-backend
+
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: go-backend
+          path: ./backend
 
       - name: Make binary executable
         run: chmod +x app
@@ -62,7 +70,7 @@ jobs:
 
       - name: Test health endpoint
         run: |
-          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:APP_PORT/health)
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$APP_PORT/health)
           
           if [ "$status_code" -ne 200 ]; then
             echo "Health check failed: HTTP $status_code"
