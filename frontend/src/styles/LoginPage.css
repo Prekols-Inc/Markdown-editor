@@ -53,3 +53,29 @@
 .login-form button:hover {
     background-color: #2563eb;
 }
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.25rem;
+  color: #9ca3af;
+  cursor: pointer;
+  user-select: none;
+  display: flezx;
+  align-items: center;
+}
+
+.toggle-password:hover {
+  color: #4b5563;
+}
