@@ -7,7 +7,7 @@ services:
     environment:
       PORT: ${BACKEND_PORT}
     ports:
-      - "${PORT}:${PORT}"
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
     networks:
       - markdown-network
     restart: unless-stopped
@@ -24,7 +24,7 @@ services:
     environment:
       PORT: ${AUTH_PORT}
     ports:
-      - "${PORT}:${PORT}"
+      - "${AUTH_PORT}:${AUTH_PORT}"
     networks:
       - markdown-network
     restart: unless-stopped
@@ -41,7 +41,7 @@ services:
     environment:
       PORT: ${FRONTEND_PORT}
     ports: 
-      - "${PORT}:${PORT}"
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     depends_on:
       - backend
       - auth-service
