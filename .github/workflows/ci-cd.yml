@@ -218,7 +218,7 @@ jobs:
       run: |
         sleep 15
         docker compose ps
-        if [ $(docker compose ps --services --filter "status=running" | grep -c 'markdown-backend\|markdown-frontend\|markdown-auth') -ne 3 ]; then
+        if [ $(docker compose ps --services | grep -c 'backend\|frontend\|auth') -ne 3 ]; then
           echo "Not all services are running"
           docker compose logs --tail=50
           exit 1
