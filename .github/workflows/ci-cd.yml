@@ -161,6 +161,9 @@ jobs:
       with:
         context: ./backend
         file: ./backend/Dockerfile
+        build-args: |
+          BACKEND_HOST=${{ env.BACKEND_HOST }}
+          BACKEND_PORT=${{ env.BACKEND_PORT }}
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-backend:latest
 
@@ -169,6 +172,9 @@ jobs:
       with:
         context: ./auth
         file: ./auth/Dockerfile
+        build-args: |
+          AUTH_HOST=${{ env.AUTH_HOST }}
+          AUTH_PORT=${{ env.AUTH_PORT }}
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-auth:latest
 
@@ -177,6 +183,9 @@ jobs:
       with:
         context: ./frontend
         file: ./frontend/Dockerfile
+        build-args: |
+          FRONTEND_HOST=${{ env.FRONTEND_HOST }}
+          FRONTEND_PORT=${{ env.FRONTEND_PORT }}
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-frontend:latest
 
@@ -207,7 +216,7 @@ jobs:
 
     - name: Verify deployment
       run: |
-        sleep 70
+        sleep 15
         docker compose ps
         if [ $(docker compose ps --services --filter "status=running" | grep -c 'markdown-backend\|markdown-frontend\|markdown-auth') -ne 3 ]; then
           echo "Not all services are running"
