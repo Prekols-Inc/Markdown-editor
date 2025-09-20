@@ -4,8 +4,6 @@ services:
   backend:
     image: ${DOCKERHUB_USERNAME}/markdown-backend:latest
     container_name: markdown-backend
-    env_file:
-      - .env
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     networks:
@@ -21,8 +19,6 @@ services:
   auth:
     image: ${DOCKERHUB_USERNAME}/markdown-auth:latest
     container_name: markdown-auth
-    env_file:
-      - .env
     ports:
       - "${AUTH_PORT}:${AUTH_PORT}"
     networks:
@@ -38,8 +34,6 @@ services:
   frontend:
     image: ${DOCKERHUB_USERNAME}/markdown-frontend:latest
     container_name: markdown-frontend
-    env_file:
-      - .env
     ports: 
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     depends_on:
