@@ -2,17 +2,16 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
 	"backend/db/repodb"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 const (
@@ -29,15 +28,17 @@ func NewFile(name string, bytes []byte) *File {
 }
 
 func main() {
-	err := godotenv.Load("../.env")
-	if err != nil {
-		panic(fmt.Sprintf("Error loading .env file: %v", err))
-	}
-	port := os.Getenv("BACKEND_PORT")
-	host := os.Getenv("BACKEND_HOST")
+	var host, port string
+	flag.StringVar(&host, "host", "", "Host to bind")
+	flag.StringVar(&port, "port", "", "Port to bind")
+	flag.Parse()
 
 	if err := validatePort(port); err != nil {
 		panic(fmt.Sprintf("Invalid port: %v\n", err))
+	}
+
+	if host == "" {
+		panic("Host not provided")
 	}
 
 	repo, err := repodb.NewLocalFileRepo(DB_PATH)

@@ -1,14 +1,13 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 const (
@@ -23,12 +22,10 @@ type LoginRequest struct {
 }
 
 func main() {
-	err := godotenv.Load("../.env")
-	if err != nil {
-		panic(fmt.Sprintf("Error loading .env file: %v", err))
-	}
-	port := os.Getenv("AUTH_PORT")
-	host := os.Getenv("AUTH_HOST")
+	var host, port string
+	flag.StringVar(&host, "host", "", "Host to bind")
+	flag.StringVar(&port, "port", "", "Port to bind")
+	flag.Parse()
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
