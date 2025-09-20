@@ -6,6 +6,7 @@ services:
     build: 
       context: ./backend
       args:
+      - BACKEND_HOST=${BACKEND_HOST}
       - BACKEND_PORT=${BACKEND_PORT}
     container_name: markdown-backend
     env_file:
@@ -27,6 +28,7 @@ services:
     build: 
       context: ./auth
       args:
+      - AUTH_HOST=${AUTH_HOST}
       - AUTH_PORT=${AUTH_PORT}
     container_name: markdown-auth
     env_file:

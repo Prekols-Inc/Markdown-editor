@@ -196,7 +196,7 @@ jobs:
           AUTH_HOST=$AUTH_HOST
           AUTH_PORT=$AUTH_PORT
           FRONTEND_HOST=$FRONTEND_HOST
-          FRONTEND_PORT=$FRONTEND_PORTs
+          FRONTEND_PORT=$FRONTEND_PORT
           DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
           EOF
 
@@ -207,12 +207,12 @@ jobs:
 
     - name: Verify deployment
       run: |
-        sleep 15
+        sleep 30
         docker compose ps
         if [ $(docker compose ps --services --filter "status=running" | grep -c 'markdown-backend\|markdown-frontend\|markdown-auth') -ne 3 ]; then
           echo "Not all services are running"
           docker compose logs --tail=50
           exit 1
         fi
-        curl -f http://localhost:${BACKEND_PORT}/health || exit 1
-        curl -f http://localhost:${FRONTEND_PORT} || exit 1
+        curl -f http://${BACKEND_HOST}:${BACKEND_PORT}/health || exit 1
+        curl -f http://${FRONTEND_HOST}:${FRONTEND_PORT} || exit 1
