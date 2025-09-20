@@ -5,6 +5,14 @@ on:
     branches: [main, ci/cd]
   pull_request:
     branches: ["*"]
+    
+env:
+  BACKEND_HOST: localhost
+  BACKEND_PORT: 1234
+  AUTH_HOST: localhost
+  AUTH_PORT: 8080
+  FRONTEND_HOST: localhost
+  FRONTEND_PORT: 5173
 
 jobs:
   test-backend:
@@ -53,11 +61,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Load .env file
-      uses: falti/dotenv-action@v1
-      with:
-        path: .env
-
     - name: Download build artifact
       uses: actions/download-artifact@v4
       with:
@@ -77,7 +80,7 @@ jobs:
       run: |
         for i in {1..5}; do
           echo "Attempt $i"
-          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:1234/health || echo "000")
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://${BACKEND_HOST}:${BACKEND_PORT}/health || echo "000")
           if [ "$status_code" -eq 200 ]; then
             echo "Health check passed"
             exit 0
@@ -184,11 +187,18 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
-    - name: Load .env file
-      uses: falti/dotenv-action@v1
-      with:
-        path: .env
+      
+    - name: Create .env file for Docker Compose
+      run: |
+        cat << EOF > .env
+          BACKEND_HOST=$BACKEND_HOST
+          BACKEND_PORT=$BACKEND_PORT
+          AUTH_HOST=$AUTH_HOST
+          AUTH_PORT=$AUTH_PORT
+          FRONTEND_HOST=$FRONTEND_HOST
+          FRONTEND_PORT=$FRONTEND_PORTs
+          DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+          EOF
 
     - name: Deploy with Docker Compose
       run: |
