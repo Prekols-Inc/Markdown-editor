@@ -6,6 +6,7 @@ services:
     container_name: markdown-backend
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
+      - "1234:1234"
     networks:
       - markdown-network
     restart: unless-stopped
