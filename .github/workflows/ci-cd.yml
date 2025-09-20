@@ -207,12 +207,34 @@ jobs:
 
     - name: Verify deployment
       run: |
-        sleep 30
+        sleep 70
         docker compose ps
         if [ $(docker compose ps --services --filter "status=running" | grep -c 'markdown-backend\|markdown-frontend\|markdown-auth') -ne 3 ]; then
           echo "Not all services are running"
           docker compose logs --tail=50
           exit 1
         fi
-        curl -f http://${BACKEND_HOST}:${BACKEND_PORT}/health || exit 1
-        curl -f http://${FRONTEND_HOST}:${FRONTEND_PORT} || exit 1
+        
+        echo "Checking backend health at http://${BACKEND_HOST}:${BACKEND_PORT}/health"
+        if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://${BACKEND_HOST}:${BACKEND_PORT}/health"; 
+        then
+          echo "ERROR: Backend health check failed!"
+          echo "Backend logs:"
+          docker compose logs backend --tail=20
+          exit 1
+        else
+          echo "Backend health check passed!"
+        fi
+        
+        echo "Checking frontend availability at http://${FRONTEND_HOST}:${FRONTEND_PORT}"
+        if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://${FRONTEND_HOST}:${FRONTEND_PORT}"; 
+        then
+          echo "ERROR: Frontend availability check failed!"
+          echo "Frontend logs:"
+          docker compose logs frontend --tail=20
+          exit 1
+        else
+          echo "Frontend availability check passed!"
+        fi
+        
+        echo "All services are healthy and responding!"
