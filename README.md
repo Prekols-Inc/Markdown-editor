@@ -2,7 +2,23 @@
 
 ## Build
 
-### Frontend
+The most easiest way to set up the project is Docker Compose:
+
+1. Create `.env` file like `.env.example`
+
+2. Run project:
+ - To run all containers in a background (detach process)
+```bash
+docker-compose up -d
+```
+ - To attach all processes to the terminal session
+```bash
+docker compose up
+```
+
+### Build from source
+
+#### Frontend
 
 > Prerequisites: **Node.js ≥ 18 LTS** and **npm** (or `pnpm` / `yarn`).
 
@@ -27,7 +43,7 @@ Admin credentials:
 - Password: `password`
 ---
 
-###  Backend
+####  Backend
 
 ```bash
 $ cd backend
@@ -35,7 +51,7 @@ $ go mod tidy
 $ go run . --host 
 ```
 
-### Auth service
+#### Auth service
 
 > Prerequisites: **Go ≥ 1.23**.
 
@@ -43,19 +59,6 @@ $ go run . --host
 $ cd auth
 $ go mod tidy
 $ go run .
-```
-
-### Docker
-
-To run all containers in a background (detach process)
-
-```bash
-docker-compose up -d
-```
-
-To attach all processes to the terminal session
-```bash
-docker compose up
 ```
 
 ---
