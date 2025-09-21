@@ -13,8 +13,10 @@ cd frontend
 # 2. Install dependencies
 npm install
 
-# 3. Add VITE_AUTH_API_BASE_URL env variable in frontend/.env file
-# Example: VITE_AUTH_API_BASE_URL=http://localhost:8080
+# 3. Add env variables in frontend/.env file:
+# Example: 
+VITE_AUTH_API_BASE_URL=http://localhost:8080
+VITE_BACKEND_API_BASE_URL=http://localhost:1234
 
 # 4. Start the dev server
 npm run dev
@@ -28,8 +30,9 @@ Admin credentials:
 ###  Backend
 
 ```bash
-cd backend
-go run main.go
+$ cd backend
+$ go mod tidy
+$ go run . --host 
 ```
 
 ### Auth service
@@ -37,14 +40,9 @@ go run main.go
 > Prerequisites: **Go ≥ 1.23**.
 
 ```bash
-# 1. Go to the frontend folder
-cd auth
-
-# 2. Get dependencies
-go mod tidy
-
-# 3 Start the auth service
-go run .
+$ cd auth
+$ go mod tidy
+$ go run .
 ```
 
 ### Docker
@@ -55,15 +53,14 @@ docker-compose up -d
 
 ---
 ## Tests
-### Test backend
+### Backend
 ```bash
 cd backend
 go test -v
 ```
 
-### Test auth service
+### Auth service
 ```bash
 cd auth
-
-go test
+go test -v
 ```
