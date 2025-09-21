@@ -2,49 +2,58 @@ version: '3.8'
 
 services:
   backend:
-    image: ${DOCKERHUB_USERNAME}/markdown-backend:latest
+    image: sid00r/markdown-backend:latest
+    build:
+      context: ./backend
+      args:
+        - BACKEND_HOST=${BACKEND_HOST}
+        - BACKEND_PORT=${BACKEND_PORT}
     container_name: markdown-backend
-    environment:
-      PORT: ${BACKEND_PORT}
     ports:
-      - "${PORT}:${PORT}"
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
     networks:
       - markdown-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "timeout 5 bash -c 'echo > /dev/tcp/localhost/${PORT}' || exit 1"]
+      test: ["CMD-SHELL", "timeout 5 bash -c 'echo > /dev/tcp/localhost/${BACKEND_PORT}' || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 5
       start_period: 40s
       
-  auth-service:
-    image: ${DOCKERHUB_USERNAME}/markdown-auth:latest
+  auth:
+    image: sid00r/markdown-auth:latest
+    build:
+      context: ./auth
+      args:
+        - AUTH_HOST=${AUTH_HOST}
+        - AUTH_PORT=${AUTH_PORT}
     container_name: markdown-auth
-    environment:
-      PORT: ${AUTH_PORT}
     ports:
-      - "${PORT}:${PORT}"
+      - "${AUTH_PORT}:${AUTH_PORT}"
     networks:
       - markdown-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "timeout 5 bash -c 'echo > /dev/tcp/localhost/${PORT}' || exit 1"]
+      test: ["CMD-SHELL", "timeout 5 bash -c 'echo > /dev/tcp/localhost/${AUTH_PORT}' || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 5
       start_period: 40s
 
   frontend:
-    image: ${DOCKERHUB_USERNAME}/markdown-frontend:latest
+    image: sid00r/markdown-frontend:latest
+    build:
+      context: ./frontend
+      args:
+        - FRONTEND_HOST=${FRONTEND_HOST}
+        - FRONTEND_PORT=${FRONTEND_PORT}
     container_name: markdown-frontend
-    environment:
-      PORT: ${FRONTEND_PORT}
     ports: 
-      - "${PORT}:${PORT}"
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     depends_on:
       - backend
-      - auth-service
+      - auth
     networks:
       - markdown-network
     restart: unless-stopped

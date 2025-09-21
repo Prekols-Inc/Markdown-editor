@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 import '../styles/LoginPage.css';
 import API from '../API';
 
@@ -7,6 +8,7 @@ export default function LoginPage({ onLogin }) {
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showPw, setShowPw] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -52,14 +54,25 @@ export default function LoginPage({ onLogin }) {
                     placeholder="Логин"
                     required
                 />
-                <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Пароль"
-                    required
-                />
+                <div className="password-field">
+                    <input
+                        type={showPw ? 'text' : 'password'}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        placeholder="Пароль"
+                        required
+                    />
+
+                    <span
+                        className="toggle-password"
+                        onClick={() => setShowPw(p => !p)}
+                        aria-label={showPw ? 'Скрыть пароль' : 'Показать пароль'}
+                        role="button"
+                    >
+                        {showPw ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                    </span>
+                </div>
 
                 {error && <p className="error">{error}</p>}
 
