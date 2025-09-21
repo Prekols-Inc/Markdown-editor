@@ -11,10 +11,8 @@ FROM alpine:latest
 
 ARG AUTH_HOST
 ARG AUTH_PORT
-ENV HOST=${AUTH_HOST}
-ENV PORT=${AUTH_PORT}
-EXPOSE ${PORT}
+EXPOSE ${AUTH_PORT}
 
 WORKDIR /root/
 COPY --from=builder /markdown-auth/auth .
-CMD ./auth --port=${PORT} --host=${HOST}
+CMD ./auth --port=${AUTH_PORT} --host=${AUTH_HOST}
