@@ -3,6 +3,11 @@ version: '3.8'
 services:
   backend:
     image: ${DOCKERHUB_USERNAME}/markdown-backend:latest
+    build:
+      context: ./backend
+      args:
+        - BACKEND_HOST=${BACKEND_HOST}
+        - BACKEND_PORT=${BACKEND_PORT}
     container_name: markdown-backend
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
@@ -18,6 +23,11 @@ services:
       
   auth:
     image: ${DOCKERHUB_USERNAME}/markdown-auth:latest
+    build:
+      context: ./auth
+      args:
+        - AUTH_HOST=${AUTH_HOST}
+        - AUTH_PORT=${AUTH_PORT}
     container_name: markdown-auth
     ports:
       - "${AUTH_PORT}:${AUTH_PORT}"
@@ -33,6 +43,11 @@ services:
 
   frontend:
     image: ${DOCKERHUB_USERNAME}/markdown-frontend:latest
+    build:
+      context: ./frontend
+      args:
+        - FRONTEND_HOST=${FRONTEND_HOST}
+        - FRONTEND_PORT=${FRONTEND_PORT}
     container_name: markdown-frontend
     ports: 
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
