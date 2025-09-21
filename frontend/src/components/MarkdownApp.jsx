@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import MarkdownEditor from './MarkdownEditor';
 import FileSidebar from './FileSidebar';
 import OptionsEditor from './OptionsEditor';
 import MarkdownPreview from './MarkdownPreview';
 import { marked } from 'marked';
-import { fileSave } from 'browser-fs-access';
+import API from '../API';
 
 const DEFAULT_MD = `# Marked - Markdown Parser
 
@@ -57,6 +57,8 @@ export default function App() {
     const [fileHandle, setFileHandle] = useState(null);
     const [unsaved, setUnsaved] = useState(false);
 
+    const sidebarRef = useRef(null);
+
     useEffect(() => {
         if (fileHandle) setUnsaved(true);
     }, [markdown, fileHandle]);
@@ -67,29 +69,62 @@ export default function App() {
         setUnsaved(false);
     }, []);
 
+    const handleNewFile = useCallback(async () => {
+        try {
+            let filename = prompt('Введите имя нового файла', 'untitled.md');
+            if (!filename) return;
+
+            if (!/\.(md|markdown|txt|html)$/i.test(filename)) {
+                filename += '.md';
+            }
+
+            await API.STORAGE.post(`/save/${encodeURIComponent(filename)}`, {
+                content: DEFAULT_MD,
+            });
+
+            setMarkdown(DEFAULT_MD);
+            setFileHandle({ name: filename });
+            setUnsaved(false);
+
+            // обновляем список файлов в сайдбаре
+            sidebarRef.current?.refresh();
+        } catch (err) {
+            console.error('Ошибка создания файла', err);
+            alert('Не удалось создать файл');
+        }
+    }, []);
+
     const handleSave = useCallback(
-        async (format) => {
+        async (refreshFiles) => {
             try {
-                let blob;
-                if (format === 'md') {
-                    blob = new Blob([markdown], { type: 'text/markdown' });
-                } else {
-                    const html = marked.parse(markdown, options);
-                    blob = new Blob([html], { type: 'text/html' });
+                let filename = fileHandle?.name;
+                if (!filename) {
+                    filename = prompt('Введите имя файла', 'untitled.md');
+                    if (!filename) return;
                 }
 
-                await fileSave(
-                    blob,
-                    {
-                        fileName: fileHandle?.name
-                            ? fileHandle.name.replace(/\.(md|markdown|txt)$/i, `.${format}`)
-                            : `untitled.${format}`,
-                        extensions: [`.${format}`],
-                    },
-                    fileHandle
-                );
+                if (!/\.(md|markdown|txt|html)$/i.test(filename)) {
+                    filename += '.md';
+                }
+
+                let content;
+                if (filename.endsWith('.html')) {
+                    content = marked.parse(markdown, options);
+                } else {
+                    content = markdown;
+                }
+
+                await API.STORAGE.post(`/save/${encodeURIComponent(filename)}`, { content });
+
+                setFileHandle({ name: filename });
                 setUnsaved(false);
-            } catch (_) {
+
+                if (typeof refreshFiles === 'function') {
+                    refreshFiles();
+                }
+            } catch (err) {
+                console.error('Ошибка сохранения файла', err);
+                alert('Не удалось сохранить файл');
             }
         },
         [markdown, options, fileHandle]
@@ -101,9 +136,11 @@ export default function App() {
             style={{ gridTemplateColumns: `${sidebarOpen ? 260 : 48}px 1fr 1fr` }}
         >
             <FileSidebar
+                ref={sidebarRef}
                 current={fileHandle}
                 onOpenFile={handleOpenFile}
                 onSave={handleSave}
+                onNewFile={handleNewFile}
                 unsaved={unsaved}
                 setUnsaved={setUnsaved}
                 collapsed={!sidebarOpen}
@@ -140,4 +177,3 @@ export default function App() {
         </div>
     );
 }
-

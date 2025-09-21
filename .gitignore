@@ -10,6 +10,7 @@ coverage/
 *.tsbuildinfo
 
 *.env
+!/.env
 .env.*.local
 *.local
 
@@ -23,3 +24,6 @@ pnpm-debug.log*
 *.code-workspace
 *.sublime-project
 *.sublime-workspace
+
+backend/db/storage/*
+!backend/db/storage/test*.md

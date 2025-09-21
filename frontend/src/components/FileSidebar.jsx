@@ -1,15 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import API from '../API';
 
-export default function FileSidebar({
-  current,
-  onOpenFile,
-  onSave,
-  unsaved,
-  setUnsaved,
-  collapsed = false,
-  onToggle
-}) {
+const FileSidebar = forwardRef(function FileSidebar(
+  {
+    current,
+    onOpenFile,
+    onSave,
+    onNewFile,
+    unsaved,
+    setUnsaved,
+    collapsed = false,
+    onToggle
+  },
+  ref
+) {
   const [entries, setEntries] = useState([]);
 
   const fetchFiles = async () => {
@@ -25,7 +29,6 @@ export default function FileSidebar({
   const clickFile = async (item) => {
     try {
       const response = await API.STORAGE.get(`/download/${encodeURIComponent(item.name)}`);
-      // response.data — это текст файла
       onOpenFile(response.data, { name: item.name });
       setUnsaved(false);
     } catch (err) {
@@ -36,6 +39,10 @@ export default function FileSidebar({
   useEffect(() => {
     fetchFiles();
   }, []);
+
+  useImperativeHandle(ref, () => ({
+    refresh: fetchFiles,
+  }));
 
   return (
     <aside
@@ -54,8 +61,14 @@ export default function FileSidebar({
 
         {!collapsed && (
           <>
-            <button className="btn" disabled={!current} onClick={() => handleSave('md')}>Save .md</button>
-            <button className="btn" disabled={!current} onClick={() => handleSave('html')}>Save .html</button>
+            <button className="btn" onClick={onNewFile}>New</button>
+            <button
+              className="btn"
+              disabled={!current && !unsaved}
+              onClick={() => onSave(fetchFiles)}
+            >
+              Save
+            </button>
           </>
         )}
       </div>
@@ -67,11 +80,7 @@ export default function FileSidebar({
           title={e.name}
           onClick={() => clickFile(e)}
         >
-          <span
-            className="fs-name"
-            title={e.name}
-            onClick={() => clickFile(e)}
-          >
+          <span className="fs-name">
             {e.name}
             {unsaved && current?.name === e.name && ' ●'}
           </span>
@@ -88,4 +97,6 @@ export default function FileSidebar({
       ))}
     </aside>
   );
-}
+});
+
+export default FileSidebar;

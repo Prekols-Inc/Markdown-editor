@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ${DOCKERHUB_USERNAME}/markdown-backend:latest
+    container_name: markdown-backend
+    environment:
+      PORT: ${BACKEND_PORT}
+    ports:
+      - "${PORT}:${PORT}"
+    networks:
+      - markdown-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c 'echo > /dev/tcp/localhost/${PORT}' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+      
+  auth-service:
+    image: ${DOCKERHUB_USERNAME}/markdown-auth:latest
+    container_name: markdown-auth
+    environment:
+      PORT: ${AUTH_PORT}
+    ports:
+      - "${PORT}:${PORT}"
+    networks:
+      - markdown-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c 'echo > /dev/tcp/localhost/${PORT}' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME}/markdown-frontend:latest
+    container_name: markdown-frontend
+    environment:
+      PORT: ${FRONTEND_PORT}
+    ports: 
+      - "${PORT}:${PORT}"
+    depends_on:
+      - backend
+      - auth-service
+    networks:
+      - markdown-network
+    restart: unless-stopped
+
+networks:
+  markdown-network:
+    driver: bridge

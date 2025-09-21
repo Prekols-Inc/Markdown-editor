@@ -1,15 +1,17 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 const (
-	PORT        = ":8000"
 	USERNAME    = "admin"
 	PASSWORD    = "password"
 	RSP_MSG_KEY = "message"
@@ -21,8 +23,14 @@ type LoginRequest struct {
 }
 
 func main() {
-	r := gin.Default()
+	err := godotenv.Load("../.env")
+	if err != nil {
+		panic(fmt.Sprintf("Error loading .env file: %v", err))
+	}
+	port := os.Getenv("AUTH_PORT")
+	host := os.Getenv("AUTH_HOST")
 
+	r := gin.Default()
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"POST", "GET", "OPTIONS"},
@@ -46,5 +54,5 @@ func main() {
 
 		c.JSON(http.StatusOK, gin.H{RSP_MSG_KEY: "login successful"})
 	})
-	r.Run(PORT)
+	r.Run(fmt.Sprintf("%s:%s", host, port))
 }
