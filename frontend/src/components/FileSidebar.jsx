@@ -28,7 +28,7 @@ const FileSidebar = forwardRef(function FileSidebar(
 
   const clickFile = async (item) => {
     try {
-      const response = await API.STORAGE.get(`/download/${encodeURIComponent(item.name)}`);
+      const response = await API.STORAGE.get(`/file/${encodeURIComponent(item.name)}`);
       onOpenFile(response.data, { name: item.name });
       setUnsaved(false);
     } catch (err) {

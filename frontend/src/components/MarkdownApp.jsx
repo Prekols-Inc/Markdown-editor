@@ -78,21 +78,25 @@ export default function App() {
                 filename += '.md';
             }
 
-            await API.STORAGE.post(`/save/${encodeURIComponent(filename)}`, {
-                content: DEFAULT_MD,
+            const blob = new Blob([DEFAULT_MD], { type: 'text/plain' });
+            const formData = new FormData();
+            formData.append('file', blob, filename);
+
+            await API.STORAGE.post(`/file/${encodeURIComponent(filename)}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
             });
 
             setMarkdown(DEFAULT_MD);
             setFileHandle({ name: filename });
             setUnsaved(false);
 
-            // обновляем список файлов в сайдбаре
             sidebarRef.current?.refresh();
         } catch (err) {
             console.error('Ошибка создания файла', err);
             alert('Не удалось создать файл');
         }
     }, []);
+
 
     const handleSave = useCallback(
         async (refreshFiles) => {
@@ -114,7 +118,13 @@ export default function App() {
                     content = markdown;
                 }
 
-                await API.STORAGE.post(`/save/${encodeURIComponent(filename)}`, { content });
+                const blob = new Blob([content], { type: 'text/plain' });
+                const formData = new FormData();
+                formData.append('file', blob, filename);
+
+                await API.STORAGE.put(`/file/${encodeURIComponent(filename)}`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
 
                 setFileHandle({ name: filename });
                 setUnsaved(false);
@@ -129,6 +139,7 @@ export default function App() {
         },
         [markdown, options, fileHandle]
     );
+
 
     return (
         <div
