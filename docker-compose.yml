@@ -1,5 +1,8 @@
 version: '3.8'
 
+environment:
+  DOCKERHUB_USERNAME=sid00r
+
 services:
   backend:
     image: ${DOCKERHUB_USERNAME}/markdown-backend:latest
