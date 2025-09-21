@@ -11,8 +11,10 @@ FROM alpine:latest
 
 ARG BACKEND_HOST
 ARG BACKEND_PORT
-EXPOSE ${BACKEND_PORT}
+ENV HOST=${BACKEND_HOST}
+ENV PORT=${BACKEND_PORT}
+EXPOSE ${PORT}
 
 WORKDIR /root/
 COPY --from=builder /markdown-backend/backend .
-CMD ./backend --port=${BACKEND_PORT} --host=${BACKEND_HOST}
+CMD ./backend --port=${PORT} --host=${HOST}
