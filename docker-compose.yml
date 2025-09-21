@@ -48,6 +48,8 @@ services:
       args:
         - FRONTEND_HOST=${FRONTEND_HOST}
         - FRONTEND_PORT=${FRONTEND_PORT}
+        - VITE_STORAGE_API_BASE_URL=${VITE_STORAGE_API_BASE_URL}
+        - VITE_AUTH_API_BASE_URL=${VITE_AUTH_API_BASE_URL}
     container_name: markdown-frontend
     ports: 
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
