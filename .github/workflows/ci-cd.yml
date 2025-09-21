@@ -7,12 +7,12 @@ on:
     branches: ["*"]
     
 env:
-  BACKEND_HOST: 0.0.0.0
-  BACKEND_PORT: 1234    
-  AUTH_HOST: 0.0.0.0
-  AUTH_PORT: 8080
-  FRONTEND_HOST: 0.0.0.0
-  FRONTEND_PORT: 5173
+  BACKEND_HOST: ${{ secrets.BACKEND_HOST }}
+  BACKEND_PORT: ${{ secrets.BACKEND_PORT }}    
+  AUTH_HOST: ${{ secrets.AUTH_HOST }}
+  AUTH_PORT: ${{ secrets.AUTH_PORT }}
+  FRONTEND_HOST: ${{ secrets.FRONTEND_HOST }}
+  FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
 
 jobs:
   test-backend:
