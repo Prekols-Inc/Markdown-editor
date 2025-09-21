@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+<<<<<<< Updated upstream
 	"os"
 	"strconv"
+=======
+>>>>>>> Stashed changes
 	"time"
 
 	"backend/db/repodb"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -39,6 +43,15 @@ func main() {
 	if err := validatePort(port); err != nil {
 		panic(fmt.Sprintf("Invalid port: %v\n", err))
 	}
+
+	router.Use(cors.New(cors.Config{
+		AllowAllOrigins:  true,
+		AllowMethods:     []string{"POST", "GET", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	repo, err := repodb.NewLocalFileRepo(DB_PATH)
 	if err != nil {
