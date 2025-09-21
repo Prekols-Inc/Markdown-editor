@@ -5,6 +5,14 @@ on:
     branches: [main, ci/cd]
   pull_request:
     branches: ["*"]
+    
+env:
+  BACKEND_HOST: ${{ secrets.BACKEND_HOST }}
+  BACKEND_PORT: ${{ secrets.BACKEND_PORT }}    
+  AUTH_HOST: ${{ secrets.AUTH_HOST }}
+  AUTH_PORT: ${{ secrets.AUTH_PORT }}
+  FRONTEND_HOST: ${{ secrets.FRONTEND_HOST }}
+  FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
 
 jobs:
   test-backend:
@@ -53,11 +61,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Load .env file
-      uses: falti/dotenv-action@v1
-      with:
-        path: .env
-
     - name: Download build artifact
       uses: actions/download-artifact@v4
       with:
@@ -77,7 +80,7 @@ jobs:
       run: |
         for i in {1..5}; do
           echo "Attempt $i"
-          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:1234/health || echo "000")
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://$BACKEND_HOST:$BACKEND_PORT/health || echo "000")
           if [ "$status_code" -eq 200 ]; then
             echo "Health check passed"
             exit 0
@@ -158,6 +161,9 @@ jobs:
       with:
         context: ./backend
         file: ./backend/Dockerfile
+        build-args: |
+          BACKEND_HOST=${{ env.BACKEND_HOST }}
+          BACKEND_PORT=${{ env.BACKEND_PORT }}
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-backend:latest
 
@@ -166,6 +172,9 @@ jobs:
       with:
         context: ./auth
         file: ./auth/Dockerfile
+        build-args: |
+          AUTH_HOST=${{ env.AUTH_HOST }}
+          AUTH_PORT=${{ env.AUTH_PORT }}
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-auth:latest
 
@@ -174,6 +183,9 @@ jobs:
       with:
         context: ./frontend
         file: ./frontend/Dockerfile
+        build-args: |
+          FRONTEND_HOST=${{ env.FRONTEND_HOST }}
+          FRONTEND_PORT=${{ env.FRONTEND_PORT }}
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-frontend:latest
 
@@ -184,11 +196,17 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
-    - name: Load .env file
-      uses: falti/dotenv-action@v1
-      with:
-        path: .env
+      
+    - name: Create .env file for Docker Compose
+      run: |
+        cat << EOF > .env
+          BACKEND_HOST=$BACKEND_HOST
+          BACKEND_PORT=$BACKEND_PORT
+          AUTH_HOST=$AUTH_HOST
+          AUTH_PORT=$AUTH_PORT
+          FRONTEND_HOST=$FRONTEND_HOST
+          FRONTEND_PORT=$FRONTEND_PORT
+          EOF
 
     - name: Deploy with Docker Compose
       run: |
@@ -199,10 +217,43 @@ jobs:
       run: |
         sleep 15
         docker compose ps
-        if [ $(docker compose ps --services --filter "status=running" | grep -c 'markdown-backend\|markdown-frontend\|markdown-auth') -ne 3 ]; then
+        if [ $(docker compose ps --services | grep -c 'backend\|frontend\|auth') -ne 3 ]; then
           echo "Not all services are running"
           docker compose logs --tail=50
           exit 1
         fi
-        curl -f http://localhost:${BACKEND_PORT}/health || exit 1
-        curl -f http://localhost:${FRONTEND_PORT} || exit 1
+        
+        echo "Checking backend health at http://$BACKEND_HOST:$BACKEND_PORT/health"
+        if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$BACKEND_HOST:$BACKEND_PORT/health"; 
+        then
+          echo "ERROR: Backend health check failed!"
+          echo "Backend logs:"
+          docker compose logs backend --tail=35
+          exit 1
+        else
+          echo "Backend health check passed!"
+        fi
+        
+        echo "Checking auth health at http://$AUTH_HOST:$AUTH_PORT/health"
+        if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$AUTH_HOST:$AUTH_PORT/health"; 
+        then
+          echo "ERROR: Auth health check failed!"
+          echo "Auth logs:"
+          docker compose logs auth --tail=35
+          exit 1
+        else
+          echo "Auth health check passed!"
+        fi
+        
+        echo "Checking frontend availability at http://$FRONTEND_HOST:$FRONTEND_PORT"
+        if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$FRONTEND_HOST:$FRONTEND_PORT"; 
+        then
+          echo "ERROR: Frontend availability check failed!"
+          echo "Frontend logs:"
+          docker compose logs frontend --tail=35
+          exit 1
+        else
+          echo "Frontend availability check passed!"
+        fi
+        
+        echo "All services are healthy and responding!"

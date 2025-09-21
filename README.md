@@ -47,6 +47,12 @@ go mod tidy
 go run .
 ```
 
+### Docker
+
+```bash
+docker-compose up -d
+```
+
 ---
 ## Tests
 ### Test backend

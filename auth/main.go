@@ -1,14 +1,13 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 const (
@@ -23,12 +22,10 @@ type LoginRequest struct {
 }
 
 func main() {
-	err := godotenv.Load("../.env")
-	if err != nil {
-		panic(fmt.Sprintf("Error loading .env file: %v", err))
-	}
-	port := os.Getenv("AUTH_PORT")
-	host := os.Getenv("AUTH_HOST")
+	var host, port string
+	flag.StringVar(&host, "host", "", "Host to bind")
+	flag.StringVar(&port, "port", "", "Port to bind")
+	flag.Parse()
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
@@ -40,6 +37,7 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	r.GET("/health", healthHandler)
 	r.POST("/v1/login", func(c *gin.Context) {
 		var req LoginRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -55,4 +53,11 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{RSP_MSG_KEY: "login successful"})
 	})
 	r.Run(fmt.Sprintf("%s:%s", host, port))
+}
+
+func healthHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status": "healthy",
+		"time":   time.Now(),
+	})
 }
