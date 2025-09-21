@@ -7,11 +7,11 @@ on:
     branches: ["*"]
     
 env:
-  BACKEND_HOST: localhost
-  BACKEND_PORT: 1234
-  AUTH_HOST: localhost
+  BACKEND_HOST: 0.0.0.0
+  BACKEND_PORT: 1234    
+  AUTH_HOST: 0.0.0.0
   AUTH_PORT: 8080
-  FRONTEND_HOST: localhost
+  FRONTEND_HOST: 0.0.0.0
   FRONTEND_PORT: 5173
 
 jobs:
@@ -80,7 +80,7 @@ jobs:
       run: |
         for i in {1..5}; do
           echo "Attempt $i"
-          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://${BACKEND_HOST}:${BACKEND_PORT}/health || echo "000")
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://$BACKEND_HOST:$BACKEND_PORT/health || echo "000")
           if [ "$status_code" -eq 200 ]; then
             echo "Health check passed"
             exit 0
@@ -224,23 +224,34 @@ jobs:
           exit 1
         fi
         
-        echo "Checking backend health at http://${BACKEND_HOST}:${BACKEND_PORT}/health"
-        if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://${BACKEND_HOST}:${BACKEND_PORT}/health"; 
+        echo "Checking backend health at http://$BACKEND_HOST:$BACKEND_PORT/health"
+        if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$BACKEND_HOST:$BACKEND_PORT/health"; 
         then
           echo "ERROR: Backend health check failed!"
           echo "Backend logs:"
-          docker compose logs backend --tail=20
+          docker compose logs backend --tail=35
           exit 1
         else
           echo "Backend health check passed!"
         fi
         
-        echo "Checking frontend availability at http://${FRONTEND_HOST}:${FRONTEND_PORT}"
-        if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://${FRONTEND_HOST}:${FRONTEND_PORT}"; 
+        echo "Checking auth health at http://$AUTH_HOST:$AUTH_PORT/health"
+        if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$AUTH_HOST:$AUTH_PORT/health"; 
+        then
+          echo "ERROR: Auth health check failed!"
+          echo "Auth logs:"
+          docker compose logs auth --tail=35
+          exit 1
+        else
+          echo "Auth health check passed!"
+        fi
+        
+        echo "Checking frontend availability at http://$FRONTEND_HOST:$FRONTEND_PORT"
+        if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$FRONTEND_HOST:$FRONTEND_PORT"; 
         then
           echo "ERROR: Frontend availability check failed!"
           echo "Frontend logs:"
-          docker compose logs frontend --tail=20
+          docker compose logs frontend --tail=35
           exit 1
         else
           echo "Frontend availability check passed!"

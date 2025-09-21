@@ -37,6 +37,7 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	r.GET("/health", healthHandler)
 	r.POST("/v1/login", func(c *gin.Context) {
 		var req LoginRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -52,4 +53,11 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{RSP_MSG_KEY: "login successful"})
 	})
 	r.Run(fmt.Sprintf("%s:%s", host, port))
+}
+
+func healthHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status": "healthy",
+		"time":   time.Now(),
+	})
 }

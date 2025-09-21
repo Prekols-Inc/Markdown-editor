@@ -12,4 +12,4 @@ ENV HOST=${FRONTEND_HOST}
 ENV PORT=${FRONTEND_PORT}
 EXPOSE ${PORT}
 
-CMD ["npm", "run", "dev"]
+CMD npm run dev
