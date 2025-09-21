@@ -47,8 +47,15 @@ $ go run .
 
 ### Docker
 
+To run all containers in a background (detach process)
+
 ```bash
 docker-compose up -d
+```
+
+To attach all processes to the terminal session
+```bash
+docker compose up
 ```
 
 ---
