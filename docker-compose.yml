@@ -1,11 +1,8 @@
 version: '3.8'
 
-environment:
-  DOCKERHUB_USERNAME=sid00r
-
 services:
   backend:
-    image: ${DOCKERHUB_USERNAME}/markdown-backend:latest
+    image: sid00r/markdown-backend:latest
     build:
       context: ./backend
       args:
@@ -25,7 +22,7 @@ services:
       start_period: 40s
       
   auth:
-    image: ${DOCKERHUB_USERNAME}/markdown-auth:latest
+    image: sid00r/markdown-auth:latest
     build:
       context: ./auth
       args:
@@ -45,7 +42,7 @@ services:
       start_period: 40s
 
   frontend:
-    image: ${DOCKERHUB_USERNAME}/markdown-frontend:latest
+    image: sid00r/markdown-frontend:latest
     build:
       context: ./frontend
       args:

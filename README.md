@@ -50,28 +50,8 @@ go run .
 ### Docker
 
 ```bash
-# 1. Авторизация в Docker Hub
-docker login
-
-# 2. Создание файла .env в корневой директории проекта
-cat > .env << EOF
-BACKEND_HOST=localhost
-BACKEND_PORT=1234
-AUTH_HOST=localhost
-AUTH_PORT=8080
-FRONTEND_HOST=localhost
-FRONTEND_PORT=5173
-DOCKERHUB_USERNAME=[your-dockerhub-username]
-EOF
-
-# 3. Сборка образов
-docker compose build
-
-# 4. Пуш образов в Docker Hub
-docker compose push
-
-# 5. Запуск приложения
 docker-compose up -d
+```
 
 ---
 ## Tests
