@@ -5,11 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-<<<<<<< Updated upstream
 	"os"
 	"strconv"
-=======
->>>>>>> Stashed changes
 	"time"
 
 	"backend/db/repodb"
@@ -44,6 +41,13 @@ func main() {
 		panic(fmt.Sprintf("Invalid port: %v\n", err))
 	}
 
+	repo, err := repodb.NewLocalFileRepo(DB_PATH)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create file repository: %v", err))
+	}
+
+	router := gin.Default()
+
 	router.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"POST", "GET", "PUT", "DELETE", "OPTIONS"},
@@ -53,12 +57,6 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	repo, err := repodb.NewLocalFileRepo(DB_PATH)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to create file repository: %v", err))
-	}
-
-	router := gin.Default()
 	router.GET("/health", healthHandler)
 	router.GET("/files", func(c *gin.Context) {
 		getAllFilesHandler(c, repo)
