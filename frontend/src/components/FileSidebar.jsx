@@ -1,80 +1,48 @@
-import { useEffect, useState } from 'react';
-import { directoryOpen, fileOpen } from 'browser-fs-access';
+import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import API from '../API';
 
-export default function FileSidebar({
-  current,
-  onOpenFile,
-  onSave,
-  unsaved,
-  setUnsaved,
-  collapsed = false,
-  onToggle
-}) {
-  const [dirHandle, setDirHandle] = useState(null);
-  const [entries,   setEntries]   = useState([]);
+const FileSidebar = forwardRef(function FileSidebar(
+  {
+    current,
+    onOpenFile,
+    onSave,
+    onNewFile,
+    unsaved,
+    setUnsaved,
+    collapsed = false,
+    onToggle
+  },
+  ref
+) {
+  const [entries, setEntries] = useState([]);
 
-
-  /* Open folder */
-  async function openFolder() {
+  const fetchFiles = async () => {
     try {
-      const handle = await directoryOpen({ id: 'md-dir', recursive: true });
-      setDirHandle(handle);
-    } catch {
-      try {
-        const file = await fileOpen({
-          id: 'md-single',
-          mimeTypes: ['text/markdown', 'text/plain'],
-          extensions: ['.md', '.markdown', '.txt']
-        });
-        setDirHandle([file]);
-      } catch {}
+      const response = await API.STORAGE.get('/files');
+      const files = response.data.files.map(name => ({ name }));
+      setEntries(files);
+    } catch (err) {
+      console.error('Ошибка загрузки файлов', err);
     }
-  }
+  };
 
-  /* Open single file */
-  async function openSingleFile() {
+  const clickFile = async (item) => {
     try {
-    const file = await fileOpen({
-    id: 'md-single',
-    mimeTypes: ['text/markdown', 'text/plain'],
-    extensions: ['.md', '.markdown', '.txt']
-    });
-    onOpenFile(await file.text(), file);
-    setUnsaved(false);
-    setEntries(list => {
-      const exists = list.some(e => e.file.name === file.name);
-      if (exists) return list;
-      return [...list, { source: file, file }];
-    });
-    setDirHandle(null);
-    } catch {}
+      const response = await API.STORAGE.get(`/file/${encodeURIComponent(item.name)}`);
+      onOpenFile(response.data, { name: item.name });
+      setUnsaved(false);
+    } catch (err) {
+      console.error('Ошибка загрузки файла', err);
     }
+  };
 
   useEffect(() => {
-    if (!dirHandle) return;
+    fetchFiles();
+  }, []);
 
-    (async () => {
-      const iterable = dirHandle.values ? dirHandle.values() : dirHandle;
-      const list = [];
-      for await (const entry of iterable) {
-        const file = entry.kind === 'file' ? await entry.getFile() : entry;
-        if (/\.(md|markdown|txt)$/i.test(file.name)) list.push({ source: entry, file });
-      }
-      setEntries(list);
-    })();
-  }, [dirHandle]);
-
-  async function clickFile(item) {
-    const file = 'getFile' in item.source ? await item.source.getFile() : item.file;
-    onOpenFile(await file.text(), item.source);
-    setUnsaved(false);
-  }
-
-  /* save */
-  async function handleSave(ext) {
-    await onSave(ext);
-    setUnsaved(false);
-  }
+  useImperativeHandle(ref, () => ({
+    refresh: fetchFiles,
+  }));
 
   return (
     <aside
@@ -93,34 +61,34 @@ export default function FileSidebar({
 
         {!collapsed && (
           <>
-            <button className="btn" onClick={openFolder}>Open Folder</button>
-            <button className="btn" onClick={openSingleFile}>Open File</button>
-            <button className="btn" disabled={!current} onClick={() => handleSave('md')}>Save .md</button>
-            <button className="btn" disabled={!current} onClick={() => handleSave('html')}>Save .html</button>
+            <button className="btn" onClick={onNewFile}>New</button>
+            <button
+              className="btn"
+              disabled={!current && !unsaved}
+              onClick={() => onSave(fetchFiles)}
+            >
+              Save
+            </button>
           </>
         )}
       </div>
 
       {!collapsed && entries.map(e => (
         <div
-          key={e.file.name}
-          className={'fs-item' + (current?.name === e.file.name ? ' active' : '')}
-          title={e.file.name}
+          key={e.name}
+          className={'fs-item' + (current?.name === e.name ? ' active' : '')}
+          title={e.name}
           onClick={() => clickFile(e)}
         >
-          <span
-            className="fs-name"
-            title={e.file.name}
-            onClick={() => clickFile(e)}
-          >
-            {e.file.name}
-            {unsaved && current?.name === e.file.name && ' ●'}
+          <span className="fs-name">
+            {e.name}
+            {unsaved && current?.name === e.name && ' ●'}
           </span>
           <button
             className="fs-close"
             title="Remove from sidebar"
             onClick={() =>
-              setEntries(list => list.filter(x => x.file.name !== e.file.name))
+              setEntries(list => list.filter(x => x.name !== e.name))
             }
           >
             ×
@@ -129,4 +97,6 @@ export default function FileSidebar({
       ))}
     </aside>
   );
-}
+});
+
+export default FileSidebar;

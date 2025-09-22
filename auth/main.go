@@ -52,7 +52,11 @@ func main() {
 
 		c.JSON(http.StatusOK, gin.H{RSP_MSG_KEY: "login successful"})
 	})
-	r.Run(fmt.Sprintf("%s:%s", host, port))
+	serverAddr := fmt.Sprintf("%s:%s", host, port)
+	if err := r.Run(serverAddr); err != nil {
+		panic(fmt.Sprintf("Failed to run server: %v", err))
+	}
+	fmt.Printf("Server started on %s\n", serverAddr)
 }
 
 func healthHandler(c *gin.Context) {
