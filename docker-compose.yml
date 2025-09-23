@@ -38,7 +38,13 @@ services:
 
   frontend:
     image: sid00r/markdown-frontend:latest
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        - FRONTEND_HOST=${FRONTEND_HOST}
+        - FRONTEND_PORT=${FRONTEND_PORT}
+        - VITE_STORAGE_API_BASE_URL=${VITE_STORAGE_API_BASE_URL}
+        - VITE_AUTH_API_BASE_URL=${VITE_AUTH_API_BASE_URL}
     container_name: markdown-frontend
     environment:
       - FRONTEND_HOST=${FRONTEND_HOST}
