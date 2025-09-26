@@ -249,6 +249,7 @@ jobs:
           exit 1
         else
           echo "Frontend availability check passed!"
+          docker compose logs frontend --tail=35
         fi
         
         echo "All services are healthy and responding!"
