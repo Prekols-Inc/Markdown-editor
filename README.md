@@ -32,7 +32,7 @@ npm install
 # 3. Add env variables in frontend/.env file:
 # Example: 
 VITE_AUTH_API_BASE_URL=http://localhost:8080
-VITE_BACKEND_API_BASE_URL=http://localhost:1234
+VITE_STORAGE_API_BASE_URL=http://localhost:1234
 
 # 4. Start the dev server
 npm run dev

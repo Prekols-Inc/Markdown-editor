@@ -9,12 +9,8 @@ RUN go build -o backend .
 
 FROM alpine:latest
 
-ARG BACKEND_HOST
-ARG BACKEND_PORT
-ENV HOST=${BACKEND_HOST}
-ENV PORT=${BACKEND_PORT}
-EXPOSE ${PORT}
+EXPOSE ${BACKEND_PORT}
 
 WORKDIR /root/
 COPY --from=builder /markdown-backend/backend .
-CMD ./backend --port=${PORT} --host=${HOST}
+CMD ./backend --port=${BACKEND_PORT} --host=${BACKEND_HOST}
