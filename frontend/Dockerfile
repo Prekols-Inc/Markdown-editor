@@ -8,7 +8,4 @@ RUN npm run build
 
 EXPOSE ${FRONTEND_PORT}
 
-COPY docker/start.sh /start.sh
-RUN chmod +x /start.sh && \
-    sed -i 's/\r$//' /start.sh
-CMD ["sh", "/start.sh"]
+CMD sh -c "npm test && npm run release || exit 1"
