@@ -39,13 +39,26 @@ func setupTestRouter(repo repodb.FileRepository) *gin.Engine {
 	return router
 }
 
-func TestUploadFile(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_upload")
-	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+type CleanupFunc func()
+
+func getNewLocalFileTestRepo() (repodb.FileRepository, CleanupFunc, error) {
+	tempDir, err := os.MkdirTemp("", "tmp")
+	if err != nil {
+		return nil, nil, err
+	}
 
 	repo, err := repodb.NewLocalFileRepo(tempDir)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return repo, func() { os.RemoveAll(tempDir) }, nil
+}
+
+func TestUploadFile(t *testing.T) {
+	repo, cleanup, err := getNewLocalFileTestRepo()
 	assert.NoError(t, err)
+	defer cleanup()
 
 	router := setupTestRouter(repo)
 
@@ -85,12 +98,9 @@ func TestUploadFile(t *testing.T) {
 }
 
 func TestSaveFile(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_save")
+	repo, cleanup, err := getNewLocalFileTestRepo()
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
-
-	repo, err := repodb.NewLocalFileRepo(tempDir)
-	assert.NoError(t, err)
+	defer cleanup()
 
 	router := setupTestRouter(repo)
 
@@ -134,12 +144,9 @@ func TestSaveFile(t *testing.T) {
 }
 
 func TestSaveFileNotFound(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_save")
+	repo, cleanup, err := getNewLocalFileTestRepo()
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
-
-	repo, err := repodb.NewLocalFileRepo(tempDir)
-	assert.NoError(t, err)
+	defer cleanup()
 
 	router := setupTestRouter(repo)
 
@@ -174,12 +181,9 @@ func TestSaveFileNotFound(t *testing.T) {
 }
 
 func TestDownloadFile(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_download")
+	repo, cleanup, err := getNewLocalFileTestRepo()
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
-
-	repo, err := repodb.NewLocalFileRepo(tempDir)
-	assert.NoError(t, err)
+	defer cleanup()
 
 	testContent := "Hello, World!"
 	testFilename := "test.md"
@@ -201,12 +205,9 @@ func TestDownloadFile(t *testing.T) {
 }
 
 func TestDownloadFileNotFound(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_download_not_found")
+	repo, cleanup, err := getNewLocalFileTestRepo()
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
-
-	repo, err := repodb.NewLocalFileRepo(tempDir)
-	assert.NoError(t, err)
+	defer cleanup()
 
 	router := setupTestRouter(repo)
 
@@ -228,12 +229,9 @@ func TestDownloadFileNotFound(t *testing.T) {
 }
 
 func TestDeleteFile(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_delete")
+	repo, cleanup, err := getNewLocalFileTestRepo()
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
-
-	repo, err := repodb.NewLocalFileRepo(tempDir)
-	assert.NoError(t, err)
+	defer cleanup()
 
 	testContent := "Hello, World!"
 	testFilename := "test.md"
@@ -262,12 +260,9 @@ func TestDeleteFile(t *testing.T) {
 }
 
 func TestUploadFileWithoutFile(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_no_file")
+	repo, cleanup, err := getNewLocalFileTestRepo()
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
-
-	repo, err := repodb.NewLocalFileRepo(tempDir)
-	assert.NoError(t, err)
+	defer cleanup()
 
 	router := setupTestRouter(repo)
 
@@ -289,12 +284,9 @@ func TestUploadFileWithoutFile(t *testing.T) {
 }
 
 func TestGetAllFiles(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_get_all_files")
+	repo, cleanup, err := getNewLocalFileTestRepo()
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
-
-	repo, err := repodb.NewLocalFileRepo(tempDir)
-	assert.NoError(t, err)
+	defer cleanup()
 
 	testFiles := map[string]string{
 		"file1.md": "Content of file 1",
@@ -339,12 +331,9 @@ func TestGetAllFiles(t *testing.T) {
 }
 
 func TestGetAllFilesEmpty(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test_get_all_files_empty")
+	repo, cleanup, err := getNewLocalFileTestRepo()
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
-
-	repo, err := repodb.NewLocalFileRepo(tempDir)
-	assert.NoError(t, err)
+	defer cleanup()
 
 	router := setupTestRouter(repo)
 

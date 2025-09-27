@@ -66,7 +66,7 @@ $ go run .
 ### Backend
 ```bash
 cd backend
-go test -v
+go test ./... -v
 ```
 
 ### Auth service

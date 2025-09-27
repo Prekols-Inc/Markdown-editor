@@ -20,7 +20,6 @@ func NewLocalFileRepo(basePath string) (*LocalFileRepo, error) {
 
 func IsFileExists(path string) (bool, error) {
 	if _, err := os.Stat(path); err != nil {
-		fmt.Println(err.Error())
 		if os.IsNotExist(err) {
 			return false, nil
 		}
@@ -31,13 +30,22 @@ func IsFileExists(path string) (bool, error) {
 	return true, nil
 }
 
-func (l *LocalFileRepo) Save(filename string, data []byte) error {
+func getPath(basePath string, filename string) (string, error) {
 	err := validateFile(filename)
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(basePath, filename)
+
+	return path, nil
+}
+
+func (l *LocalFileRepo) Save(filename string, data []byte) error {
+	path, err := getPath(l.basePath, filename)
 	if err != nil {
 		return err
 	}
 
-	path := filepath.Join(l.basePath, filename)
 	ex, err := IsFileExists(path)
 	if err != nil {
 		return err
@@ -45,16 +53,16 @@ func (l *LocalFileRepo) Save(filename string, data []byte) error {
 	if !ex {
 		return ErrFileNotFound
 	}
+
 	return os.WriteFile(path, data, 0644)
 }
 
 func (l *LocalFileRepo) Create(filename string, data []byte) error {
-	err := validateFile(filename)
+	path, err := getPath(l.basePath, filename)
 	if err != nil {
 		return err
 	}
 
-	path := filepath.Join(l.basePath, filename)
 	ex, err := IsFileExists(path)
 	if err != nil {
 		return err
@@ -62,21 +70,26 @@ func (l *LocalFileRepo) Create(filename string, data []byte) error {
 	if ex {
 		return ErrFileExists
 	}
+
 	return os.WriteFile(path, data, 0644)
 }
 
 func (l *LocalFileRepo) Get(filename string) ([]byte, error) {
-	err := validateFile(filename)
+	path, err := getPath(l.basePath, filename)
 	if err != nil {
 		return nil, err
 	}
 
-	path := filepath.Join(l.basePath, filename)
+	ex, err := IsFileExists(path)
+	if err != nil {
+		return nil, err
+	}
+	if !ex {
+		return nil, ErrFileNotFound
+	}
+
 	bytes, err := os.ReadFile(path)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, ErrFileNotFound
-		}
 		return nil, err
 	}
 
@@ -84,7 +97,19 @@ func (l *LocalFileRepo) Get(filename string) ([]byte, error) {
 }
 
 func (l *LocalFileRepo) Delete(filename string) error {
-	path := filepath.Join(l.basePath, filename)
+	path, err := getPath(l.basePath, filename)
+	if err != nil {
+		return err
+	}
+
+	ex, err := IsFileExists(path)
+	if err != nil {
+		return err
+	}
+	if !ex {
+		return ErrFileNotFound
+	}
+
 	return os.Remove(path)
 }
 
