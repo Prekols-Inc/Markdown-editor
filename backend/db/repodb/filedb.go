@@ -32,6 +32,11 @@ func IsFileExists(path string) (bool, error) {
 }
 
 func (l *LocalFileRepo) Save(filename string, data []byte) error {
+	err := validateFile(filename)
+	if err != nil {
+		return err
+	}
+
 	path := filepath.Join(l.basePath, filename)
 	ex, err := IsFileExists(path)
 	if err != nil {
@@ -44,6 +49,11 @@ func (l *LocalFileRepo) Save(filename string, data []byte) error {
 }
 
 func (l *LocalFileRepo) Create(filename string, data []byte) error {
+	err := validateFile(filename)
+	if err != nil {
+		return err
+	}
+
 	path := filepath.Join(l.basePath, filename)
 	ex, err := IsFileExists(path)
 	if err != nil {
@@ -56,8 +66,12 @@ func (l *LocalFileRepo) Create(filename string, data []byte) error {
 }
 
 func (l *LocalFileRepo) Get(filename string) ([]byte, error) {
-	path := filepath.Join(l.basePath, filename)
+	err := validateFile(filename)
+	if err != nil {
+		return nil, err
+	}
 
+	path := filepath.Join(l.basePath, filename)
 	bytes, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {

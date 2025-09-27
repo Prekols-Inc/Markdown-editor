@@ -50,7 +50,7 @@ func TestUploadFile(t *testing.T) {
 	router := setupTestRouter(repo)
 
 	testContent := "Hello, World!"
-	testFilename := "test.txt"
+	testFilename := "test.md"
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -96,7 +96,7 @@ func TestSaveFile(t *testing.T) {
 
 	testContent := "Hello, World!"
 	testContentSaved := "Goodbye, World!"
-	testFilename := "test.txt"
+	testFilename := "test.md"
 
 	err = repo.Create(testFilename, []byte(testContent))
 	assert.NoError(t, err)
@@ -144,7 +144,7 @@ func TestSaveFileNotFound(t *testing.T) {
 	router := setupTestRouter(repo)
 
 	testContent := "Hello, World!"
-	noExistsFile := "noexists.txt"
+	noExistsFile := "noexists.md"
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -182,7 +182,7 @@ func TestDownloadFile(t *testing.T) {
 	assert.NoError(t, err)
 
 	testContent := "Hello, World!"
-	testFilename := "test.txt"
+	testFilename := "test.md"
 	err = repo.Create(testFilename, []byte(testContent))
 	assert.NoError(t, err)
 
@@ -210,7 +210,7 @@ func TestDownloadFileNotFound(t *testing.T) {
 
 	router := setupTestRouter(repo)
 
-	testFilename := "nonexistent.txt"
+	testFilename := "nonexistent.md"
 
 	req, err := http.NewRequest("GET", "/file/"+testFilename, nil)
 	assert.NoError(t, err)
@@ -236,7 +236,7 @@ func TestDeleteFile(t *testing.T) {
 	assert.NoError(t, err)
 
 	testContent := "Hello, World!"
-	testFilename := "test.txt"
+	testFilename := "test.md"
 	err = repo.Create(testFilename, []byte(testContent))
 	assert.NoError(t, err)
 
@@ -271,7 +271,7 @@ func TestUploadFileWithoutFile(t *testing.T) {
 
 	router := setupTestRouter(repo)
 
-	testFilename := "test.txt"
+	testFilename := "test.md"
 	req, err := http.NewRequest("POST", "/file/"+testFilename, nil)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "multipart/form-data")
@@ -297,9 +297,9 @@ func TestGetAllFiles(t *testing.T) {
 	assert.NoError(t, err)
 
 	testFiles := map[string]string{
-		"file1.txt": "Content of file 1",
-		"file2.txt": "Content of file 2",
-		"file3.txt": "Content of file 3",
+		"file1.md": "Content of file 1",
+		"file2.md": "Content of file 2",
+		"file3.md": "Content of file 3",
 	}
 
 	for filename, content := range testFiles {
@@ -332,7 +332,7 @@ func TestGetAllFiles(t *testing.T) {
 
 	assert.Equal(t, 3, len(fileNames))
 
-	expectedFiles := []string{"file1.txt", "file2.txt", "file3.txt"}
+	expectedFiles := []string{"file1.md", "file2.md", "file3.md"}
 	for _, expectedFile := range expectedFiles {
 		assert.Contains(t, fileNames, expectedFile)
 	}
