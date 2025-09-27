@@ -8,4 +8,4 @@ RUN npm run build
 
 EXPOSE ${FRONTEND_PORT}
 
-CMD npm run release
+CMD sh -c "npm test && npm run release || exit 1"
