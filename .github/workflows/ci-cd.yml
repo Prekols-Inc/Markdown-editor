@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, ci/cd]
+    branches: [main, dev, ci/cd]
   pull_request:
     branches: ["*"]
     
@@ -13,8 +13,8 @@ env:
   AUTH_PORT: ${{ secrets.AUTH_PORT }}
   FRONTEND_HOST: ${{ secrets.FRONTEND_HOST }}
   FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
-  VITE_STORAGE_API_BASE_URL: http://markdown-backend:$BACKEND_PORT
-  VITE_AUTH_API_BASE_URL: http://markdown-auth:$AUTH_PORT
+  VITE_STORAGE_API_BASE_URL: http://markdown-backend:${{ secrets.BACKEND_PORT }}
+  VITE_AUTH_API_BASE_URL: http://markdown-auth:${{ secrets.AUTH_PORT }}
 
 jobs:
   test-backend:
@@ -249,6 +249,7 @@ jobs:
           exit 1
         else
           echo "Frontend availability check passed!"
+          docker compose logs frontend --tail=35
         fi
         
         echo "All services are healthy and responding!"
