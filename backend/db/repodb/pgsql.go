@@ -10,7 +10,6 @@ import (
 )
 
 type DBConnAttrs struct {
-	host     string
 	port     string
 	user     string
 	password string
@@ -25,7 +24,7 @@ type PGSQLRepo struct {
 func NewPGSQLRepo(attrs DBConnAttrs) (*PGSQLRepo, error) {
 	db, err := sql.Open(
 		"postgres",
-		fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", attrs.host, attrs.port, attrs.user, attrs.password, attrs.dbname, attrs.sslmode),
+		fmt.Sprintf("port=%s user=%s password=%s dbname=%s sslmode=%s", attrs.port, attrs.user, attrs.password, attrs.dbname, attrs.sslmode),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)

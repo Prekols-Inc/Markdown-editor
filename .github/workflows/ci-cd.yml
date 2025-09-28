@@ -22,6 +22,13 @@ env:
   FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
   VITE_STORAGE_API_BASE_URL: http://markdown-backend:${{ secrets.BACKEND_PORT }}
   VITE_AUTH_API_BASE_URL: http://markdown-auth:${{ secrets.AUTH_PORT }}
+  
+  DB_HOST: markdown-db
+  DB_PORT: ${{ secrets.DB_PORT }}
+  DB_NAME: ${{ secrets.DB_NAME }}
+  DB_USER: ${{ secrets.DB_USER }}
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+  DB_SSLMODE: enable
 
 jobs:
   test-backend:
@@ -51,11 +58,10 @@ jobs:
       run: |
         cat << EOF > .env
         DB_PORT=5432
-        TEST_DB_HOST=localhost
         TEST_DB_PORT=5431
+        TEST_DB_NAME=markdown_test_db
         TEST_DB_USER=my_test_user
         TEST_DB_PASSWORD=password
-        TEST_DB_NAME=markdown_test_db
         TEST_DB_SSLMODE=disable
         EOF
 
@@ -222,15 +228,19 @@ jobs:
     - name: Create .env file for Docker Compose
       run: |
         cat << EOF > .env
-          BACKEND_HOST=$BACKEND_HOST
-          BACKEND_PORT=$BACKEND_PORT
-          AUTH_HOST=$AUTH_HOST
-          AUTH_PORT=$AUTH_PORT
-          FRONTEND_HOST=$FRONTEND_HOST
-          FRONTEND_PORT=$FRONTEND_PORT
-          VITE_STORAGE_API_BASE_URL=$VITE_STORAGE_API_BASE_URL
-          VITE_AUTH_API_BASE_URL=$VITE_AUTH_API_BASE_URL
-          EOF
+        BACKEND_HOST=$BACKEND_HOST
+        BACKEND_PORT=$BACKEND_PORT
+        AUTH_HOST=$AUTH_HOST
+        AUTH_PORT=$AUTH_PORT
+        FRONTEND_HOST=$FRONTEND_HOST
+        FRONTEND_PORT=$FRONTEND_PORT
+        VITE_STORAGE_API_BASE_URL=$VITE_STORAGE_API_BASE_URL
+        VITE_AUTH_API_BASE_URL=$VITE_AUTH_API_BASE_URL
+        DB_PORT=$DB_PORT
+        DB_NAME=$DB_NAME
+        DB_USER=$DB_USER
+        DB_PASSWORD=$DB_PASSWORD
+        EOF
 
     - name: Deploy with Docker Compose
       run: |
@@ -282,3 +292,11 @@ jobs:
         fi
         
         echo "All services are healthy and responding!"
+        
+        echo "Checking database connection..."
+        if pg_isready -h localhost -p ${{ env.TEST_DB_PORT }} -U ${{ env.TEST_DB_USER }} -d ${{ env.TEST_DB_NAME }}; then
+          echo "Database is ready!"
+        else
+          echo "ERROR: Database connection check failed!"
+          docker compose logs db --tail=35
+        fi
