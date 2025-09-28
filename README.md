@@ -63,6 +63,12 @@ $ go run .
 
 ---
 ## Tests
+### Frontend
+```bash
+cd frontend
+npm run test
+```
+
 ### Backend
 ```bash
 cd backend
