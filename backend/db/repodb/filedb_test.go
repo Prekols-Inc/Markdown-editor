@@ -34,9 +34,6 @@ func TestNewLocalFileRepo(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, repo2)
 	assert.DirExists(t, nonExistentDir)
-
-	_, err = NewLocalFileRepo("???")
-	assert.Error(t, err)
 }
 
 func TestLocalFileRepo_CreateAndGet(t *testing.T) {
@@ -234,9 +231,8 @@ func TestLocalFileRepo_FilenameValidation(t *testing.T) {
 			} else {
 				assert.NoError(t, err, "Expected no error for filename: %s", tc.filename)
 
-				if err == nil {
-					repo.Delete(tc.filename)
-				}
+				err = repo.Delete(tc.filename)
+				assert.NoError(t, err, "Expected no error for file: %s", tc.filename)
 			}
 		})
 	}

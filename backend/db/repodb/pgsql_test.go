@@ -11,6 +11,8 @@ import (
 
 func getTestDBConnAttrs() DBConnAttrs {
 	return DBConnAttrs{
+		host:     os.Getenv("TEST_DB_HOST"),
+		port:     os.Getenv("TEST_DB_PORT"),
 		user:     os.Getenv("TEST_DB_USER"),
 		password: os.Getenv("TEST_DB_PASSWORD"),
 		dbname:   os.Getenv("TEST_DB_NAME"),
@@ -35,7 +37,7 @@ func setupTestDB(t *testing.T) *PGSQLRepo {
 }
 
 func TestMain(m *testing.M) {
-	err := godotenv.Load("../../../.env")
+	err := godotenv.Load("../../.env")
 	if err != nil {
 		panic(fmt.Sprintf("Can not load evironment variables: %v", err))
 	}
