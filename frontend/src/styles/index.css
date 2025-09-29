@@ -187,6 +187,17 @@ body,
 
 .preview a { color: #0366d6; }
 
+/* resizer */
+.resizer {
+  background: #e5e7eb;
+  cursor: col-resize;
+  user-select: none;
+}
+
+.resizer:hover {
+  background: #d1d5db;
+}
+
 /* errors JSON in Options */
 .error {
   padding: 0.25rem 0.75rem;
