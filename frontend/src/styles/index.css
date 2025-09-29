@@ -144,6 +144,46 @@ body,
   padding: 1rem 1.25rem;
 }
 
+
+/* Options form UI */
+.options-form {
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.option-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.option-row label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.option-row select,
+.option-row textarea {
+  font-size: 0.9rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  resize: vertical;
+}
+
+.option-row .hint {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.mode-switch {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+}
+
 /* lsits */
 .preview ol,
 .preview ul {

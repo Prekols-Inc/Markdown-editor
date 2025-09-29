@@ -12,7 +12,6 @@ const DEFAULT_MD = `# Marked - Markdown Parser
 `;
 
 const DEFAULT_OPTIONS = {
-    async: false,
     breaks: false,
     extensions: null,
     gfm: true,
@@ -178,7 +177,7 @@ export default function App() {
                     <MarkdownEditor value={markdown} onChange={setMarkdown} />
                 ) : (
                     <OptionsEditor
-                        value={JSON.stringify(options, null, 2)}
+                        value={options}
                         onChange={handleOptionsChange}
                     />
                 )}
