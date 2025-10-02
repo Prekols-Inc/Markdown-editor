@@ -13,13 +13,9 @@ const DEFAULT_MD = `# Marked - Markdown Parser
 
 const DEFAULT_OPTIONS = {
     breaks: false,
-    extensions: null,
     gfm: true,
-    hooks: null,
     pedantic: false,
-    silent: false,
-    tokenizer: null,
-    walkTokens: null
+    silent: false
 };
 
 export default function App() {

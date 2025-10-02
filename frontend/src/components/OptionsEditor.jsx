@@ -26,30 +26,6 @@ const FIELDS = [
     type: 'boolean',
     label: 'Silent',
     hint: 'Не выбрасывать ошибки, а возвращать исходный Markdown.'
-  },
-  {
-    key: 'extensions',
-    type: 'json',
-    label: 'Extensions',
-    hint: 'Массив расширений marked или null.'
-  },
-  {
-    key: 'hooks',
-    type: 'json',
-    label: 'Hooks',
-    hint: 'Объект с хуками marked или null.'
-  },
-  {
-    key: 'tokenizer',
-    type: 'json',
-    label: 'Tokenizer',
-    hint: 'Переопределённый токенизатор или null.'
-  },
-  {
-    key: 'walkTokens',
-    type: 'json',
-    label: 'walkTokens',
-    hint: 'Функция обхода токенов или null.'
   }
 ];
 
