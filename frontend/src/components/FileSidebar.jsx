@@ -22,30 +22,41 @@ const FileSidebar = forwardRef(function FileSidebar(
       const response = await API.STORAGE.get('/files');
       const files = response.data.files.map(name => ({ name }));
       setEntries(files);
+
+      if (files.length === 0) {
+        onOpenFile("Нет открытых файлов. Нажмите «New» для создания.", null);
+        setUnsaved(false);
+      } else if (!current) {
+        openFile(files[0]);
+      }
     } catch (err) {
       console.error('Ошибка загрузки файлов', err);
     }
   };
 
-  const clickFile = async (item) => {
+  const openFile = async (file) => {
     try {
-      const response = await API.STORAGE.get(`/file/${encodeURIComponent(item.name)}`);
-      onOpenFile(response.data, { name: item.name });
+      const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`);
+      onOpenFile(response.data, { name: file.name });
       setUnsaved(false);
     } catch (err) {
       console.error('Ошибка загрузки файла', err);
     }
   };
 
-  const deleteFile = async (item) => {
+  const deleteFile = async (file) => {
     try {
-      await API.STORAGE.delete(`/file/${encodeURIComponent(item.name)}`);
+      await API.STORAGE.delete(`/file/${encodeURIComponent(file.name)}`);
+      const newList = entries.filter(x => x.name !== file.name);
+      setEntries(newList);
 
-      setEntries(list => list.filter(x => x.name !== item.name));
-
-      if (current?.name === item.name) {
-        onOpenFile(DEFAULT_MD, null);
-        setUnsaved(false);
+      if (current?.name === file.name) {
+        if (newList.length > 0) {
+          openFile(newList[0]);
+        } else {
+          onOpenFile("Нет открытых файлов. Нажмите «New» для создания.", null);
+          setUnsaved(false);
+        }
       }
     } catch (err) {
       console.error('Ошибка удаления файла', err);
@@ -95,7 +106,7 @@ const FileSidebar = forwardRef(function FileSidebar(
           key={file.name}
           className={'fs-item' + (current?.name === file.name ? ' active' : '')}
           title={file.name}
-          onClick={() => clickFile(file)}
+          onClick={() => openFile(file)}
         >
           <span className="fs-name">
             {file.name}
@@ -116,6 +127,5 @@ const FileSidebar = forwardRef(function FileSidebar(
     </aside >
   );
 });
-
 
 export default FileSidebar;
