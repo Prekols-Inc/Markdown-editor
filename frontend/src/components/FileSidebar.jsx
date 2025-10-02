@@ -1,5 +1,6 @@
 import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import API from '../API';
+import { DEFAULT_MD } from './MarkdownApp';
 
 const FileSidebar = forwardRef(function FileSidebar(
   {
@@ -33,6 +34,22 @@ const FileSidebar = forwardRef(function FileSidebar(
       setUnsaved(false);
     } catch (err) {
       console.error('Ошибка загрузки файла', err);
+    }
+  };
+
+  const deleteFile = async (item) => {
+    try {
+      await API.STORAGE.delete(`/file/${encodeURIComponent(item.name)}`);
+
+      setEntries(list => list.filter(x => x.name !== item.name));
+
+      if (current?.name === item.name) {
+        onOpenFile(DEFAULT_MD, null);
+        setUnsaved(false);
+      }
+    } catch (err) {
+      console.error('Ошибка удаления файла', err);
+      alert('Не удалось удалить файл');
     }
   };
 
@@ -73,30 +90,32 @@ const FileSidebar = forwardRef(function FileSidebar(
         )}
       </div>
 
-      {!collapsed && entries.map(e => (
+      {!collapsed && entries.map(file => (
         <div
-          key={e.name}
-          className={'fs-item' + (current?.name === e.name ? ' active' : '')}
-          title={e.name}
-          onClick={() => clickFile(e)}
+          key={file.name}
+          className={'fs-item' + (current?.name === file.name ? ' active' : '')}
+          title={file.name}
+          onClick={() => clickFile(file)}
         >
           <span className="fs-name">
-            {e.name}
-            {unsaved && current?.name === e.name && ' ●'}
+            {file.name}
+            {unsaved && current?.name === file.name && ' ●'}
           </span>
           <button
             className="fs-close"
-            title="Remove from sidebar"
-            onClick={() =>
-              setEntries(list => list.filter(x => x.name !== e.name))
-            }
+            title="Удалить файл"
+            onClick={(ev) => {
+              ev.stopPropagation();
+              deleteFile(file);
+            }}
           >
             ×
           </button>
         </div>
       ))}
-    </aside>
+    </aside >
   );
 });
+
 
 export default FileSidebar;

@@ -6,7 +6,7 @@ import MarkdownPreview from './MarkdownPreview';
 import { marked } from 'marked';
 import API from '../API';
 
-const DEFAULT_MD = `# Marked - Markdown Parser
+export const DEFAULT_MD = `# Marked - Markdown Parser
 
 > Введите Markdown слева — результат увидите справа.
 `;
