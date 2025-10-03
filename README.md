@@ -47,41 +47,49 @@ Admin credentials:
 
 ####  Backend
 
+1. Create JWT_SECRET in .env file
+2. Run:
 ```bash
-$ cd backend
-$ go mod tidy
-$ go run . --host 
+cd backend
+go mod tidy
+go run . --host=localhost --port=YOUR_PORT
 ```
 
 #### Auth service
 
 > Prerequisites: **Go ≥ 1.23**.
 
+1. Create JWT_SECRET in .env file
+2. Run:
 ```bash
-$ cd auth
-$ go mod tidy
-$ go run .
+cd auth
+go mod tidy
+go run . --host=localhost --port=YOUR_PORT
 ```
 
 ---
 ## Tests
+
 ### Frontend
+
 ```bash
 cd frontend
 npm run test
 ```
 
 ### Backend
+
 1. Create `backend/.env` file like `backend/.env.example`
 2. Run:
 ```bash
 cd backend
-docker-compose -f docker-compose.test.yml up -d // start PostrgreSQL for testing
+docker-compose -f docker-compose.test.yml up -d # start PostrgreSQL for testing
 go test ./... -v
 docker-compose -f docker-compose.test.yml down
 ```
 
 ### Auth service
+
 ```bash
 cd auth
 go test -v
