@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/google/uuid"
 )
 
 type LocalFileRepo struct {
@@ -30,18 +32,36 @@ func IsFileExists(path string) (bool, error) {
 	return true, nil
 }
 
-func getPath(basePath string, filename string) (string, error) {
+func getPath(basePath string, userId uuid.UUID, filename string) (string, error) {
 	err := validateFile(filename)
 	if err != nil {
 		return "", err
 	}
-	path := filepath.Join(basePath, filename)
+	path := filepath.Join(basePath, userId.String(), filename)
 
 	return path, nil
 }
 
-func (l *LocalFileRepo) Save(filename string, data []byte) error {
-	path, err := getPath(l.basePath, filename)
+func createUserDirIfNotExists(basePath string, userId uuid.UUID) error {
+	path := filepath.Join(basePath, userId.String())
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(path, 0755); err != nil {
+				return fmt.Errorf("failed to create directory %s: %w", path, err)
+			}
+
+			return nil
+		}
+
+		return fmt.Errorf("failed to create user dir %s: %w", path, err)
+	}
+
+	return nil
+}
+
+func (l *LocalFileRepo) Save(filename string, userId uuid.UUID, data []byte) error {
+	path, err := getPath(l.basePath, userId, filename)
 	if err != nil {
 		return err
 	}
@@ -57,8 +77,13 @@ func (l *LocalFileRepo) Save(filename string, data []byte) error {
 	return os.WriteFile(path, data, 0644)
 }
 
-func (l *LocalFileRepo) Create(filename string, data []byte) error {
-	path, err := getPath(l.basePath, filename)
+func (l *LocalFileRepo) Create(filename string, userId uuid.UUID, data []byte) error {
+	err := createUserDirIfNotExists(l.basePath, userId)
+	if err != nil {
+		return err
+	}
+
+	path, err := getPath(l.basePath, userId, filename)
 	if err != nil {
 		return err
 	}
@@ -74,8 +99,8 @@ func (l *LocalFileRepo) Create(filename string, data []byte) error {
 	return os.WriteFile(path, data, 0644)
 }
 
-func (l *LocalFileRepo) Get(filename string) ([]byte, error) {
-	path, err := getPath(l.basePath, filename)
+func (l *LocalFileRepo) Get(filename string, userId uuid.UUID) ([]byte, error) {
+	path, err := getPath(l.basePath, userId, filename)
 	if err != nil {
 		return nil, err
 	}
@@ -96,8 +121,8 @@ func (l *LocalFileRepo) Get(filename string) ([]byte, error) {
 	return bytes, nil
 }
 
-func (l *LocalFileRepo) Delete(filename string) error {
-	path, err := getPath(l.basePath, filename)
+func (l *LocalFileRepo) Delete(filename string, userId uuid.UUID) error {
+	path, err := getPath(l.basePath, userId, filename)
 	if err != nil {
 		return err
 	}
@@ -113,10 +138,16 @@ func (l *LocalFileRepo) Delete(filename string) error {
 	return os.Remove(path)
 }
 
-func (l *LocalFileRepo) GetList() ([]string, error) {
-	files, err := os.ReadDir(l.basePath)
+func (l *LocalFileRepo) GetList(userId uuid.UUID) ([]string, error) {
+	err := createUserDirIfNotExists(l.basePath, userId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read base directory %s: %w", l.basePath, err)
+		return nil, err
+	}
+
+	path := filepath.Join(l.basePath, userId.String())
+	files, err := os.ReadDir(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read base directory %s: %w", path, err)
 	}
 
 	var fileNames []string

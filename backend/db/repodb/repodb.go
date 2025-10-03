@@ -7,18 +7,22 @@ import (
 	"slices"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/google/uuid"
 )
 
 var ErrFileNotFound = errors.New("file not found")
 var ErrFileExists = errors.New("file already exists")
+var ErrUserNotFound = errors.New("user not found")
+
 var validExtensions = []string{".md", ".markdown"}
 
 type FileRepository interface {
-	Save(filename string, data []byte) error
-	Create(filename string, data []byte) error
-	Get(filename string) ([]byte, error)
-	Delete(filename string) error
-	GetList() ([]string, error)
+	Save(filename string, userId uuid.UUID, data []byte) error
+	Create(filename string, userId uuid.UUID, data []byte) error
+	Get(filename string, userId uuid.UUID) ([]byte, error)
+	Delete(filename string, userId uuid.UUID) error
+	GetList(userId uuid.UUID) ([]string, error)
 }
 
 func isValidLinuxFilename(filename string) bool {

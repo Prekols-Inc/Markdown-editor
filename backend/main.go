@@ -16,11 +16,17 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
 
 const (
 	DB_PATH = "db/storage"
+)
+
+var (
+	ErrUserIdNotFound    = errors.New("user_id not found in claims")
+	ErrInvalidUserIdType = errors.New("invalid user_id type")
 )
 
 type File struct {
@@ -163,36 +169,63 @@ func authMiddleware() gin.HandlerFunc {
 	}
 }
 
-func getFile(c *gin.Context) (*File, error) {
+func getFile(c *gin.Context) *File {
 	file, _, err := c.Request.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File not provided"})
-		return nil, err
+		return nil
 	}
 	defer file.Close()
 
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read file: " + err.Error()})
-		return nil, err
+		return nil
 	}
 
 	filename := c.Param("filename")
 	if filename == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Filename not provided"})
-		return nil, err
+		return nil
 	}
 
-	return NewFile(filename, fileBytes), nil
+	return NewFile(filename, fileBytes)
+}
+
+func getUserId(c *gin.Context) *uuid.UUID {
+	userIdField, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id not found in jwt claims"})
+		return nil
+	}
+
+	userIdStr, ok := userIdField.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid type for user_id"})
+		return nil
+	}
+
+	userId, err := uuid.Parse(userIdStr)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "user_id parse error: " + err.Error()})
+		return nil
+	}
+
+	return &userId
 }
 
 func uploadFileHandler(c *gin.Context, repo repodb.FileRepository) {
-	file, err := getFile(c)
-	if err != nil {
+	file := getFile(c)
+	if file == nil {
 		return
 	}
 
-	if err := repo.Create(file.name, file.bytes); err != nil {
+	userId := getUserId(c)
+	if userId == nil {
+		return
+	}
+
+	if err := repo.Create(file.name, *userId, file.bytes); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create file: " + err.Error()})
 		return
 	}
@@ -204,11 +237,17 @@ func uploadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 }
 
 func editFileHandler(c *gin.Context, repo repodb.FileRepository) {
-	file, err := getFile(c)
-	if err != nil {
+	file := getFile(c)
+	if file == nil {
 		return
 	}
-	if err := repo.Save(file.name, file.bytes); err != nil {
+
+	userId := getUserId(c)
+	if userId == nil {
+		return
+	}
+
+	if err := repo.Save(file.name, *userId, file.bytes); err != nil {
 		if errors.Is(err, repodb.ErrFileNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
@@ -227,7 +266,12 @@ func editFileHandler(c *gin.Context, repo repodb.FileRepository) {
 func downloadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	filename := c.Param("filename")
 
-	bytes, err := repo.Get(filename)
+	userId := getUserId(c)
+	if userId == nil {
+		return
+	}
+
+	bytes, err := repo.Get(filename, *userId)
 	if err != nil {
 		if errors.Is(err, repodb.ErrFileNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
@@ -245,7 +289,12 @@ func downloadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 func deleteFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	filename := c.Param("filename")
 
-	if err := repo.Delete(filename); err != nil {
+	userId := getUserId(c)
+	if userId == nil {
+		return
+	}
+
+	if err := repo.Delete(filename, *userId); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to delete file: " + err.Error()})
 		return
 	}
@@ -257,7 +306,12 @@ func deleteFileHandler(c *gin.Context, repo repodb.FileRepository) {
 }
 
 func getAllFilesHandler(c *gin.Context, repo repodb.FileRepository) {
-	fileNames, err := repo.GetList()
+	userId := getUserId(c)
+	if userId == nil {
+		return
+	}
+
+	fileNames, err := repo.GetList(*userId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load file list: " + err.Error()})
 		return

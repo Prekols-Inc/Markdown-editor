@@ -3,36 +3,47 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"backend/db/repodb"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 )
+
+var testToken string
+var testUUID uuid.UUID
 
 func setupTestRouter(repo repodb.FileRepository) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
 
-	router.GET("/files", func(c *gin.Context) {
+	authorized := router.Group("/api")
+	authorized.Use(authMiddleware())
+	authorized.GET("/files", func(c *gin.Context) {
 		getAllFilesHandler(c, repo)
 	})
-	router.GET("/file/:filename", func(c *gin.Context) {
+	authorized.GET("/file/:filename", func(c *gin.Context) {
 		downloadFileHandler(c, repo)
 	})
-	router.POST("/file/:filename", func(c *gin.Context) {
+	authorized.POST("/file/:filename", func(c *gin.Context) {
 		uploadFileHandler(c, repo)
 	})
-	router.PUT("/file/:filename", func(c *gin.Context) {
+	authorized.PUT("/file/:filename", func(c *gin.Context) {
 		editFileHandler(c, repo)
 	})
-	router.DELETE("/file/:filename", func(c *gin.Context) {
+	authorized.DELETE("/file/:filename", func(c *gin.Context) {
 		deleteFileHandler(c, repo)
 	})
 
@@ -40,6 +51,20 @@ func setupTestRouter(repo repodb.FileRepository) *gin.Engine {
 }
 
 type CleanupFunc func()
+
+func generateToken(userID uuid.UUID) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": userID.String(),
+		"exp":     time.Now().Add(24 * time.Hour).Unix(), // тоже можно так
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return "", errors.New("JWT_SECRET environment variable not set")
+	}
+	return token.SignedString([]byte(secret))
+}
 
 func getNewLocalFileTestRepo() (repodb.FileRepository, CleanupFunc, error) {
 	tempDir, err := os.MkdirTemp("", "tmp")
@@ -53,6 +78,25 @@ func getNewLocalFileTestRepo() (repodb.FileRepository, CleanupFunc, error) {
 	}
 
 	return repo, func() { os.RemoveAll(tempDir) }, nil
+}
+
+func TestMain(m *testing.M) {
+	err := godotenv.Load()
+	if err != nil {
+		panic("Fail loading .env file")
+	}
+
+	testUUID = uuid.New()
+	testToken, err = generateToken(testUUID)
+	if err != nil {
+		panic("Fail to generate test token")
+	}
+
+	fmt.Println(testToken)
+
+	code := m.Run()
+
+	os.Exit(code)
 }
 
 func TestUploadFile(t *testing.T) {
@@ -76,7 +120,8 @@ func TestUploadFile(t *testing.T) {
 	err = writer.Close()
 	assert.NoError(t, err)
 
-	req, err := http.NewRequest("POST", "/file/"+testFilename, body)
+	req, err := http.NewRequest("POST", "/api/file/"+testFilename, body)
+	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
@@ -92,7 +137,7 @@ func TestUploadFile(t *testing.T) {
 	assert.Equal(t, "File uploaded successfully", response["message"])
 	assert.Equal(t, testFilename, response["filename"])
 
-	savedContent, err := repo.Get(testFilename)
+	savedContent, err := repo.Get(testFilename, testUUID)
 	assert.NoError(t, err)
 	assert.Equal(t, testContent, string(savedContent))
 }
@@ -108,7 +153,7 @@ func TestSaveFile(t *testing.T) {
 	testContentSaved := "Goodbye, World!"
 	testFilename := "test.md"
 
-	err = repo.Create(testFilename, []byte(testContent))
+	err = repo.Create(testFilename, testUUID, []byte(testContent))
 	assert.NoError(t, err)
 
 	body := &bytes.Buffer{}
@@ -122,7 +167,8 @@ func TestSaveFile(t *testing.T) {
 	err = writer.Close()
 	assert.NoError(t, err)
 
-	req, err := http.NewRequest("PUT", "/file/"+testFilename, body)
+	req, err := http.NewRequest("PUT", "/api/file/"+testFilename, body)
+	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
@@ -138,7 +184,7 @@ func TestSaveFile(t *testing.T) {
 	assert.Equal(t, "File saved successfully", response["message"])
 	assert.Equal(t, testFilename, response["filename"])
 
-	savedContent, err := repo.Get(testFilename)
+	savedContent, err := repo.Get(testFilename, testUUID)
 	assert.NoError(t, err)
 	assert.Equal(t, testContentSaved, string(savedContent))
 }
@@ -164,7 +210,8 @@ func TestSaveFileNotFound(t *testing.T) {
 	err = writer.Close()
 	assert.NoError(t, err)
 
-	req, err := http.NewRequest("PUT", "/file/"+noExistsFile, body)
+	req, err := http.NewRequest("PUT", "/api/file/"+noExistsFile, body)
+	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
@@ -187,12 +234,13 @@ func TestDownloadFile(t *testing.T) {
 
 	testContent := "Hello, World!"
 	testFilename := "test.md"
-	err = repo.Create(testFilename, []byte(testContent))
+	err = repo.Create(testFilename, testUUID, []byte(testContent))
 	assert.NoError(t, err)
 
 	router := setupTestRouter(repo)
 
-	req, err := http.NewRequest("GET", "/file/"+testFilename, nil)
+	req, err := http.NewRequest("GET", "/api/file/"+testFilename, nil)
+	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()
@@ -213,7 +261,8 @@ func TestDownloadFileNotFound(t *testing.T) {
 
 	testFilename := "nonexistent.md"
 
-	req, err := http.NewRequest("GET", "/file/"+testFilename, nil)
+	req, err := http.NewRequest("GET", "/api/file/"+testFilename, nil)
+	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()
@@ -235,12 +284,13 @@ func TestDeleteFile(t *testing.T) {
 
 	testContent := "Hello, World!"
 	testFilename := "test.md"
-	err = repo.Create(testFilename, []byte(testContent))
+	err = repo.Create(testFilename, testUUID, []byte(testContent))
 	assert.NoError(t, err)
 
 	router := setupTestRouter(repo)
 
-	req, err := http.NewRequest("DELETE", "/file/"+testFilename, nil)
+	req, err := http.NewRequest("DELETE", "/api/file/"+testFilename, nil)
+	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()
@@ -255,7 +305,7 @@ func TestDeleteFile(t *testing.T) {
 	assert.Equal(t, "File deleted successfuly!", response["message"])
 	assert.Equal(t, testFilename, response["filename"])
 
-	_, err = repo.Get(testFilename)
+	_, err = repo.Get(testFilename, testUUID)
 	assert.Error(t, err)
 }
 
@@ -267,7 +317,8 @@ func TestUploadFileWithoutFile(t *testing.T) {
 	router := setupTestRouter(repo)
 
 	testFilename := "test.md"
-	req, err := http.NewRequest("POST", "/file/"+testFilename, nil)
+	req, err := http.NewRequest("POST", "/api/file/"+testFilename, nil)
+	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "multipart/form-data")
 
@@ -295,13 +346,14 @@ func TestGetAllFiles(t *testing.T) {
 	}
 
 	for filename, content := range testFiles {
-		err = repo.Create(filename, []byte(content))
+		err = repo.Create(filename, testUUID, []byte(content))
 		assert.NoError(t, err)
 	}
 
 	router := setupTestRouter(repo)
 
-	req, err := http.NewRequest("GET", "/files", nil)
+	req, err := http.NewRequest("GET", "/api/files", nil)
+	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()
@@ -337,7 +389,8 @@ func TestGetAllFilesEmpty(t *testing.T) {
 
 	router := setupTestRouter(repo)
 
-	req, err := http.NewRequest("GET", "/files", nil)
+	req, err := http.NewRequest("GET", "/api/files", nil)
+	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
 
 	w := httptest.NewRecorder()

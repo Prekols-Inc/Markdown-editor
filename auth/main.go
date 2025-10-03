@@ -10,14 +10,16 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
 
 const (
-	USERNAME      = "admin"
-	PASSWORD      = "password"
-	RSP_TOKEN_KEY = "token"
-	RSP_ERROR_KEY = "error"
+	USERNAME        = "admin"
+	PASSWORD        = "password"
+	RSP_TOKEN_KEY   = "token"
+	RSP_ERROR_KEY   = "error"
+	adminUUIDString = "123e4567-e89b-12d3-a456-426614174000"
 )
 
 type LoginRequest struct {
@@ -25,9 +27,9 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-func generateToken(userID int) (string, error) {
+func generateToken(userID uuid.UUID) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id": userID,
+		"user_id": userID.String(),
 		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	}
 
@@ -69,7 +71,13 @@ func main() {
 			return
 		}
 
-		token, err := generateToken(0)
+		adminUUID, err := uuid.Parse(adminUUIDString)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{RSP_ERROR_KEY: "internal server error"})
+			return
+		}
+
+		token, err := generateToken(adminUUID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{RSP_ERROR_KEY: "failed to generate jwt token"})
 			return
