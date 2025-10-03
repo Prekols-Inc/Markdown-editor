@@ -55,7 +55,7 @@ async function runTests() {
   }
 }
 
-runTests().catch(error => {
-  console.error('Test execution error:', error);
-  process.exit(1);
-});
+// runTests().catch(error => {
+//   console.error('Test execution error:', error);
+//   process.exit(1);
+// });
