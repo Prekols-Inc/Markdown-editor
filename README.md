@@ -64,9 +64,13 @@ $ go run .
 ---
 ## Tests
 ### Backend
+1. Create `backend/.env` file like `backend/.env.example`
+2. Run:
 ```bash
 cd backend
+docker-compose -f docker-compose.test.yml up -d // start PostrgreSQL for testing
 go test ./... -v
+docker-compose -f docker-compose.test.yml down
 ```
 
 ### Auth service
