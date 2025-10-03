@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:17
+    image: postgres:18-alpine
     container_name: markdown-db
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -21,6 +21,7 @@ services:
     environment:
       - BACKEND_HOST=${BACKEND_HOST}
       - BACKEND_PORT=${BACKEND_PORT}
+      - JWT_SECRET=${JWT_SECRET}
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     networks:
@@ -40,6 +41,7 @@ services:
     environment:
       - AUTH_HOST=${AUTH_HOST}
       - AUTH_PORT=${AUTH_PORT}
+      - JWT_SECRET=${JWT_SECRET}
     ports:
       - "${AUTH_PORT}:${AUTH_PORT}"
     networks:

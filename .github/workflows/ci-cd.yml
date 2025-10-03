@@ -23,6 +23,8 @@ env:
   VITE_STORAGE_API_BASE_URL: http://localhost:${{ secrets.BACKEND_PORT }}
   VITE_AUTH_API_BASE_URL: http://localhost:${{ secrets.AUTH_PORT }}
   
+  JWT_SECRET: ${{ secrets.JWT_SECRET }}
+  
   DB_HOST: markdown-db
   DB_PORT: ${{ secrets.DB_PORT }}
   DB_NAME: ${{ secrets.DB_NAME }}
@@ -240,6 +242,7 @@ jobs:
         DB_NAME=$DB_NAME
         DB_USER=$DB_USER
         DB_PASSWORD=$DB_PASSWORD
+        JWT_SECRET=$JWT_SECRET
         EOF
 
     - name: Deploy with Docker Compose

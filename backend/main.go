@@ -6,13 +6,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"backend/db/repodb"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
+	"github.com/joho/godotenv"
 )
 
 const (
@@ -33,6 +37,11 @@ func main() {
 	flag.StringVar(&host, "host", "", "Host to bind")
 	flag.StringVar(&port, "port", "", "Port to bind")
 	flag.Parse()
+
+	err := godotenv.Load()
+	if err != nil {
+		panic("error loading .env file")
+	}
 
 	if err := validatePort(port); err != nil {
 		panic(fmt.Sprintf("Invalid port: %v\n", err))
@@ -59,19 +68,22 @@ func main() {
 	}))
 
 	router.GET("/health", healthHandler)
-	router.GET("/files", func(c *gin.Context) {
+
+	authorized := router.Group("/api")
+	authorized.Use(authMiddleware())
+	authorized.GET("/files", func(c *gin.Context) {
 		getAllFilesHandler(c, repo)
 	})
-	router.GET("/file/:filename", func(c *gin.Context) {
+	authorized.GET("/file/:filename", func(c *gin.Context) {
 		downloadFileHandler(c, repo)
 	})
-	router.POST("/file/:filename", func(c *gin.Context) {
+	authorized.POST("/file/:filename", func(c *gin.Context) {
 		uploadFileHandler(c, repo)
 	})
-	router.PUT("/file/:filename", func(c *gin.Context) {
+	authorized.PUT("/file/:filename", func(c *gin.Context) {
 		editFileHandler(c, repo)
 	})
-	router.DELETE("/file/:filename", func(c *gin.Context) {
+	authorized.DELETE("/file/:filename", func(c *gin.Context) {
 		deleteFileHandler(c, repo)
 	})
 
@@ -104,6 +116,51 @@ func healthHandler(c *gin.Context) {
 		"status": "healthy",
 		"time":   time.Now(),
 	})
+}
+
+func parseToken(tokenString string) (*jwt.Token, error) {
+	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+}
+
+func authMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "JWT not provided"})
+			return
+		}
+
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		token, err := parseToken(tokenString)
+		if err != nil || token == nil {
+			if ve, ok := err.(*jwt.ValidationError); ok {
+				if ve.Errors&jwt.ValidationErrorExpired != 0 {
+					c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token has expired"})
+					return
+				}
+			}
+
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Wrong jwt"})
+			return
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			userId, exists := claims["user_id"]
+			if !exists {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+				return
+			}
+
+			c.Set("user_id", userId)
+
+			c.Next()
+		} else {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			return
+		}
+	}
 }
 
 func getFile(c *gin.Context) (*File, error) {
