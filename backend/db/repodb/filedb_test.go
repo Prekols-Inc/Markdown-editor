@@ -52,7 +52,7 @@ func TestLocalFileRepo_CreateAndGet(t *testing.T) {
 	err = repo.Create(filename, testUUID, content)
 	assert.NoError(t, err)
 
-	filePath := filepath.Join(tempDir, filename)
+	filePath := filepath.Join(tempDir, testUUID.String(), filename)
 	assert.FileExists(t, filePath)
 
 	retrievedContent, err := repo.Get(filename, testUUID)

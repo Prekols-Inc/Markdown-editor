@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, db]
+    branches: [main, jwt]
   pull_request:
     branches: ["*"]
   workflow_dispatch:
