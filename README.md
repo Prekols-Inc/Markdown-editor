@@ -1,5 +1,7 @@
 # Markdown Editor
 
+<img width="1897" height="899" alt="image" src="https://github.com/user-attachments/assets/7b63401f-b83d-4147-846f-9794156c2e36" />
+
 ## Build
 
 The most easiest way to set up the project is Docker Compose:
@@ -63,6 +65,12 @@ $ go run .
 
 ---
 ## Tests
+### Frontend
+```bash
+cd frontend
+npm run test
+```
+
 ### Backend
 1. Create `backend/.env` file like `backend/.env.example`
 2. Run:
