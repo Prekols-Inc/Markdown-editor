@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -91,8 +90,6 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic("Fail to generate test token")
 	}
-
-	fmt.Println(testToken)
 
 	code := m.Run()
 

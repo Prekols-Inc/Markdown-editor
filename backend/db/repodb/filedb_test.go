@@ -5,9 +5,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var testUUID uuid.UUID = uuid.New()
 
 func setupTestDir(t *testing.T) (string, func()) {
 	tempDir, err := os.MkdirTemp("", "filerepo_test")
@@ -46,13 +49,13 @@ func TestLocalFileRepo_CreateAndGet(t *testing.T) {
 	filename := "test.md"
 	content := []byte("Hello, World!")
 
-	err = repo.Create(filename, content)
+	err = repo.Create(filename, testUUID, content)
 	assert.NoError(t, err)
 
 	filePath := filepath.Join(tempDir, filename)
 	assert.FileExists(t, filePath)
 
-	retrievedContent, err := repo.Get(filename)
+	retrievedContent, err := repo.Get(filename, testUUID)
 	assert.NoError(t, err)
 	assert.Equal(t, content, retrievedContent)
 }
@@ -67,10 +70,10 @@ func TestLocalFileRepo_CreateDuplicate(t *testing.T) {
 	filename := "test.md"
 	content := []byte("Hello, World!")
 
-	err = repo.Create(filename, content)
+	err = repo.Create(filename, testUUID, content)
 	assert.NoError(t, err)
 
-	err = repo.Create(filename, []byte("Different content"))
+	err = repo.Create(filename, testUUID, []byte("Different content"))
 	assert.Error(t, err)
 	assert.Equal(t, ErrFileExists, err)
 }
@@ -82,7 +85,7 @@ func TestLocalFileRepo_GetNonExistent(t *testing.T) {
 	repo, err := NewLocalFileRepo(tempDir)
 	require.NoError(t, err)
 
-	_, err = repo.Get("nonexistent.md")
+	_, err = repo.Get("nonexistent.md", testUUID)
 	assert.Error(t, err)
 	assert.Equal(t, ErrFileNotFound, err)
 }
@@ -98,13 +101,13 @@ func TestLocalFileRepo_Save(t *testing.T) {
 	initialContent := []byte("Initial content")
 	updatedContent := []byte("Updated content")
 
-	err = repo.Create(filename, initialContent)
+	err = repo.Create(filename, testUUID, initialContent)
 	assert.NoError(t, err)
 
-	err = repo.Save(filename, updatedContent)
+	err = repo.Save(filename, testUUID, updatedContent)
 	assert.NoError(t, err)
 
-	retrievedContent, err := repo.Get(filename)
+	retrievedContent, err := repo.Get(filename, testUUID)
 	assert.NoError(t, err)
 	assert.Equal(t, updatedContent, retrievedContent)
 }
@@ -119,7 +122,7 @@ func TestLocalFileRepo_SaveNewFile(t *testing.T) {
 	filename := "newfile.md"
 	content := []byte("New content")
 
-	err = repo.Save(filename, content)
+	err = repo.Save(filename, testUUID, content)
 	assert.Error(t, err)
 	assert.Equal(t, ErrFileNotFound, err)
 }
@@ -134,13 +137,13 @@ func TestLocalFileRepo_Delete(t *testing.T) {
 	filename := "test.md"
 	content := []byte("Hello, World!")
 
-	err = repo.Create(filename, content)
+	err = repo.Create(filename, testUUID, content)
 	assert.NoError(t, err)
 
-	err = repo.Delete(filename)
+	err = repo.Delete(filename, testUUID)
 	assert.NoError(t, err)
 
-	_, err = repo.Get(filename)
+	_, err = repo.Get(filename, testUUID)
 	assert.Error(t, err)
 	assert.Equal(t, ErrFileNotFound, err)
 }
@@ -152,7 +155,7 @@ func TestLocalFileRepo_DeleteNonExistent(t *testing.T) {
 	repo, err := NewLocalFileRepo(tempDir)
 	require.NoError(t, err)
 
-	err = repo.Delete("nonexistent.md")
+	err = repo.Delete("nonexistent.md", testUUID)
 	assert.Error(t, err)
 	assert.Equal(t, ErrFileNotFound, err)
 }
@@ -171,11 +174,11 @@ func TestLocalFileRepo_GetList(t *testing.T) {
 	}
 
 	for filename, content := range files {
-		err = repo.Create(filename, content)
+		err = repo.Create(filename, testUUID, content)
 		assert.NoError(t, err)
 	}
 
-	titles, err := repo.GetList()
+	titles, err := repo.GetList(testUUID)
 	assert.NoError(t, err)
 	assert.Len(t, titles, 3)
 
@@ -192,7 +195,7 @@ func TestLocalFileRepo_GetListEmpty(t *testing.T) {
 	repo, err := NewLocalFileRepo(tempDir)
 	require.NoError(t, err)
 
-	titles, err := repo.GetList()
+	titles, err := repo.GetList(testUUID)
 	assert.NoError(t, err)
 	assert.Empty(t, titles)
 }
@@ -224,14 +227,14 @@ func TestLocalFileRepo_FilenameValidation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := repo.Create(tc.filename, []byte("content"))
+			err := repo.Create(tc.filename, testUUID, []byte("content"))
 
 			if tc.shouldError {
 				assert.Error(t, err, "Expected error for filename: %s", tc.filename)
 			} else {
 				assert.NoError(t, err, "Expected no error for filename: %s", tc.filename)
 
-				err = repo.Delete(tc.filename)
+				err = repo.Delete(tc.filename, testUUID)
 				assert.NoError(t, err, "Expected no error for file: %s", tc.filename)
 			}
 		})
@@ -248,13 +251,13 @@ func TestLocalFileRepo_FilePersistence(t *testing.T) {
 	filename := "persistent.md"
 	content := []byte("Persistent content")
 
-	err = repo1.Create(filename, content)
+	err = repo1.Create(filename, testUUID, content)
 	assert.NoError(t, err)
 
 	repo2, err := NewLocalFileRepo(tempDir)
 	require.NoError(t, err)
 
-	retrievedContent, err := repo2.Get(filename)
+	retrievedContent, err := repo2.Get(filename, testUUID)
 	assert.NoError(t, err)
 	assert.Equal(t, content, retrievedContent)
 }
@@ -279,14 +282,14 @@ func TestLocalFileRepo_SpecialCharacters(t *testing.T) {
 		t.Run(filename, func(t *testing.T) {
 			content := []byte("content for " + filename)
 
-			err := repo.Create(filename, content)
+			err := repo.Create(filename, testUUID, content)
 			assert.NoError(t, err)
 
-			retrieved, err := repo.Get(filename)
+			retrieved, err := repo.Get(filename, testUUID)
 			assert.NoError(t, err)
 			assert.Equal(t, content, retrieved)
 
-			err = repo.Delete(filename)
+			err = repo.Delete(filename, testUUID)
 			assert.NoError(t, err)
 		})
 	}
