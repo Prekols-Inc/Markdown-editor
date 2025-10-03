@@ -17,7 +17,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 )
 
 const (
@@ -43,11 +42,6 @@ func main() {
 	flag.StringVar(&host, "host", "", "Host to bind")
 	flag.StringVar(&port, "port", "", "Port to bind")
 	flag.Parse()
-
-	err := godotenv.Load()
-	if err != nil {
-		panic("error loading .env file")
-	}
 
 	if err := validatePort(port); err != nil {
 		panic(fmt.Sprintf("Invalid port: %v\n", err))
