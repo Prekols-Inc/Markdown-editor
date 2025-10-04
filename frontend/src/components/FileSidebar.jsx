@@ -1,4 +1,4 @@
-import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useState, forwardRef, useImperativeHandle, cache } from 'react';
 import API from '../API';
 
 const FileSidebar = forwardRef(function FileSidebar(
@@ -35,9 +35,19 @@ const FileSidebar = forwardRef(function FileSidebar(
 
   const openFile = async (file) => {
     try {
-      const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`);
-      onOpenFile(response.data, { name: file.name });
-      setUnsaved(false);
+      const cached_file = localStorage.getItem(file.name);
+      if (cached_file != null) {
+        console.log("cache hit", file.name);
+        onOpenFile(cached_file, { name: file.name });
+        setUnsaved(true);
+      }
+      else {
+        console.log("cache miss", file.name);
+        const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`);
+        onOpenFile(response.data, { name: file.name });
+        setUnsaved(false);
+        localStorage.setItem(file.name, response.data);
+      }
     } catch (err) {
       console.error('Ошибка загрузки файла', err);
     }
@@ -48,6 +58,7 @@ const FileSidebar = forwardRef(function FileSidebar(
       await API.STORAGE.delete(`/file/${encodeURIComponent(file.name)}`);
       const newList = entries.filter(x => x.name !== file.name);
       setEntries(newList);
+      localStorage.removeItem(file.name);
 
       if (current?.name === file.name) {
         if (newList.length > 0) {
