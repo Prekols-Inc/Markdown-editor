@@ -5,10 +5,10 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"backend/db/repodb"
@@ -59,7 +59,7 @@ func main() {
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{
-		AllowAllOrigins:  true,
+		AllowOrigins:     []string{"http://localhost:5173"},
 		AllowMethods:     []string{"POST", "GET", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -122,13 +122,12 @@ func parseToken(tokenString string) (*jwt.Token, error) {
 
 func authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
+		tokenString, err := c.Cookie("access_token")
+		if err != nil || tokenString == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "JWT not provided"})
 			return
 		}
 
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 		token, err := parseToken(tokenString)
 		if err != nil || token == nil {
 			if ve, ok := err.(*jwt.ValidationError); ok {
@@ -297,7 +296,9 @@ func deleteFileHandler(c *gin.Context, repo repodb.FileRepository) {
 
 func getAllFilesHandler(c *gin.Context, repo repodb.FileRepository) {
 	userId := getUserId(c)
+	log.Println("USER ID:", userId)
 	if userId == nil {
+
 		return
 	}
 
