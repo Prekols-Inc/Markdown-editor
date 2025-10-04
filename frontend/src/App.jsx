@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import LoginPage from './components/LoginPage';
-import EditorPage from './components/EditorPage';
+import MarkdownApp from './components/MarkdownApp';
 
 export default function App() {
   const [isAuth, setIsAuth] = useState(false);
@@ -11,7 +11,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage onLogin={() => setIsAuth(true)} />} />
       <Route
         path="/editor"
-        element={isAuth ? <EditorPage /> : <Navigate to="/login" replace />}
+        element={isAuth ? <MarkdownApp /> : <Navigate to="/login" replace />}
       />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

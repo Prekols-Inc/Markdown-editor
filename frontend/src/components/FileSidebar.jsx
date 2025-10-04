@@ -1,6 +1,5 @@
 import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import API from '../API';
-import { DEFAULT_MD } from './MarkdownApp';
 
 const FileSidebar = forwardRef(function FileSidebar(
   {
