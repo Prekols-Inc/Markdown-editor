@@ -37,12 +37,10 @@ const FileSidebar = forwardRef(function FileSidebar(
     try {
       const cached_file = localStorage.getItem(file.name);
       if (cached_file != null) {
-        console.log("cache hit", file.name);
         onOpenFile(cached_file, { name: file.name });
         setUnsaved(true);
       }
       else {
-        console.log("cache miss", file.name);
         const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`);
         onOpenFile(response.data, { name: file.name });
         setUnsaved(false);
