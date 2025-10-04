@@ -138,6 +138,8 @@ export default function App() {
                     content = markdown;
                 }
 
+                localStorage.setItem(filename, content);
+
                 const blob = new Blob([content], { type: 'text/plain' });
                 const formData = new FormData();
                 formData.append('file', blob, filename);
