@@ -14,15 +14,10 @@ export const DEFAULT_MD = `# Marked - Markdown Parser
 const DEFAULT_LEFT = Math.round(window.innerWidth * 0.4);
 
 const DEFAULT_OPTIONS = {
-    async: false,
     breaks: false,
-    extensions: null,
     gfm: true,
-    hooks: null,
     pedantic: false,
-    silent: false,
-    tokenizer: null,
-    walkTokens: null
+    silent: false
 };
 
 export default function App() {
@@ -205,7 +200,7 @@ export default function App() {
                     <MarkdownEditor value={markdown} onChange={setMarkdown} />
                 ) : (
                     <OptionsEditor
-                        value={JSON.stringify(options, null, 2)}
+                        value={options}
                         onChange={handleOptionsChange}
                     />
                 )}
