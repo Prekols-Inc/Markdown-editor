@@ -2,7 +2,7 @@
 
 <img width="1897" height="899" alt="image" src="https://github.com/user-attachments/assets/7b63401f-b83d-4147-846f-9794156c2e36" />
 
-## Build
+## Run using Docker Compose
 
 The most easiest way to set up the project is Docker Compose:
 
@@ -83,9 +83,7 @@ npm run test
 2. Run:
 ```bash
 cd backend
-docker-compose -f docker-compose.test.yml up -d # start PostrgreSQL for testing
-go test ./... -v
-docker-compose -f docker-compose.test.yml down
+go test  -v
 ```
 
 ### Auth service
