@@ -5,6 +5,7 @@ const AUTH = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 const STORAGE = axios.create({
