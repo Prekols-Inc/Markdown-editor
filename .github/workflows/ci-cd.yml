@@ -2,9 +2,16 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, dev, ci/cd]
+    branches: [main]
   pull_request:
     branches: ["*"]
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: 'Enable debug mode'
+        required: false
+        type: boolean
+  
     
 env:
   BACKEND_HOST: ${{ secrets.BACKEND_HOST }}
@@ -13,8 +20,17 @@ env:
   AUTH_PORT: ${{ secrets.AUTH_PORT }}
   FRONTEND_HOST: ${{ secrets.FRONTEND_HOST }}
   FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
-  VITE_STORAGE_API_BASE_URL: http://markdown-backend:${{ secrets.BACKEND_PORT }}
-  VITE_AUTH_API_BASE_URL: http://markdown-auth:${{ secrets.AUTH_PORT }}
+  VITE_STORAGE_API_BASE_URL: http://localhost:${{ secrets.BACKEND_PORT }}
+  VITE_AUTH_API_BASE_URL: http://localhost:${{ secrets.AUTH_PORT }}
+  
+  JWT_SECRET: ${{ secrets.JWT_SECRET }}
+  
+  DB_HOST: markdown-db
+  DB_PORT: ${{ secrets.DB_PORT }}
+  DB_NAME: ${{ secrets.DB_NAME }}
+  DB_USER: ${{ secrets.DB_USER }}
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+  DB_SSLMODE: enable
 
 jobs:
   test-backend:
@@ -39,9 +55,31 @@ jobs:
         version: v1.64.7
         args: --disable-all --enable=govet --enable=errcheck --enable=staticcheck --enable=gofmt --enable=typecheck --timeout=5m
         working-directory: ./backend
+        
+    - name: Create .env file
+      run: |
+        cat << EOF > .env
+        DB_PORT=5432
+        TEST_DB_PORT=5431
+        TEST_DB_NAME=markdown_test_db
+        TEST_DB_USER=my_test_user
+        TEST_DB_PASSWORD=password
+        TEST_DB_SSLMODE=disable
+        JWT_SECRET=test-secret
+        EOF
+
+    - name: Run PostgreSQL for tests
+      run: |
+        docker compose -f docker-compose.test.yml down --remove-orphans
+        docker compose -f docker-compose.test.yml up -d
+        sleep 5
 
     - name: Run tests
-      run: go test -v
+      run: go test ./... -v
+      
+    - name: Stop PostgreSQL
+      run: |
+        docker compose -f docker-compose.test.yml down
 
     - name: Build application
       run: go build -o app .
@@ -71,6 +109,12 @@ jobs:
 
     - name: Make binary executable
       run: chmod +x app
+      
+    - name: Create .env file
+      run: |
+        cat << EOF > .env
+        JWT_SECRET=$JWT_SECRET
+        EOF
 
     - name: Start application
       run: |
@@ -193,15 +237,20 @@ jobs:
     - name: Create .env file for Docker Compose
       run: |
         cat << EOF > .env
-          BACKEND_HOST=$BACKEND_HOST
-          BACKEND_PORT=$BACKEND_PORT
-          AUTH_HOST=$AUTH_HOST
-          AUTH_PORT=$AUTH_PORT
-          FRONTEND_HOST=$FRONTEND_HOST
-          FRONTEND_PORT=$FRONTEND_PORT
-          VITE_STORAGE_API_BASE_URL=$VITE_STORAGE_API_BASE_URL
-          VITE_AUTH_API_BASE_URL=$VITE_AUTH_API_BASE_URL
-          EOF
+        BACKEND_HOST=$BACKEND_HOST
+        BACKEND_PORT=$BACKEND_PORT
+        AUTH_HOST=$AUTH_HOST
+        AUTH_PORT=$AUTH_PORT
+        FRONTEND_HOST=$FRONTEND_HOST
+        FRONTEND_PORT=$FRONTEND_PORT
+        VITE_STORAGE_API_BASE_URL=$VITE_STORAGE_API_BASE_URL
+        VITE_AUTH_API_BASE_URL=$VITE_AUTH_API_BASE_URL
+        DB_PORT=$DB_PORT
+        DB_NAME=$DB_NAME
+        DB_USER=$DB_USER
+        DB_PASSWORD=$DB_PASSWORD
+        JWT_SECRET=$JWT_SECRET
+        EOF
 
     - name: Deploy with Docker Compose
       run: |
@@ -253,3 +302,11 @@ jobs:
         fi
         
         echo "All services are healthy and responding!"
+        
+        echo "Checking database connection..."
+        if pg_isready -h localhost -p ${{ env.TEST_DB_PORT }} -U ${{ env.TEST_DB_USER }} -d ${{ env.TEST_DB_NAME }}; then
+          echo "Database is ready!"
+        else
+          echo "ERROR: Database connection check failed!"
+          docker compose logs db --tail=35
+        fi

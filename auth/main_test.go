@@ -30,16 +30,16 @@ func setupRouter() *gin.Engine {
 	r.POST("/v1/login", func(c *gin.Context) {
 		var req LoginRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{RSP_MSG_KEY: "invalid request body"})
+			c.JSON(http.StatusBadRequest, gin.H{RSP_ERROR_KEY: "invalid request body"})
 			return
 		}
 
 		if req.Username != USERNAME || req.Password != PASSWORD {
-			c.JSON(http.StatusUnauthorized, gin.H{RSP_MSG_KEY: "invalid username or password"})
+			c.JSON(http.StatusUnauthorized, gin.H{RSP_ERROR_KEY: "invalid username or password"})
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{RSP_MSG_KEY: "login successful"})
+		c.JSON(http.StatusOK, gin.H{RSP_ERROR_KEY: "login successful"})
 	})
 
 	return r
