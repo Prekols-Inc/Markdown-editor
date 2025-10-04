@@ -35,9 +35,9 @@ const FileSidebar = forwardRef(function FileSidebar(
 
   const openFile = async (file) => {
     try {
-      const cached_file = localStorage.getItem(file.name);
-      if (cached_file != null) {
-        onOpenFile(cached_file, { name: file.name });
+      const cachedFile = localStorage.getItem(file.name);
+      if (cachedFile != null) {
+        onOpenFile(cachedFile, { name: file.name });
         setUnsaved(true);
       }
       else {
