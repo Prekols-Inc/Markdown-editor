@@ -2,7 +2,7 @@
 
 <img width="1897" height="899" alt="image" src="https://github.com/user-attachments/assets/7b63401f-b83d-4147-846f-9794156c2e36" />
 
-## Build
+## Run using Docker Compose
 
 The most easiest way to set up the project is Docker Compose:
 
@@ -47,37 +47,47 @@ Admin credentials:
 
 ####  Backend
 
+1. Create JWT_SECRET in .env file
+2. Run:
 ```bash
-$ cd backend
-$ go mod tidy
-$ go run . --host 
+cd backend
+go mod tidy
+go run . --host=localhost --port=YOUR_PORT
 ```
 
 #### Auth service
 
 > Prerequisites: **Go ≥ 1.23**.
 
+1. Create JWT_SECRET in .env file
+2. Run:
 ```bash
-$ cd auth
-$ go mod tidy
-$ go run .
+cd auth
+go mod tidy
+go run . --host=localhost --port=YOUR_PORT
 ```
 
 ---
 ## Tests
+
 ### Frontend
+
 ```bash
 cd frontend
 npm run test
 ```
 
 ### Backend
+
+1. Create `backend/.env` file like `backend/.env.example`
+2. Run:
 ```bash
 cd backend
-go test -v
+go test  -v
 ```
 
 ### Auth service
+
 ```bash
 cd auth
 go test -v
