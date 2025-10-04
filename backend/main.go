@@ -100,12 +100,8 @@ func validatePort(portStr string) error {
 		return fmt.Errorf("port must be a number")
 	}
 
-	if port < 1 || port > 65535 {
-		return fmt.Errorf("port must be between 1 and 65535")
-	}
-
-	if port <= 1023 {
-		return fmt.Errorf("port %d is a system port and requires root privileges", port)
+	if port < 1024 || port > 65535 {
+		return fmt.Errorf("port must be between 1024 and 65535")
 	}
 
 	return nil

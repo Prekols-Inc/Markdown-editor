@@ -1,19 +1,4 @@
 services:
-  db:
-    image: postgres:18-alpine
-    container_name: markdown-db
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    ports:
-      - "${DB_PORT}:${DB_PORT}"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   backend:
     image: sid00r/markdown-backend:latest
     build: ./backend
@@ -28,12 +13,16 @@ services:
       - markdown-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "timeout 5 bash -c 'echo > /dev/tcp/localhost/${BACKEND_PORT}' || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "timeout 5 bash -c 'echo > /dev/tcp/localhost/${BACKEND_PORT}' || exit 1",
+        ]
       interval: 15s
       timeout: 10s
       retries: 5
       start_period: 40s
-      
+
   auth:
     image: sid00r/markdown-auth:latest
     build: ./auth
@@ -48,7 +37,11 @@ services:
       - markdown-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "timeout 5 bash -c 'echo > /dev/tcp/localhost/${AUTH_PORT}' || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "timeout 5 bash -c 'echo > /dev/tcp/localhost/${AUTH_PORT}' || exit 1",
+        ]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -63,7 +56,7 @@ services:
       - FRONTEND_PORT=${FRONTEND_PORT}
       - VITE_STORAGE_API_BASE_URL=${VITE_STORAGE_API_BASE_URL}
       - VITE_AUTH_API_BASE_URL=${VITE_AUTH_API_BASE_URL}
-    ports: 
+    ports:
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     depends_on:
       - backend
