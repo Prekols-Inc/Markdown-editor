@@ -118,9 +118,14 @@ func TestUploadFile(t *testing.T) {
 	assert.NoError(t, err)
 
 	req, err := http.NewRequest("POST", "/api/file/"+testFilename, body)
-	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	req.AddCookie(&http.Cookie{
+		Name:  "access_token",
+		Value: testToken,
+		Path:  "/",
+	})
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -165,9 +170,14 @@ func TestSaveFile(t *testing.T) {
 	assert.NoError(t, err)
 
 	req, err := http.NewRequest("PUT", "/api/file/"+testFilename, body)
-	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	req.AddCookie(&http.Cookie{
+		Name:  "access_token",
+		Value: testToken,
+		Path:  "/",
+	})
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -208,9 +218,14 @@ func TestSaveFileNotFound(t *testing.T) {
 	assert.NoError(t, err)
 
 	req, err := http.NewRequest("PUT", "/api/file/"+noExistsFile, body)
-	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	req.AddCookie(&http.Cookie{
+		Name:  "access_token",
+		Value: testToken,
+		Path:  "/",
+	})
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -237,8 +252,13 @@ func TestDownloadFile(t *testing.T) {
 	router := setupTestRouter(repo)
 
 	req, err := http.NewRequest("GET", "/api/file/"+testFilename, nil)
-	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
+
+	req.AddCookie(&http.Cookie{
+		Name:  "access_token",
+		Value: testToken,
+		Path:  "/",
+	})
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -259,8 +279,13 @@ func TestDownloadFileNotFound(t *testing.T) {
 	testFilename := "nonexistent.md"
 
 	req, err := http.NewRequest("GET", "/api/file/"+testFilename, nil)
-	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
+
+	req.AddCookie(&http.Cookie{
+		Name:  "access_token",
+		Value: testToken,
+		Path:  "/",
+	})
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -287,8 +312,13 @@ func TestDeleteFile(t *testing.T) {
 	router := setupTestRouter(repo)
 
 	req, err := http.NewRequest("DELETE", "/api/file/"+testFilename, nil)
-	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
+
+	req.AddCookie(&http.Cookie{
+		Name:  "access_token",
+		Value: testToken,
+		Path:  "/",
+	})
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -315,9 +345,14 @@ func TestUploadFileWithoutFile(t *testing.T) {
 
 	testFilename := "test.md"
 	req, err := http.NewRequest("POST", "/api/file/"+testFilename, nil)
-	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "multipart/form-data")
+
+	req.AddCookie(&http.Cookie{
+		Name:  "access_token",
+		Value: testToken,
+		Path:  "/",
+	})
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -350,8 +385,13 @@ func TestGetAllFiles(t *testing.T) {
 	router := setupTestRouter(repo)
 
 	req, err := http.NewRequest("GET", "/api/files", nil)
-	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
+
+	req.AddCookie(&http.Cookie{
+		Name:  "access_token",
+		Value: testToken,
+		Path:  "/",
+	})
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -387,8 +427,13 @@ func TestGetAllFilesEmpty(t *testing.T) {
 	router := setupTestRouter(repo)
 
 	req, err := http.NewRequest("GET", "/api/files", nil)
-	req.Header.Set("Authorization", "Bearer "+testToken)
 	assert.NoError(t, err)
+
+	req.AddCookie(&http.Cookie{
+		Name:  "access_token",
+		Value: testToken,
+		Path:  "/",
+	})
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)

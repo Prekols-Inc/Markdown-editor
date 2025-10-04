@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -296,9 +295,7 @@ func deleteFileHandler(c *gin.Context, repo repodb.FileRepository) {
 
 func getAllFilesHandler(c *gin.Context, repo repodb.FileRepository) {
 	userId := getUserId(c)
-	log.Println("USER ID:", userId)
 	if userId == nil {
-
 		return
 	}
 
