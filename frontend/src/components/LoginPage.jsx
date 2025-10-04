@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 import '../styles/LoginPage.css';
 import API from '../API';
@@ -23,9 +23,10 @@ export default function LoginPage({ onLogin }) {
 
         try {
             const response = await API.AUTH.post('/v1/login', formData);
-            if (response.status == 200) {
+            if (response.status == 200 && response.status < 300) {
                 onLogin();
                 navigate('/editor');
+                return;
             } else {
                 console.log("error");
                 setError(response.data.message || 'Неверный логин или пароль');
@@ -79,6 +80,9 @@ export default function LoginPage({ onLogin }) {
                 <button type="submit" disabled={loading}>
                     {loading ? 'Входим...' : 'Войти'}
                 </button>
+                <p style={{ marginTop: '0.75rem', fontSize: '0.9rem', textAlign: 'center' }}>
+                    Нет аккаунта? <Link to="/signup">Зарегистрируйтесь</Link>
+                </p>
             </form>
         </div>
     );
