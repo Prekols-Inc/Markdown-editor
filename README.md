@@ -1,5 +1,7 @@
 # Markdown Editor
 
+Project requirements: [requirements.md](docs/requirements.md)
+
 ## Build
 
 The most easiest way to set up the project is Docker Compose:
