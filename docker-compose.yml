@@ -6,18 +6,23 @@ services:
     environment:
       - BACKEND_HOST=${BACKEND_HOST}
       - BACKEND_PORT=${BACKEND_PORT}
+      - JWT_SECRET=${JWT_SECRET}
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     networks:
       - markdown-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "timeout 5 bash -c 'echo > /dev/tcp/localhost/${BACKEND_PORT}' || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "timeout 5 bash -c 'echo > /dev/tcp/localhost/${BACKEND_PORT}' || exit 1",
+        ]
       interval: 15s
       timeout: 10s
       retries: 5
       start_period: 40s
-      
+
   auth:
     image: sid00r/markdown-auth:latest
     build: ./auth
@@ -25,13 +30,18 @@ services:
     environment:
       - AUTH_HOST=${AUTH_HOST}
       - AUTH_PORT=${AUTH_PORT}
+      - JWT_SECRET=${JWT_SECRET}
     ports:
       - "${AUTH_PORT}:${AUTH_PORT}"
     networks:
       - markdown-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "timeout 5 bash -c 'echo > /dev/tcp/localhost/${AUTH_PORT}' || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "timeout 5 bash -c 'echo > /dev/tcp/localhost/${AUTH_PORT}' || exit 1",
+        ]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -46,7 +56,7 @@ services:
       - FRONTEND_PORT=${FRONTEND_PORT}
       - VITE_STORAGE_API_BASE_URL=${VITE_STORAGE_API_BASE_URL}
       - VITE_AUTH_API_BASE_URL=${VITE_AUTH_API_BASE_URL}
-    ports: 
+    ports:
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     depends_on:
       - backend
