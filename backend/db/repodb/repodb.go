@@ -3,105 +3,65 @@ package repodb
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
+	"slices"
+	"strings"
+	"unicode/utf8"
+
+	"github.com/google/uuid"
 )
 
 var ErrFileNotFound = errors.New("file not found")
 var ErrFileExists = errors.New("file already exists")
+var ErrUserNotFound = errors.New("user not found")
+
+var validExtensions = []string{".md", ".markdown"}
 
 type FileRepository interface {
-	Save(filename string, data []byte) error
-	Create(filename string, data []byte) error
-	Get(filename string) ([]byte, error)
-	Delete(filename string) error
-	GetList() ([]string, error)
+	Save(filename string, userId uuid.UUID, data []byte) error
+	Create(filename string, userId uuid.UUID, data []byte) error
+	Get(filename string, userId uuid.UUID) ([]byte, error)
+	Delete(filename string, userId uuid.UUID) error
+	GetList(userId uuid.UUID) ([]string, error)
 }
 
-type LocalFileRepo struct {
-	basePath string
+func isValidLinuxFilename(filename string) bool {
+	if filename == "" || len(filename) > 255 {
+		return false
+	}
+
+	if !utf8.ValidString(filename) {
+		return false
+	}
+
+	if strings.Contains(filename, "\x00") {
+		return false
+	}
+
+	if filename == "." || filename == ".." {
+		return false
+	}
+
+	return true
 }
 
-func NewLocalFileRepo(basePath string) (*LocalFileRepo, error) {
-	if err := os.MkdirAll(basePath, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create base directory: %w", err)
+func validateFile(filename string) error {
+	if !isValidLinuxFilename(filename) {
+		return fmt.Errorf("filename is not valid")
 	}
 
-	return &LocalFileRepo{basePath: basePath}, nil
-}
-
-func IsFileExists(path string) (bool, error) {
-	if _, err := os.Stat(path); err != nil {
-		fmt.Println(err.Error())
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-
-		return false, err
+	if filepath.Base(filename) != filename {
+		return fmt.Errorf("filename must not contain file path")
 	}
 
-	return true, nil
-}
-
-func (l *LocalFileRepo) Save(filename string, data []byte) error {
-	path := filepath.Join(l.basePath, filename)
-	ex, err := IsFileExists(path)
-	if err != nil {
-		return err
-	}
-	if !ex {
-		return ErrFileNotFound
-	}
-	return os.WriteFile(path, data, 0644)
-}
-
-func (l *LocalFileRepo) Create(filename string, data []byte) error {
-	path := filepath.Join(l.basePath, filename)
-	ex, err := IsFileExists(path)
-	if err != nil {
-		return err
-	}
-	if ex {
-		return ErrFileExists
-	}
-	return os.WriteFile(path, data, 0644)
-}
-
-func (l *LocalFileRepo) Get(filename string) ([]byte, error) {
-	path := filepath.Join(l.basePath, filename)
-
-	bytes, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, ErrFileNotFound
-		}
-		return nil, err
+	ext := strings.ToLower(filepath.Ext(filename))
+	if !slices.Contains(validExtensions, ext) {
+		return fmt.Errorf("file extension must be .md")
 	}
 
-	return bytes, nil
-}
-
-func (l *LocalFileRepo) Delete(filename string) error {
-	path := filepath.Join(l.basePath, filename)
-	return os.Remove(path)
-}
-
-func (l *LocalFileRepo) GetList() ([]string, error) {
-	files, err := os.ReadDir(l.basePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read base directory %s: %w", l.basePath, err)
+	if strings.TrimSuffix(filename, ext) == "" {
+		return fmt.Errorf("file name must not be empty")
 	}
 
-	var fileNames []string
-	for _, file := range files {
-		if !file.IsDir() {
-			fileNames = append(fileNames, file.Name())
-		}
-	}
-
-	if fileNames == nil {
-		fileNames = []string{}
-	}
-
-	return fileNames, nil
+	return nil
 }
