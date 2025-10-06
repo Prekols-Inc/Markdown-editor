@@ -2,7 +2,13 @@
 
 ## v0.0.2
 
-- TBA
+- File storage for multiple users
+- User auth session (JWT tokens)
+- Browser cache user files
+- Backend handles file names safely
+- Frontend supports markdown option sections
+- Fixed CI/CD: build uses correct .env variables
+- More presentable frontend
 
 ## v0.0.1
 
