@@ -2,6 +2,10 @@
 
 <img width="1897" height="899" alt="image" src="https://github.com/user-attachments/assets/7b63401f-b83d-4147-846f-9794156c2e36" />
 
+Project requirements: [requirements.md](docs/requirements.md)
+
+## Build
+
 ## Run using Docker Compose
 
 The most easiest way to set up the project is Docker Compose:
