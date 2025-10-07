@@ -1,4 +1,4 @@
-import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useState, forwardRef, useImperativeHandle, cache } from 'react';
 import API from '../API';
 
 const FileSidebar = forwardRef(function FileSidebar(
@@ -21,18 +21,54 @@ const FileSidebar = forwardRef(function FileSidebar(
       const response = await API.STORAGE.get('/files');
       const files = response.data.files.map(name => ({ name }));
       setEntries(files);
+
+      if (files.length === 0) {
+        onOpenFile("Нет открытых файлов. Нажмите «New» для создания.", null);
+        setUnsaved(false);
+      } else if (!current) {
+        openFile(files[0]);
+      }
     } catch (err) {
       console.error('Ошибка загрузки файлов', err);
     }
   };
 
-  const clickFile = async (item) => {
+  const openFile = async (file) => {
     try {
-      const response = await API.STORAGE.get(`/file/${encodeURIComponent(item.name)}`);
-      onOpenFile(response.data, { name: item.name });
-      setUnsaved(false);
+      const cachedFile = localStorage.getItem(file.name);
+      if (cachedFile != null) {
+        onOpenFile(cachedFile, { name: file.name });
+        setUnsaved(true);
+      }
+      else {
+        const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`);
+        onOpenFile(response.data, { name: file.name });
+        setUnsaved(false);
+        localStorage.setItem(file.name, response.data);
+      }
     } catch (err) {
       console.error('Ошибка загрузки файла', err);
+    }
+  };
+
+  const deleteFile = async (file) => {
+    try {
+      await API.STORAGE.delete(`/file/${encodeURIComponent(file.name)}`);
+      const newList = entries.filter(x => x.name !== file.name);
+      setEntries(newList);
+      localStorage.removeItem(file.name);
+
+      if (current?.name === file.name) {
+        if (newList.length > 0) {
+          openFile(newList[0]);
+        } else {
+          onOpenFile("Нет открытых файлов. Нажмите «New» для создания.", null);
+          setUnsaved(false);
+        }
+      }
+    } catch (err) {
+      console.error('Ошибка удаления файла', err);
+      alert('Не удалось удалить файл');
     }
   };
 
@@ -73,29 +109,30 @@ const FileSidebar = forwardRef(function FileSidebar(
         )}
       </div>
 
-      {!collapsed && entries.map(e => (
+      {!collapsed && entries.map(file => (
         <div
-          key={e.name}
-          className={'fs-item' + (current?.name === e.name ? ' active' : '')}
-          title={e.name}
-          onClick={() => clickFile(e)}
+          key={file.name}
+          className={'fs-item' + (current?.name === file.name ? ' active' : '')}
+          title={file.name}
+          onClick={() => openFile(file)}
         >
           <span className="fs-name">
-            {e.name}
-            {unsaved && current?.name === e.name && ' ●'}
+            {file.name}
+            {unsaved && current?.name === file.name && ' ●'}
           </span>
           <button
             className="fs-close"
-            title="Remove from sidebar"
-            onClick={() =>
-              setEntries(list => list.filter(x => x.name !== e.name))
-            }
+            title="Удалить файл"
+            onClick={(ev) => {
+              ev.stopPropagation();
+              deleteFile(file);
+            }}
           >
             ×
           </button>
         </div>
       ))}
-    </aside>
+    </aside >
   );
 });
 

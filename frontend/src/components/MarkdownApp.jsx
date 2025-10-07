@@ -6,26 +6,25 @@ import MarkdownPreview from './MarkdownPreview';
 import { marked } from 'marked';
 import API from '../API';
 
-const DEFAULT_MD = `# Marked - Markdown Parser
+export const DEFAULT_MD = `# Marked - Markdown Parser
 
 > Введите Markdown слева — результат увидите справа.
 `;
 
+const DEFAULT_LEFT = Math.round(window.innerWidth * 0.4);
+
 const DEFAULT_OPTIONS = {
-    async: false,
     breaks: false,
-    extensions: null,
     gfm: true,
-    hooks: null,
     pedantic: false,
-    silent: false,
-    tokenizer: null,
-    walkTokens: null
+    silent: false
 };
 
 export default function App() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const toggleSidebar = () => setSidebarOpen(o => !o);
+    const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT);
+    const isResizing = useRef(false);
     const [markdown, setMarkdown] = useState(
         () => localStorage.getItem('md-draft') ?? DEFAULT_MD
     );
@@ -34,6 +33,27 @@ export default function App() {
         const id = setTimeout(() => localStorage.setItem('md-draft', markdown), 400);
         return () => clearTimeout(id);
     }, [markdown]);
+
+    const handleMouseDown = () => (isResizing.current = true);
+
+    useEffect(() => {
+        const handleMouseMove = e => {
+            if (!isResizing.current) return;
+            const sidebar = sidebarOpen ? 260 : 48;
+            const min = 220;
+            const max = window.innerWidth - sidebar - 220;
+            const next = Math.min(Math.max(e.clientX - sidebar, min), max);
+            setLeftWidth(next);
+        };
+        const stop = () => (isResizing.current = false);
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', stop);
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', stop);
+        };
+    }, [sidebarOpen]);
 
     const [options, setOptions] = useState(() => {
         try {
@@ -118,6 +138,8 @@ export default function App() {
                     content = markdown;
                 }
 
+                localStorage.setItem(filename, content);
+
                 const blob = new Blob([content], { type: 'text/plain' });
                 const formData = new FormData();
                 formData.append('file', blob, filename);
@@ -144,7 +166,9 @@ export default function App() {
     return (
         <div
             className="app-grid"
-            style={{ gridTemplateColumns: `${sidebarOpen ? 260 : 48}px 1fr 1fr` }}
+            style={{
+                gridTemplateColumns: `${sidebarOpen ? 260 : 48}px ${leftWidth}px 5px 1fr`
+            }}
         >
             <FileSidebar
                 ref={sidebarRef}
@@ -178,11 +202,16 @@ export default function App() {
                     <MarkdownEditor value={markdown} onChange={setMarkdown} />
                 ) : (
                     <OptionsEditor
-                        value={JSON.stringify(options, null, 2)}
+                        value={options}
                         onChange={handleOptionsChange}
                     />
                 )}
             </div>
+
+            <div
+                className="resizer"
+                onMouseDown={handleMouseDown}
+            />
 
             <MarkdownPreview markdown={markdown} options={options} />
         </div>

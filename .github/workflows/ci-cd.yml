@@ -2,17 +2,27 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, ci/cd]
+    branches: [main]
   pull_request:
     branches: ["*"]
-    
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: "Enable debug mode"
+        required: false
+        type: boolean
+
 env:
   BACKEND_HOST: ${{ secrets.BACKEND_HOST }}
-  BACKEND_PORT: ${{ secrets.BACKEND_PORT }}    
+  BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
   AUTH_HOST: ${{ secrets.AUTH_HOST }}
   AUTH_PORT: ${{ secrets.AUTH_PORT }}
   FRONTEND_HOST: ${{ secrets.FRONTEND_HOST }}
   FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
+  VITE_STORAGE_API_BASE_URL: http://localhost:${{ secrets.BACKEND_PORT }}
+  VITE_AUTH_API_BASE_URL: http://localhost:${{ secrets.AUTH_PORT }}
+
+  JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
 jobs:
   test-backend:
@@ -22,33 +32,39 @@ jobs:
         working-directory: ./backend
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Golang
-      uses: actions/setup-go@v6
-      with:
-        go-version: v1.24.0
-        cache: true
+      - name: Setup Golang
+        uses: actions/setup-go@v6
+        with:
+          go-version: v1.24.0
+          cache: true
 
-    - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v6
-      with:
-        version: v1.64.7
-        args: --disable-all --enable=govet --enable=errcheck --enable=staticcheck --enable=gofmt --enable=typecheck --timeout=5m
-        working-directory: ./backend
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64.7
+          args: --disable-all --enable=govet --enable=errcheck --enable=staticcheck --enable=gofmt --enable=typecheck --timeout=5m
+          working-directory: ./backend
 
-    - name: Run tests
-      run: go test -v
+      - name: Create .env file
+        run: |
+          cat << EOF > .env
+          JWT_SECRET=test-secret
+          EOF
 
-    - name: Build application
-      run: go build -o app .
+      - name: Run tests
+        run: go test ./... -v
 
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: go-backend
-        path: ./backend/app
+      - name: Build application
+        run: go build -o app .
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-backend
+          path: ./backend/app
 
   backend-health-check:
     runs-on: ubuntu-latest
@@ -58,46 +74,52 @@ jobs:
     needs: test-backend
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Download build artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: go-backend
-        path: ./backend
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: go-backend
+          path: ./backend
 
-    - name: Make binary executable
-      run: chmod +x app
+      - name: Make binary executable
+        run: chmod +x app
 
-    - name: Start application
-      run: |
-        ./app --host=$BACKEND_HOST --port=$BACKEND_PORT &
-        echo $! > app.pid
-        sleep 7
+      - name: Create .env file
+        run: |
+          cat << EOF > .env
+          JWT_SECRET=$JWT_SECRET
+          EOF
 
-    - name: Check backend health with retry
-      run: |
-        for i in {1..5}; do
-          echo "Attempt $i"
-          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://$BACKEND_HOST:$BACKEND_PORT/health || echo "000")
-          if [ "$status_code" -eq 200 ]; then
-            echo "Health check passed"
-            exit 0
-          else
-            echo "Health check attempt $i failed: HTTP $status_code"
-            sleep 3
+      - name: Start application
+        run: |
+          ./app --host=$BACKEND_HOST --port=$BACKEND_PORT &
+          echo $! > app.pid
+          sleep 7
+
+      - name: Check backend health with retry
+        run: |
+          for i in {1..5}; do
+            echo "Attempt $i"
+            status_code=$(curl -s -o /dev/null -w "%{http_code}" http://$BACKEND_HOST:$BACKEND_PORT/health || echo "000")
+            if [ "$status_code" -eq 200 ]; then
+              echo "Health check passed"
+              exit 0
+            else
+              echo "Health check attempt $i failed: HTTP $status_code"
+              sleep 3
+            fi
+          done
+          echo "Health check failed after 5 attempts"
+          exit 1
+
+      - name: Stop application
+        run: |
+          if [ -f app.pid ]; then
+            kill $(cat app.pid) 2>/dev/null || true
+            rm -f app.pid
           fi
-        done
-        echo "Health check failed after 5 attempts"
-        exit 1
-
-    - name: Stop application
-      run: |
-        if [ -f app.pid ]; then
-          kill $(cat app.pid) 2>/dev/null || true
-          rm -f app.pid
-        fi
 
   test-auth-service:
     runs-on: ubuntu-latest
@@ -106,17 +128,17 @@ jobs:
         working-directory: ./auth
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Golang
-      uses: actions/setup-go@v6
-      with:
-        go-version: v1.24.0
-        cache: true
+      - name: Setup Golang
+        uses: actions/setup-go@v6
+        with:
+          go-version: v1.24.0
+          cache: true
 
-    - name: Run tests
-      run: go test -v
+      - name: Run tests
+        run: go test -v
 
   build-frontend:
     runs-on: ubuntu-latest
@@ -125,135 +147,130 @@ jobs:
         working-directory: ./frontend
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
 
-    - name: Install frontend dependencies
-      run: npm install
+      - name: Install frontend dependencies
+        run: npm install
 
-    - name: Build frontend
-      run: npm run build
+      - name: Build frontend
+        run: npm run build
 
   build-and-push-docker-images:
     runs-on: ubuntu-latest
     needs: [test-backend, build-frontend, test-auth-service]
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Login to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build and push backend image
-      uses: docker/build-push-action@v4
-      with:
-        context: ./backend
-        file: ./backend/Dockerfile
-        build-args: |
-          BACKEND_HOST=${{ env.BACKEND_HOST }}
-          BACKEND_PORT=${{ env.BACKEND_PORT }}
-        push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-backend:latest
+      - name: Build and push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-backend:latest
 
-    - name: Build and push auth-service image
-      uses: docker/build-push-action@v4
-      with:
-        context: ./auth
-        file: ./auth/Dockerfile
-        build-args: |
-          AUTH_HOST=${{ env.AUTH_HOST }}
-          AUTH_PORT=${{ env.AUTH_PORT }}
-        push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-auth:latest
+      - name: Build and push auth-service image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./auth
+          file: ./auth/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-auth:latest
 
-    - name: Build and push frontend image
-      uses: docker/build-push-action@v4
-      with:
-        context: ./frontend
-        file: ./frontend/Dockerfile
-        build-args: |
-          FRONTEND_HOST=${{ env.FRONTEND_HOST }}
-          FRONTEND_PORT=${{ env.FRONTEND_PORT }}
-        push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-frontend:latest
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-frontend:latest
 
   test-docker-compose:
     runs-on: ubuntu-latest
     needs: build-and-push-docker-images
-  
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Create .env file for Docker Compose
-      run: |
-        cat << EOF > .env
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file for Docker Compose
+        run: |
+          cat << EOF > .env
           BACKEND_HOST=$BACKEND_HOST
           BACKEND_PORT=$BACKEND_PORT
           AUTH_HOST=$AUTH_HOST
           AUTH_PORT=$AUTH_PORT
           FRONTEND_HOST=$FRONTEND_HOST
           FRONTEND_PORT=$FRONTEND_PORT
+          VITE_STORAGE_API_BASE_URL=$VITE_STORAGE_API_BASE_URL
+          VITE_AUTH_API_BASE_URL=$VITE_AUTH_API_BASE_URL
+          JWT_SECRET=$JWT_SECRET
           EOF
 
-    - name: Deploy with Docker Compose
-      run: |
-        docker compose down --remove-orphans
-        docker compose up -d --pull always
+      - name: Deploy with Docker Compose
+        run: |
+          docker compose down --remove-orphans
+          docker compose up -d --pull always
 
-    - name: Verify deployment
-      run: |
-        sleep 15
-        docker compose ps
-        if [ $(docker compose ps --services | grep -c 'backend\|frontend\|auth') -ne 3 ]; then
-          echo "Not all services are running"
-          docker compose logs --tail=50
-          exit 1
-        fi
-        
-        echo "Checking backend health at http://$BACKEND_HOST:$BACKEND_PORT/health"
-        if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$BACKEND_HOST:$BACKEND_PORT/health"; 
-        then
-          echo "ERROR: Backend health check failed!"
-          echo "Backend logs:"
-          docker compose logs backend --tail=35
-          exit 1
-        else
-          echo "Backend health check passed!"
-        fi
-        
-        echo "Checking auth health at http://$AUTH_HOST:$AUTH_PORT/health"
-        if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$AUTH_HOST:$AUTH_PORT/health"; 
-        then
-          echo "ERROR: Auth health check failed!"
-          echo "Auth logs:"
-          docker compose logs auth --tail=35
-          exit 1
-        else
-          echo "Auth health check passed!"
-        fi
-        
-        echo "Checking frontend availability at http://$FRONTEND_HOST:$FRONTEND_PORT"
-        if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$FRONTEND_HOST:$FRONTEND_PORT"; 
-        then
-          echo "ERROR: Frontend availability check failed!"
-          echo "Frontend logs:"
-          docker compose logs frontend --tail=35
-          exit 1
-        else
-          echo "Frontend availability check passed!"
-        fi
-        
-        echo "All services are healthy and responding!"
+      - name: Verify deployment
+        run: |
+          sleep 15
+          docker compose ps
+          if [ $(docker compose ps --services | grep -c 'backend\|frontend\|auth') -ne 3 ]; then
+            echo "Not all services are running"
+            docker compose logs --tail=50
+            exit 1
+          fi
+
+          echo "Checking backend health at http://$BACKEND_HOST:$BACKEND_PORT/health"
+          if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$BACKEND_HOST:$BACKEND_PORT/health"; 
+          then
+            echo "ERROR: Backend health check failed!"
+            echo "Backend logs:"
+            docker compose logs backend --tail=35
+            exit 1
+          else
+            echo "Backend health check passed!"
+          fi
+
+          echo "Checking auth health at http://$AUTH_HOST:$AUTH_PORT/health"
+          if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$AUTH_HOST:$AUTH_PORT/health"; 
+          then
+            echo "ERROR: Auth health check failed!"
+            echo "Auth logs:"
+            docker compose logs auth --tail=35
+            exit 1
+          else
+            echo "Auth health check passed!"
+          fi
+
+          echo "Checking frontend availability at http://$FRONTEND_HOST:$FRONTEND_PORT"
+          if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$FRONTEND_HOST:$FRONTEND_PORT"; 
+          then
+            echo "ERROR: Frontend availability check failed!"
+            echo "Frontend logs:"
+            docker compose logs frontend --tail=35
+            exit 1
+          else
+            echo "Frontend availability check passed!"
+            docker compose logs frontend --tail=35
+          fi
+
+          echo "All services are healthy and responding!"
