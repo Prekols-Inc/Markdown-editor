@@ -1,0 +1,14 @@
+basePath: /
+host: localhost:1234
+info:
+  contact: {}
+  description: API Server for markdown
+  title: Markdown backend
+  version: "1.0"
+paths: {}
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
