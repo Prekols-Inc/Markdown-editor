@@ -20,7 +20,7 @@ import (
 // @Success 200 {object} HealthResponce "Server health status"
 // @Router /health [get]
 func healthHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, HealthResponce{
+	c.JSON(http.StatusOK, HealthResponse{
 		Status: "healthy",
 		Time:   time.Now(),
 	})
@@ -30,7 +30,7 @@ func authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString, err := c.Cookie("access_token")
 		if err != nil || tokenString == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponce{Error: "JWT not provided"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{Error: "JWT not provided"})
 			return
 		}
 
@@ -38,19 +38,19 @@ func authMiddleware() gin.HandlerFunc {
 		if err != nil || token == nil {
 			if ve, ok := err.(*jwt.ValidationError); ok {
 				if ve.Errors&jwt.ValidationErrorExpired != 0 {
-					c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponce{Error: "Token has expired"})
+					c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{Error: "Token has expired"})
 					return
 				}
 			}
 
-			c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponce{Error: "Wrong jwt"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{Error: "Wrong jwt"})
 			return
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 			userId, exists := claims["user_id"]
 			if !exists {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponce{Error: "Invalid token claims"})
+				c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid token claims"})
 				return
 			}
 
@@ -58,7 +58,7 @@ func authMiddleware() gin.HandlerFunc {
 
 			c.Next()
 		} else {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponce{Error: "Invalid token claims"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid token claims"})
 			return
 		}
 	}
@@ -67,20 +67,20 @@ func authMiddleware() gin.HandlerFunc {
 func getFile(c *gin.Context) *File {
 	filename := c.Param("filename")
 	if filename == "" {
-		c.JSON(http.StatusBadRequest, ErrorResponce{Error: "Filename not provided"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Filename not provided"})
 		return nil
 	}
 
 	file, _, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponce{Error: "File not provided"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "File not provided"})
 		return nil
 	}
 	defer file.Close()
 
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponce{Error: "Failed to read file: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to read file: " + err.Error()})
 		return nil
 	}
 
@@ -90,19 +90,19 @@ func getFile(c *gin.Context) *File {
 func getUserId(c *gin.Context) *uuid.UUID {
 	userIdField, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusBadRequest, ErrorResponce{Error: "user_id not found in jwt claims"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "user_id not found in jwt claims"})
 		return nil
 	}
 
 	userIdStr, ok := userIdField.(string)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, ErrorResponce{Error: "invalid type for user_id"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "invalid type for user_id"})
 		return nil
 	}
 
 	userId, err := uuid.Parse(userIdStr)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponce{Error: "user_id parse error: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user_id parse error: " + err.Error()})
 		return nil
 	}
 
@@ -133,11 +133,11 @@ func uploadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	}
 	fmt.Printf("filename: %s", file.name)
 	if err := repo.Create(file.name, *userId, file.bytes); err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponce{Error: "Failed to create file: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create file: " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, UploadResponce{
+	c.JSON(http.StatusOK, UploadResponse{
 		Message:  "File uploaded successfully",
 		Filename: file.name,
 	})
@@ -169,15 +169,15 @@ func editFileHandler(c *gin.Context, repo repodb.FileRepository) {
 
 	if err := repo.Save(file.name, *userId, file.bytes); err != nil {
 		if errors.Is(err, repodb.ErrFileNotFound) {
-			c.JSON(http.StatusNotFound, ErrorResponce{Error: err.Error()})
+			c.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, ErrorResponce{Error: "Failed to save file: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to save file: " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, EditResponce{
+	c.JSON(http.StatusOK, EditResponse{
 		Message:  "File saved successfully",
 		Filename: file.name,
 	})
@@ -206,11 +206,11 @@ func downloadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	bytes, err := repo.Get(filename, *userId)
 	if err != nil {
 		if errors.Is(err, repodb.ErrFileNotFound) {
-			c.JSON(http.StatusNotFound, ErrorResponce{Error: "File not found"})
+			c.JSON(http.StatusNotFound, ErrorResponse{Error: "File not found"})
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, ErrorResponce{Error: err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -239,11 +239,11 @@ func deleteFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	}
 
 	if err := repo.Delete(filename, *userId); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponce{Error: "Failed to delete file: " + err.Error()})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to delete file: " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, DeleteResponce{
+	c.JSON(http.StatusOK, DeleteResponse{
 		Message:  "File deleted successfuly!",
 		Filename: filename,
 	})
@@ -267,11 +267,11 @@ func getAllFilesHandler(c *gin.Context, repo repodb.FileRepository) {
 
 	fileNames, err := repo.GetList(*userId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponce{Error: "Failed to load file list: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to load file list: " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, GetAllFilesResponce{
+	c.JSON(http.StatusOK, GetAllFilesResponse{
 		Files: fileNames,
 	})
 }

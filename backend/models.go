@@ -2,30 +2,30 @@ package main
 
 import "time"
 
-type HealthResponce struct {
+type HealthResponse struct {
 	Status string    `json:"status"`
 	Time   time.Time `json:"time"`
 }
 
-type UploadResponce struct {
+type UploadResponse struct {
 	Message  string `json:"message"`
 	Filename string `json:"filename"`
 }
 
-type EditResponce struct {
+type EditResponse struct {
 	Message  string `json:"message"`
 	Filename string `json:"filename"`
 }
 
-type DeleteResponce struct {
+type DeleteResponse struct {
 	Message  string `json:"message"`
 	Filename string `json:"filename"`
 }
 
-type GetAllFilesResponce struct {
+type GetAllFilesResponse struct {
 	Files []string `json:"files"`
 }
 
-type ErrorResponce struct {
+type ErrorResponse struct {
 	Error string `json:"error"`
 }
