@@ -71,6 +71,17 @@ go mod tidy
 go run . --host=localhost --port=YOUR_PORT
 ```
 
+#### Swagger
+
+1. To generate documentation run:
+```
+cd backend
+swag init
+cd ../auth
+swag init
+```
+2. To use see http://localhost:YOUR_PORT/swagger/index.html for auth and backend
+
 ---
 ## Tests
 
