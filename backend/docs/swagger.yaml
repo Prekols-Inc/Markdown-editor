@@ -40,7 +40,7 @@ info:
   title: Markdown backend
   version: "1.0"
 paths:
-  /api/file/:filename:
+  /api/file/{filename}:
     delete:
       description: Delete file from server
       parameters:
@@ -60,17 +60,11 @@ paths:
           description: Error responce
           schema:
             $ref: '#/definitions/main.ErrorResponce'
-      security:
-      - AuthApiKey: []
-      summary: Delete file
-      tags:
-      - files
-    get:
-      description: Get all user files from server
-      produces:
-      - application/json
-      responses:
-        "200":
+        "401":
+          description: Error responce
+          schema:
+            $ref: '#/definitions/main.ErrorResponce'
+        "404":
           description: Error responce
           schema:
             $ref: '#/definitions/main.ErrorResponce'
@@ -80,7 +74,43 @@ paths:
             $ref: '#/definitions/main.ErrorResponce'
       security:
       - AuthApiKey: []
-      summary: User files
+      summary: Delete file
+      tags:
+      - files
+    get:
+      description: Download a file by filename
+      parameters:
+      - description: Filename to download
+        in: path
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: File content
+          schema:
+            type: file
+        "400":
+          description: Error responce
+          schema:
+            $ref: '#/definitions/main.ErrorResponce'
+        "401":
+          description: Error responce
+          schema:
+            $ref: '#/definitions/main.ErrorResponce'
+        "404":
+          description: Error responce
+          schema:
+            $ref: '#/definitions/main.ErrorResponce'
+        "500":
+          description: Error responce
+          schema:
+            $ref: '#/definitions/main.ErrorResponce'
+      security:
+      - ApiKeyAuth: []
+      summary: Download file
       tags:
       - files
     post:
@@ -103,6 +133,14 @@ paths:
           description: Upload responce
           schema:
             $ref: '#/definitions/main.UploadResponce'
+        "400":
+          description: Error responce
+          schema:
+            $ref: '#/definitions/main.ErrorResponce'
+        "401":
+          description: Error responce
+          schema:
+            $ref: '#/definitions/main.ErrorResponce'
         "500":
           description: Error responce
           schema:
@@ -132,6 +170,14 @@ paths:
           description: Edit responce
           schema:
             $ref: '#/definitions/main.EditResponce'
+        "400":
+          description: Error responce
+          schema:
+            $ref: '#/definitions/main.ErrorResponce'
+        "401":
+          description: Error responce
+          schema:
+            $ref: '#/definitions/main.ErrorResponce'
         "404":
           description: Error responce
           schema:
@@ -145,23 +191,21 @@ paths:
       summary: Edit file
       tags:
       - files
-  /api/file/{filename}:
+  /api/files:
     get:
-      description: Download a file by filename
-      parameters:
-      - description: Filename to download
-        in: path
-        name: filename
-        required: true
-        type: string
+      description: Get all user files from server
       produces:
-      - application/octet-stream
+      - application/json
       responses:
         "200":
-          description: File content
+          description: Error responce
           schema:
-            type: file
-        "404":
+            $ref: '#/definitions/main.ErrorResponce'
+        "400":
+          description: Error responce
+          schema:
+            $ref: '#/definitions/main.ErrorResponce'
+        "401":
           description: Error responce
           schema:
             $ref: '#/definitions/main.ErrorResponce'
@@ -170,8 +214,8 @@ paths:
           schema:
             $ref: '#/definitions/main.ErrorResponce'
       security:
-      - ApiKeyAuth: []
-      summary: Download file
+      - AuthApiKey: []
+      summary: User files
       tags:
       - files
   /health:

@@ -90,7 +90,6 @@ func main() {
 
 	router.Static("/docs", "./docs")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/docs/swagger.json")))
-
 	router.GET("/health", healthHandler)
 
 	authorized := router.Group("/api")

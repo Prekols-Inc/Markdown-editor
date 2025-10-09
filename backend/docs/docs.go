@@ -15,23 +15,50 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/file/:filename": {
+        "/api/file/{filename}": {
             "get": {
                 "security": [
                     {
-                        "AuthApiKey": []
+                        "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get all user files from server",
+                "description": "Download a file by filename",
                 "produces": [
-                    "application/json"
+                    "application/octet-stream"
                 ],
                 "tags": [
                     "files"
                 ],
-                "summary": "User files",
+                "summary": "Download file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filename to download",
+                        "name": "filename",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
+                        "description": "File content",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    },
+                    "401": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    },
+                    "404": {
                         "description": "Error responce",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponce"
@@ -80,6 +107,18 @@ const docTemplate = `{
                         "description": "Edit responce",
                         "schema": {
                             "$ref": "#/definitions/main.EditResponce"
+                        }
+                    },
+                    "400": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    },
+                    "401": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
                         }
                     },
                     "404": {
@@ -133,6 +172,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/main.UploadResponce"
                         }
                     },
+                    "400": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    },
+                    "401": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    },
                     "500": {
                         "description": "Error responce",
                         "schema": {
@@ -176,42 +227,57 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponce"
                         }
+                    },
+                    "401": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    },
+                    "404": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    },
+                    "500": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
                     }
                 }
             }
         },
-        "/api/file/{filename}": {
+        "/api/files": {
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "AuthApiKey": []
                     }
                 ],
-                "description": "Download a file by filename",
+                "description": "Get all user files from server",
                 "produces": [
-                    "application/octet-stream"
+                    "application/json"
                 ],
                 "tags": [
                     "files"
                 ],
-                "summary": "Download file",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filename to download",
-                        "name": "filename",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
+                "summary": "User files",
                 "responses": {
                     "200": {
-                        "description": "File content",
+                        "description": "Error responce",
                         "schema": {
-                            "type": "file"
+                            "$ref": "#/definitions/main.ErrorResponce"
                         }
                     },
-                    "404": {
+                    "400": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    },
+                    "401": {
                         "description": "Error responce",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponce"

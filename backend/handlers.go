@@ -3,6 +3,7 @@ package main
 import (
 	"backend/db/repodb"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -64,6 +65,12 @@ func authMiddleware() gin.HandlerFunc {
 }
 
 func getFile(c *gin.Context) *File {
+	filename := c.Param("filename")
+	if filename == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponce{Error: "Filename not provided"})
+		return nil
+	}
+
 	file, _, err := c.Request.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponce{Error: "File not provided"})
@@ -74,12 +81,6 @@ func getFile(c *gin.Context) *File {
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponce{Error: "Failed to read file: " + err.Error()})
-		return nil
-	}
-
-	filename := c.Param("filename")
-	if filename == "" {
-		c.JSON(http.StatusBadRequest, ErrorResponce{Error: "Filename not provided"})
 		return nil
 	}
 
@@ -116,8 +117,10 @@ func getUserId(c *gin.Context) *uuid.UUID {
 // @Param file formData file true "File to upload"
 // @Produce json
 // @Success 200 {object} UploadResponce "Upload responce"
+// @Failure 400 {object} ErrorResponce "Error responce"
+// @Failure 401 {object} ErrorResponce "Error responce"
 // @Failure 500 {object} ErrorResponce "Error responce"
-// @Router /api/file/:filename [post]
+// @Router /api/file/{filename} [post]
 func uploadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	file := getFile(c)
 	if file == nil {
@@ -128,7 +131,7 @@ func uploadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	if userId == nil {
 		return
 	}
-
+	fmt.Printf("filename: %s", file.name)
 	if err := repo.Create(file.name, *userId, file.bytes); err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponce{Error: "Failed to create file: " + err.Error()})
 		return
@@ -148,9 +151,11 @@ func uploadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 // @Param file formData file true "File to save"
 // @Produce json
 // @Success 200 {object} EditResponce "Edit responce"
+// @Failure 400 {object} ErrorResponce "Error responce"
+// @Failure 401 {object} ErrorResponce "Error responce"
 // @Failure 404 {object} ErrorResponce "Error responce"
 // @Failure 500 {object} ErrorResponce "Error responce"
-// @Router /api/file/:filename [put]
+// @Router /api/file/{filename} [put]
 func editFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	file := getFile(c)
 	if file == nil {
@@ -185,6 +190,8 @@ func editFileHandler(c *gin.Context, repo repodb.FileRepository) {
 // @Param filename path string true "Filename to download"
 // @Produce octet-stream
 // @Success 200 {file} file "File content"
+// @Failure 400 {object} ErrorResponce "Error responce"
+// @Failure 401 {object} ErrorResponce "Error responce"
 // @Failure 404 {object} ErrorResponce "Error responce"
 // @Failure 500 {object} ErrorResponce "Error responce"
 // @Router /api/file/{filename} [get]
@@ -219,7 +226,10 @@ func downloadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 // @Param filename path string true "Filename to delete"
 // @Success 200 {object} DeleteResponce "Delete responce"
 // @Failure 400 {object} ErrorResponce "Error responce"
-// @Router /api/file/:filename [delete]
+// @Failure 401 {object} ErrorResponce "Error responce"
+// @Failure 404 {object} ErrorResponce "Error responce"
+// @Failure 500 {object} ErrorResponce "Error responce"
+// @Router /api/file/{filename} [delete]
 func deleteFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	filename := c.Param("filename")
 
@@ -245,8 +255,10 @@ func deleteFileHandler(c *gin.Context, repo repodb.FileRepository) {
 // @Security AuthApiKey
 // @Produce json
 // @Success 200 {object} ErrorResponce "Error responce"
+// @Failure 400 {object} ErrorResponce "Error responce"
+// @Failure 401 {object} ErrorResponce "Error responce"
 // @Failure 500 {object} ErrorResponce "Error responce"
-// @Router /api/file/:filename [get]
+// @Router /api/files [get]
 func getAllFilesHandler(c *gin.Context, repo repodb.FileRepository) {
 	userId := getUserId(c)
 	if userId == nil {
