@@ -9,8 +9,6 @@ import (
 
 	"backend/db/repodb"
 
-	_ "backend/docs"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -48,16 +46,6 @@ func validatePort(portStr string) error {
 	return nil
 }
 
-// @title                       Markdown backend
-// @version                     1.0
-// @description                 API Server for Markdown-editor
-
-// @host                        localhost:1234
-// @BasePath                    /
-
-// @securityDefinitions.apikey  ApiKeyAuth
-// @in                          header
-// @name                        Authorization
 func main() {
 	var host, port string
 	flag.StringVar(&host, "host", "", "Host to bind")
