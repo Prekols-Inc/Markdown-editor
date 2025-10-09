@@ -14,7 +14,293 @@ const docTemplate = `{
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {},
+    "paths": {
+        "/api/file/:filename": {
+            "get": {
+                "security": [
+                    {
+                        "AuthApiKey": []
+                    }
+                ],
+                "description": "Get all user files from server",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "User files",
+                "responses": {
+                    "200": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    },
+                    "500": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "AuthApiKey": []
+                    }
+                ],
+                "description": "Send edited file to server",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Edit file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filename to save",
+                        "name": "filename",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "File to save",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Edit responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.EditResponce"
+                        }
+                    },
+                    "404": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    },
+                    "500": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "AuthApiKey": []
+                    }
+                ],
+                "description": "Upload new file to server",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Upload file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filename to save",
+                        "name": "filename",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "File to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Upload responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.UploadResponce"
+                        }
+                    },
+                    "500": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "AuthApiKey": []
+                    }
+                ],
+                "description": "Delete file from server",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Delete file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filename to delete",
+                        "name": "filename",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Delete responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.DeleteResponce"
+                        }
+                    },
+                    "400": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/file/{filename}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Download a file by filename",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Download file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filename to download",
+                        "name": "filename",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File content",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    },
+                    "500": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponce"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Check if server respond",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Check server health",
+                "responses": {
+                    "200": {
+                        "description": "Server health status",
+                        "schema": {
+                            "$ref": "#/definitions/main.HealthResponce"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "main.DeleteResponce": {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.EditResponce": {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.ErrorResponce": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.HealthResponce": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.UploadResponce": {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        }
+    },
     "securityDefinitions": {
         "ApiKeyAuth": {
             "type": "apiKey",
@@ -31,7 +317,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Markdown backend",
-	Description:      "API Server for markdown",
+	Description:      "API Server for Markdown-editor",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
