@@ -1,0 +1,104 @@
+basePath: /
+definitions:
+  main.CheckAuthResponse:
+    properties:
+      authenticated:
+        type: boolean
+    type: object
+  main.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  main.HealthResponse:
+    properties:
+      status:
+        type: string
+      time:
+        type: string
+    type: object
+  main.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  main.LoginResponse:
+    properties:
+      message:
+        type: string
+      token:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Auth Server for Markdown-editor
+  title: Markdown auth
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: Check if auth respond
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Server health status
+          schema:
+            $ref: '#/definitions/main.HealthResponse'
+      summary: Check auth health
+      tags:
+      - health
+  /v1/check_auth:
+    get:
+      description: Check if user authenticated
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login responce
+          schema:
+            $ref: '#/definitions/main.CheckAuthResponse'
+        "401":
+          description: Error responce
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Check auth
+      tags:
+      - auth
+  /v1/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login credentials
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/main.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login response
+          schema:
+            $ref: '#/definitions/main.LoginResponse'
+        "400":
+          description: Error response
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "401":
+          description: Error response
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Error response
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Sign in
+      tags:
+      - auth
+swagger: "2.0"

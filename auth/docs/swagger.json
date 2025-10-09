@@ -1,0 +1,161 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Auth Server for Markdown-editor",
+        "title": "Markdown auth",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/health": {
+            "get": {
+                "description": "Check if auth respond",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Check auth health",
+                "responses": {
+                    "200": {
+                        "description": "Server health status",
+                        "schema": {
+                            "$ref": "#/definitions/main.HealthResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/check_auth": {
+            "get": {
+                "description": "Check if user authenticated",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Check auth",
+                "responses": {
+                    "200": {
+                        "description": "Login responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.CheckAuthResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Error responce",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/login": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Sign in",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "login",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login response",
+                        "schema": {
+                            "$ref": "#/definitions/main.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Error response",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Error response",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Error response",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "main.CheckAuthResponse": {
+            "type": "object",
+            "properties": {
+                "authenticated": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "main.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.LoginRequest": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
