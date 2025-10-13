@@ -114,6 +114,8 @@ body,
   background: #f3f4f6;
   color: #111827;
   border: 1px solid #d1d5db;
+  display: inline-flex;
+  justify-content: center;
 }
 
 .toolbar button.secondary:hover {
