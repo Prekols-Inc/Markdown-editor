@@ -26,7 +26,10 @@ body,
   overflow-y: auto;
   background: #fafafa;
 }
-.sidebar.collapsed .btn:not(.secondary) { display: none; }
+
+.sidebar.collapsed .btn:not(.secondary) {
+  display: none;
+}
 
 /* file/folder */
 .fs-item {
@@ -58,12 +61,19 @@ body,
   padding: 0 0.4rem;
   color: #6b7280;
 }
+
 .fs-close:hover {
   color: #ef4444;
 }
 
-.fs-item:hover { background: #e5e7eb; }
-.fs-item.active { background: #dbeafe; font-weight: 600; }
+.fs-item:hover {
+  background: #e5e7eb;
+}
+
+.fs-item.active {
+  background: #dbeafe;
+  font-weight: 600;
+}
 
 .toolbar {
   display: flex;
@@ -76,8 +86,40 @@ body,
 
 .toolbar select,
 .toolbar button {
-  padding: 0.25rem 0.6rem;
-  font-size: 0.85rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar button:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.toolbar button:active {
+  background: #1e40af;
+  transform: translateY(0);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar button.secondary {
+  background: #f3f4f6;
+  color: #111827;
+  border: 1px solid #d1d5db;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.toolbar button.secondary:hover {
+  background: #e5e7eb;
 }
 
 .left-panel {
@@ -204,15 +246,26 @@ body,
 }
 
 /* style Markdown */
-.preview h1 { font-size: 1.8rem; margin-bottom: 0.6rem; }
-.preview h2 { font-size: 1.5rem; margin: 1rem 0 0.5rem; }
+.preview h1 {
+  font-size: 1.8rem;
+  margin-bottom: 0.6rem;
+}
+
+.preview h2 {
+  font-size: 1.5rem;
+  margin: 1rem 0 0.5rem;
+}
+
 .preview pre {
   background: #f3f3f3;
   padding: 0.8rem;
   overflow: auto;
   border-radius: 6px;
 }
-.preview code { font-family: ui-monospace, monospace; }
+
+.preview code {
+  font-family: ui-monospace, monospace;
+}
 
 .preview blockquote {
   margin: 1.25rem 0;
@@ -225,7 +278,9 @@ body,
   line-height: 1.6;
 }
 
-.preview a { color: #0366d6; }
+.preview a {
+  color: #0366d6;
+}
 
 /* resizer */
 .resizer {
