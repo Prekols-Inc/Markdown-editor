@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestIsValidLinuxFilename(t *testing.T) {
+func TestIsValidFilename(t *testing.T) {
 	tests := []struct {
 		name     string
 		filename string
@@ -24,7 +24,7 @@ func TestIsValidLinuxFilename(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isValidLinuxFilename(tt.filename); got != tt.want {
+			if got := isValidFilename(tt.filename); got != tt.want {
 				t.Errorf("isValidLinuxFilename(%q) = %v, want %v", tt.filename, got, tt.want)
 			}
 		})
@@ -40,12 +40,13 @@ func TestValidateFile(t *testing.T) {
 	}{
 		{"Valid md file", "test.md", false, ""},
 		{"Valid txt file", "test.markdown", false, ""},
-		{"Invalid extension", "test.jpg", true, "file extension must be"},
-		{"Path traversal", "../test.md", true, "filename must not contain file path"},
-		{"Invalid filename", "file/name.md", true, "filename must not contain file path"},
-		{"Empty filename", "", true, "filename is not valid"},
+		{"Invalid extension", "test.jpg", true, "Invalid filename: file extension must be"},
+		{"Path traversal", "../test.md", true, "Invalid filename: filename must not contain file path"},
+		{"Invalid filename", "file/name.md", true, "Invalid filename: filename must not contain file path"},
+		{"Empty filename", "", true, "Invalid filename: invalid characters"},
+		{"Comma in filename", "file,md.md", true, "Invalid filename: invalid characters"},
 		{"Dot file with valid ext", ".env.md", false, ""},
-		{"Only extension", ".md", true, "file name must not be empty"},
+		{"Only extension", ".md", true, "Invalid filename: file name must not be empty"},
 	}
 
 	for _, tt := range tests {
