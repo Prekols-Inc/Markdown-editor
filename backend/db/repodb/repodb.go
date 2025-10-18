@@ -15,7 +15,16 @@ var ErrFileNotFound = errors.New("file not found")
 var ErrFileExists = errors.New("file already exists")
 var ErrUserNotFound = errors.New("user not found")
 
+type ErrInvalidFilename struct {
+	Reason string
+}
+
+func (e *ErrInvalidFilename) Error() string {
+	return fmt.Sprintf("Invalid filename: %s", e.Reason)
+}
+
 var validExtensions = []string{".md", ".markdown"}
+var invalidFilenameChars = []string{"\x00", ":", "*", "?", "\"", "<", ">", "|", "+", ",", "!", "%", "@"}
 
 type FileRepository interface {
 	Save(filename string, userId uuid.UUID, data []byte) error
@@ -25,7 +34,17 @@ type FileRepository interface {
 	GetList(userId uuid.UUID) ([]string, error)
 }
 
-func isValidLinuxFilename(filename string) bool {
+func containsChars(filename string, сhars []string) bool {
+	for _, ch := range сhars {
+		if strings.Contains(filename, ch) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isValidFilename(filename string) bool {
 	if filename == "" || len(filename) > 255 {
 		return false
 	}
@@ -34,7 +53,7 @@ func isValidLinuxFilename(filename string) bool {
 		return false
 	}
 
-	if strings.Contains(filename, "\x00") {
+	if containsChars(filename, invalidFilenameChars) {
 		return false
 	}
 
@@ -46,21 +65,21 @@ func isValidLinuxFilename(filename string) bool {
 }
 
 func validateFile(filename string) error {
-	if !isValidLinuxFilename(filename) {
-		return fmt.Errorf("filename is not valid")
+	if !isValidFilename(filename) {
+		return &ErrInvalidFilename{Reason: "invalid characters"}
 	}
 
 	if filepath.Base(filename) != filename {
-		return fmt.Errorf("filename must not contain file path")
+		return &ErrInvalidFilename{Reason: "filename must not contain file path"}
 	}
 
 	ext := strings.ToLower(filepath.Ext(filename))
 	if !slices.Contains(validExtensions, ext) {
-		return fmt.Errorf("file extension must be .md")
+		return &ErrInvalidFilename{Reason: "file extension must be .md"}
 	}
 
 	if strings.TrimSuffix(filename, ext) == "" {
-		return fmt.Errorf("file name must not be empty")
+		return &ErrInvalidFilename{Reason: "file name must not be empty"}
 	}
 
 	return nil
