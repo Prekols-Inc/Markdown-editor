@@ -27,7 +27,7 @@ func setupRouter() *gin.Engine {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	r.POST("/v1/login", loginHandler)
+	r.POST("/v1/login", loginHandler) // моки надо бы на базу
 
 	return r
 }
