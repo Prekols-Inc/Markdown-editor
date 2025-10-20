@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	DB_PATH = "db/storage"
+	DB_PATH = "storage"
 )
 
 var (
