@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	_ "auth/docs"
@@ -12,6 +13,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -32,9 +34,15 @@ func main() {
 	flag.StringVar(&port, "port", "", "Port to bind")
 	flag.Parse()
 
-	// dsn := os.Getenv("DATABASE_URL")
-	dsn := "postgres://postgres:password@localhost:5432/auth_db?sslmode=disable"
-	log.Println("Connecting to DB:", dsn)
+	err := godotenv.Load("../.env")
+	if err != nil {
+		log.Fatalf("Failed to load ../.env file: %v", err)
+	}
+
+	dsn := os.Getenv("AUTH_DATABASE_URL")
+	// dsn := "postgres://postgres:password@localhost:5432/auth_db?sslmode=disable"
+	log.Println(dsn)
+
 	db, err := pgxpool.New(context.Background(), dsn)
 	if err != nil {
 		log.Fatalf("Failed to connect DB: %v", err)
@@ -59,6 +67,11 @@ func main() {
 	r.GET("/v1/check_auth", app.checkAuthHandler)
 	r.POST("/v1/register", app.registerHandler)
 	r.POST("/v1/login", app.loginHandler)
+
+	err = app.DB.Ping(context.Background())
+	if err != nil {
+		log.Fatalf("DB ping failed: %v", err)
+	}
 
 	serverAddr := fmt.Sprintf("%s:%s", host, port)
 	if err := r.Run(serverAddr); err != nil {

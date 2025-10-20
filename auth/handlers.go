@@ -107,13 +107,8 @@ func (a *App) registerHandler(c *gin.Context) {
 		return
 	}
 
-	err := a.DB.Ping(context.Background())
-	if err != nil {
-		log.Fatalf("DB ping failed: %v", err)
-	}
-
 	var exists bool
-	err = a.DB.QueryRow(context.Background(),
+	err := a.DB.QueryRow(context.Background(),
 		"SELECT EXISTS(SELECT 1 FROM users WHERE username=$1)", req.Username).Scan(&exists)
 	if err != nil {
 		log.Println(err.Error())
