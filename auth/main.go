@@ -38,10 +38,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load ../.env file: %v", err)
 	}
-
 	dsn := os.Getenv("AUTH_DATABASE_URL")
-	// dsn := "postgres://postgres:password@localhost:5432/auth_db?sslmode=disable"
-	log.Println(dsn)
 
 	db, err := pgxpool.New(context.Background(), dsn)
 	if err != nil {
