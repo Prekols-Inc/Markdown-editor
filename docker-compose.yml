@@ -23,6 +23,8 @@ services:
       retries: 5
       start_period: 40s
 
+  # TODO: add PostgreSQL image
+
   auth:
     image: sid00r/markdown-auth:latest
     build: ./auth
