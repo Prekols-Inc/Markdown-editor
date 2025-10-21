@@ -103,7 +103,7 @@ func (a *App) checkAuthHandler(c *gin.Context) {
 func (a *App) registerHandler(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid request body"})
 		return
 	}
 
@@ -112,17 +112,17 @@ func (a *App) registerHandler(c *gin.Context) {
 		"SELECT EXISTS(SELECT 1 FROM users WHERE username=$1)", req.Username).Scan(&exists)
 	if err != nil {
 		log.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Internal server error (DB)"})
 		return
 	}
 	if exists {
-		c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
+		c.JSON(http.StatusConflict, ErrorResponse{Error: "User already exists"})
 		return
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to hash password"})
 		return
 	}
 
@@ -130,9 +130,9 @@ func (a *App) registerHandler(c *gin.Context) {
 		"INSERT INTO users (username, password_hash, created_at) VALUES ($1, $2, $3)",
 		req.Username, string(hashed), time.Now())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create user"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
+	c.JSON(http.StatusCreated, RegisterResponse{Message: "User registered successfully"})
 }
