@@ -81,8 +81,8 @@ func (a *App) loginHandler(c *gin.Context) {
 // @Tags auth
 // @Description Check if user authenticated
 // @Produce json
-// @Success 200 {object} CheckAuthResponse "Login responce"
-// @Failure 401 {object} ErrorResponse "Error responce"
+// @Success 200 {object} CheckAuthResponse "Login response"
+// @Failure 401 {object} ErrorResponse "Error response"
 // @Router /v1/check_auth [get]
 func (a *App) checkAuthHandler(c *gin.Context) {
 	tokenStr, err := c.Cookie(TOKEN_COOKIE_NAME)
@@ -106,10 +106,10 @@ func (a *App) checkAuthHandler(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param register body RegisterRequest true "Register fields"
-// @Success 201 {object} RegisterResponse "Login responce"
-// @Failure 400 {object} ErrorResponse "Error responce"
-// @Failure 409 {object} ErrorResponse "Error responce"
-// @Failure 500 {object} ErrorResponse "Error responce"
+// @Success 201 {object} RegisterResponse "Login response"
+// @Failure 400 {object} ErrorResponse "Error response"
+// @Failure 409 {object} ErrorResponse "Error response"
+// @Failure 500 {object} ErrorResponse "Error response"
 // @Router /v1/register [post]
 func (a *App) registerHandler(c *gin.Context) {
 	var req RegisterRequest
