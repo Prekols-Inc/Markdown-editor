@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -38,32 +41,40 @@ func healthHandler(c *gin.Context) {
 // @Failure 401 {object} ErrorResponse "Error response"
 // @Failure 500 {object} ErrorResponse "Error response"
 // @Router /v1/login [post]
-func loginHandler(c *gin.Context) {
+func (a *App) loginHandler(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid request body"})
 		return
 	}
 
-	if req.Username != USERNAME || req.Password != PASSWORD {
+	var (
+		id           uuid.UUID
+		passwordHash string
+	)
+
+	err := a.DB.QueryRow(context.Background(),
+		"SELECT id, password_hash FROM users WHERE username=$1", req.Username).
+		Scan(&id, &passwordHash)
+
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid username or password"})
 		return
 	}
 
-	adminUUID, err := uuid.Parse(UUID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "internal server error"})
+	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(req.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid username or password"})
 		return
 	}
 
-	token, err := generateToken(adminUUID)
+	token, err := generateToken(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to generate jwt token"})
 		return
 	}
-	c.SetCookie(TOKEN_COOKIE_NAME, token, 24*60*60, "/", "", false, true)
 
-	c.JSON(http.StatusOK, LoginResponse{Message: "login successfull", Token: token})
+	c.SetCookie(TOKEN_COOKIE_NAME, token, 24*60*60, "/", "", false, true)
+	c.JSON(http.StatusOK, LoginResponse{Message: "login successful", Token: token})
 }
 
 // @Summary Check auth
@@ -73,7 +84,7 @@ func loginHandler(c *gin.Context) {
 // @Success 200 {object} CheckAuthResponse "Login responce"
 // @Failure 401 {object} ErrorResponse "Error responce"
 // @Router /v1/check_auth [get]
-func checkAuthHandler(c *gin.Context) {
+func (a *App) checkAuthHandler(c *gin.Context) {
 	tokenStr, err := c.Cookie(TOKEN_COOKIE_NAME)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "missing token"})
@@ -87,4 +98,41 @@ func checkAuthHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, CheckAuthResponse{Authenticated: true})
+}
+
+func (a *App) registerHandler(c *gin.Context) {
+	var req RegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid request body"})
+		return
+	}
+
+	var exists bool
+	err := a.DB.QueryRow(context.Background(),
+		"SELECT EXISTS(SELECT 1 FROM users WHERE username=$1)", req.Username).Scan(&exists)
+	if err != nil {
+		log.Println(err.Error())
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Internal server error (DB)"})
+		return
+	}
+	if exists {
+		c.JSON(http.StatusConflict, ErrorResponse{Error: "User already exists"})
+		return
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to hash password"})
+		return
+	}
+
+	_, err = a.DB.Exec(context.Background(),
+		"INSERT INTO users (username, password_hash, created_at) VALUES ($1, $2, $3)",
+		req.Username, string(hashed), time.Now())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create user"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, RegisterResponse{Message: "User registered successfully"})
 }

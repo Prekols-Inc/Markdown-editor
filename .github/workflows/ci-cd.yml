@@ -222,6 +222,12 @@ jobs:
           VITE_STORAGE_API_BASE_URL=$VITE_STORAGE_API_BASE_URL
           VITE_AUTH_API_BASE_URL=$VITE_AUTH_API_BASE_URL
           JWT_SECRET=$JWT_SECRET
+          DB_HOST=markdown-db
+          DB_PORT=5432
+          DB_USER=postgres
+          DB_PASSWORD=password
+          DB_NAME=auth_db
+          DB_SSLMODE=disable
           EOF
 
       - name: Deploy with Docker Compose
