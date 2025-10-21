@@ -73,7 +73,7 @@ sudo -u postgres psql -d auth_db -f db/init.sql # creates table 'users'
 ```
 3. Run:
 ```bash
-export AUTH_DATABASE_URL=postgres://postgres:password@localhost:5432/auth_db?sslmode=disable # env variable from .env.example
+export DB_ variables # env variables from .env.example
 go mod tidy
 go run . --host=localhost --port=YOUR_PORT
 ```
