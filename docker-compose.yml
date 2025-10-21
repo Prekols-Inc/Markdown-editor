@@ -31,6 +31,7 @@ services:
       - AUTH_HOST=${AUTH_HOST}
       - AUTH_PORT=${AUTH_PORT}
       - JWT_SECRET=${JWT_SECRET}
+      - AUTH_DATABASE_URL=${AUTH_DATABASE_URL}
     ports:
       - "${AUTH_PORT}:${AUTH_PORT}"
     networks:
