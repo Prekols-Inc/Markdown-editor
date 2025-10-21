@@ -81,8 +81,8 @@ func (a *App) loginHandler(c *gin.Context) {
 // @Tags auth
 // @Description Check if user authenticated
 // @Produce json
-// @Success 200 {object} CheckAuthResponse "Login responce"
-// @Failure 401 {object} ErrorResponse "Error responce"
+// @Success 200 {object} CheckAuthResponse "Login response"
+// @Failure 401 {object} ErrorResponse "Error response"
 // @Router /v1/check_auth [get]
 func (a *App) checkAuthHandler(c *gin.Context) {
 	tokenStr, err := c.Cookie(TOKEN_COOKIE_NAME)
@@ -100,6 +100,17 @@ func (a *App) checkAuthHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, CheckAuthResponse{Authenticated: true})
 }
 
+// @Summary Register
+// @Tags auth
+// @Description Register new user
+// @Accept json
+// @Produce json
+// @Param register body RegisterRequest true "Register fields"
+// @Success 201 {object} RegisterResponse "Login response"
+// @Failure 400 {object} ErrorResponse "Error response"
+// @Failure 409 {object} ErrorResponse "Error response"
+// @Failure 500 {object} ErrorResponse "Error response"
+// @Router /v1/register [post]
 func (a *App) registerHandler(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -112,17 +123,17 @@ func (a *App) registerHandler(c *gin.Context) {
 		"SELECT EXISTS(SELECT 1 FROM users WHERE username=$1)", req.Username).Scan(&exists)
 	if err != nil {
 		log.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Internal server error (DB)"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "internal server error (DB)"})
 		return
 	}
 	if exists {
-		c.JSON(http.StatusConflict, ErrorResponse{Error: "User already exists"})
+		c.JSON(http.StatusConflict, ErrorResponse{Error: "user already exists"})
 		return
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to hash password"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to hash password"})
 		return
 	}
 
@@ -130,9 +141,9 @@ func (a *App) registerHandler(c *gin.Context) {
 		"INSERT INTO users (username, password_hash, created_at) VALUES ($1, $2, $3)",
 		req.Username, string(hashed), time.Now())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create user"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to create user"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, RegisterResponse{Message: "User registered successfully"})
+	c.JSON(http.StatusCreated, RegisterResponse{Message: "user registered successfully"})
 }
