@@ -11,6 +11,8 @@ services:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     networks:
       - markdown-network
+    volumes:
+      - storage:/root/storage
     restart: unless-stopped
     healthcheck:
       test:
@@ -68,3 +70,6 @@ services:
 networks:
   markdown-network:
     driver: bridge
+    
+volumes:
+  storage:
