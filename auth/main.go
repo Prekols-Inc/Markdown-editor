@@ -13,7 +13,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -34,10 +33,6 @@ func main() {
 	flag.StringVar(&port, "port", "", "Port to bind")
 	flag.Parse()
 
-	err := godotenv.Load("../.env")
-	if err != nil {
-		log.Fatalf("Failed to load ../.env file: %v", err)
-	}
 	dsn := os.Getenv("AUTH_DATABASE_URL")
 
 	db, err := pgxpool.New(context.Background(), dsn)
