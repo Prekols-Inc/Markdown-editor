@@ -12,10 +12,11 @@ import (
 )
 
 const (
-	USERNAME          = "admin"
-	PASSWORD          = "password"
-	UUID              = "123e4567-e89b-12d3-a456-426614174000"
-	TOKEN_COOKIE_NAME = "access_token"
+	USERNAME                  = "admin"
+	PASSWORD                  = "password"
+	UUID                      = "123e4567-e89b-12d3-a456-426614174000"
+	ACCESS_TOKEN_COOKIE_NAME  = "access_token"
+	REFRESH_TOKEN_COOKIE_NAME = "refresh_token"
 )
 
 // @Summary Check auth health
@@ -29,6 +30,11 @@ func healthHandler(c *gin.Context) {
 		Status: "healthy",
 		Time:   time.Now(),
 	})
+}
+
+func setCookieTokens(c *gin.Context, accessToken string, refreshToken string) {
+	c.SetCookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, int(ACCESS_TOKEN_TTL.Seconds()), "/", "", false, true)
+	c.SetCookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, int(REFRESH_TOKEN_TTL.Seconds()), "/auth/refresh", "", false, true)
 }
 
 // @Summary Sign in
@@ -67,37 +73,14 @@ func (a *App) loginHandler(c *gin.Context) {
 		return
 	}
 
-	token, err := generateToken(id)
+	accessToken, refreshToken, err := generateTokens(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to generate jwt token"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to generate token"})
 		return
 	}
 
-	c.SetCookie(TOKEN_COOKIE_NAME, token, 24*60*60, "/", "", false, true)
-	c.JSON(http.StatusOK, LoginResponse{Message: "login successful", Token: token})
-}
-
-// @Summary Check auth
-// @Tags auth
-// @Description Check if user authenticated
-// @Produce json
-// @Success 200 {object} CheckAuthResponse "Login response"
-// @Failure 401 {object} ErrorResponse "Error response"
-// @Router /v1/check_auth [get]
-func (a *App) checkAuthHandler(c *gin.Context) {
-	tokenStr, err := c.Cookie(TOKEN_COOKIE_NAME)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "missing token"})
-		return
-	}
-
-	_, err = parseToken(tokenStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid or expired token"})
-		return
-	}
-
-	c.JSON(http.StatusOK, CheckAuthResponse{Authenticated: true})
+	setCookieTokens(c, accessToken, refreshToken)
+	c.JSON(http.StatusOK, LoginResponse{Message: "login successful", Token: accessToken})
 }
 
 // @Summary Register
@@ -146,4 +129,57 @@ func (a *App) registerHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, RegisterResponse{Message: "user registered successfully"})
+}
+
+// @Summary Check auth
+// @Tags auth
+// @Description Check if user authenticated
+// @Produce json
+// @Success 200 {object} CheckAuthResponse "Login response"
+// @Failure 401 {object} ErrorResponse "Error response"
+// @Router /v1/check_auth [get]
+func (a *App) checkAuthHandler(c *gin.Context) {
+	accessTokenStr, err := c.Cookie(ACCESS_TOKEN_COOKIE_NAME)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "missing access token"})
+		return
+	}
+
+	_, err = parseToken(accessTokenStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid or expired access token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, CheckAuthResponse{Authenticated: true})
+}
+
+func (a *App) refreshHandler(c *gin.Context) {
+	refreshTokenStr, err := c.Cookie(REFRESH_TOKEN_COOKIE_NAME)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "missing refresh token"})
+		return
+	}
+
+	claims, err := parseToken(refreshTokenStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid or expired refresh token"})
+		return
+	}
+
+	userIdStr, exists := claims["user_id"]
+	userId, ok := userIdStr.(uuid.UUID)
+	if !exists || !ok {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid token claims"})
+		return
+	}
+
+	accessToken, refreshToken, err := generateTokens(userId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to generate token"})
+		return
+	}
+
+	setCookieTokens(c, accessToken, refreshToken)
+	c.JSON(http.StatusOK, LoginResponse{Message: "login successful", Token: accessToken})
 }
