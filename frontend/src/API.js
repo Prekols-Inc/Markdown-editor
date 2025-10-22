@@ -25,9 +25,7 @@ AUTH.interceptors.response.use(
       if (errorMessage && errorMessage === "Token has expired") {
         originalRequest._retry = true;
         try {
-          const refreshResponse = await AUTH.post('/v1/refresh', {
-            refreshToken: localStorage.getItem('refresh_token')
-          });
+          const refreshResponse = await AUTH.post('/v1/refresh');
 
           return AUTH(originalRequest);
         } catch (refreshError) {

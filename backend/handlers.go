@@ -112,7 +112,6 @@ func getUserId(c *gin.Context) *uuid.UUID {
 // @Summary Upload file
 // @Tags files
 // @Description Upload new file to server
-// @Security CookieAccessToken
 // @Param filename path string true "Filename to save"
 // @Param file formData file true "File to upload"
 // @Produce json
@@ -146,7 +145,6 @@ func uploadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 // @Summary Edit file
 // @Tags files
 // @Description Send edited file to server
-// @Security CookieAccessToken
 // @Param filename path string true "Filename to save"
 // @Param file formData file true "File to save"
 // @Produce json
@@ -186,7 +184,6 @@ func editFileHandler(c *gin.Context, repo repodb.FileRepository) {
 // @Summary Download file
 // @Tags files
 // @Description Download a file by filename
-// @Security CookieAccessToken
 // @Param filename path string true "Filename to download"
 // @Produce octet-stream
 // @Success 200 {file} file "File content"
@@ -221,7 +218,6 @@ func downloadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 // @Summary Delete file
 // @Tags files
 // @Description Delete file from server
-// @Security CookieAccessToken
 // @Produce json
 // @Param filename path string true "Filename to delete"
 // @Success 200 {object} DeleteResponse "Delete response"
@@ -252,7 +248,6 @@ func deleteFileHandler(c *gin.Context, repo repodb.FileRepository) {
 // @Summary User files
 // @Tags files
 // @Description Get all user files from server
-// @Security CookieAccessToken
 // @Produce json
 // @Success 200 {object} ErrorResponse "Error response"
 // @Failure 400 {object} ErrorResponse "Error response"

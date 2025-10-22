@@ -17,11 +17,6 @@ const docTemplate = `{
     "paths": {
         "/api/file/{filename}": {
             "get": {
-                "security": [
-                    {
-                        "CookieAccessToken": []
-                    }
-                ],
                 "description": "Download a file by filename",
                 "produces": [
                     "application/octet-stream"
@@ -73,11 +68,6 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "security": [
-                    {
-                        "CookieAccessToken": []
-                    }
-                ],
                 "description": "Send edited file to server",
                 "produces": [
                     "application/json"
@@ -136,11 +126,6 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "security": [
-                    {
-                        "CookieAccessToken": []
-                    }
-                ],
                 "description": "Upload new file to server",
                 "produces": [
                     "application/json"
@@ -193,11 +178,6 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "security": [
-                    {
-                        "CookieAccessToken": []
-                    }
-                ],
                 "description": "Delete file from server",
                 "produces": [
                     "application/json"
@@ -251,11 +231,6 @@ const docTemplate = `{
         },
         "/api/files": {
             "get": {
-                "security": [
-                    {
-                        "CookieAccessToken": []
-                    }
-                ],
                 "description": "Get all user files from server",
                 "produces": [
                     "application/json"
@@ -365,14 +340,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        }
-    },
-    "securityDefinitions": {
-        "CookieAccessToken": {
-            "description": "HTTP Only Cookie access_token для авторизации",
-            "type": "apiKey",
-            "name": "access_token",
-            "in": "header"
         }
     }
 }`

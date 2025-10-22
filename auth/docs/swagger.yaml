@@ -26,11 +26,7 @@ definitions:
     type: object
   main.LoginResponse:
     properties:
-      access_token:
-        type: string
       message:
-        type: string
-      refresh_token:
         type: string
     type: object
   main.RegisterRequest:
@@ -133,8 +129,6 @@ paths:
           description: Error response
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - CookieRefreshToken: []
       summary: Refresh tokens
       tags:
       - auth
@@ -172,10 +166,4 @@ paths:
       summary: Register
       tags:
       - auth
-securityDefinitions:
-  CookieRefreshToken:
-    description: HTTP Only Cookie refresh_token для запроса /v1/refresh
-    in: header
-    name: refresh_token
-    type: apiKey
 swagger: "2.0"

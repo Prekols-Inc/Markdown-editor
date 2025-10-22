@@ -72,8 +72,6 @@ paths:
           description: Error response
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - CookieAccessToken: []
       summary: Delete file
       tags:
       - files
@@ -108,8 +106,6 @@ paths:
           description: Error response
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - CookieAccessToken: []
       summary: Download file
       tags:
       - files
@@ -145,8 +141,6 @@ paths:
           description: Error response
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - CookieAccessToken: []
       summary: Upload file
       tags:
       - files
@@ -186,8 +180,6 @@ paths:
           description: Error response
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - CookieAccessToken: []
       summary: Edit file
       tags:
       - files
@@ -213,8 +205,6 @@ paths:
           description: Error response
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - CookieAccessToken: []
       summary: User files
       tags:
       - files
@@ -231,10 +221,4 @@ paths:
       summary: Check server health
       tags:
       - health
-securityDefinitions:
-  CookieAccessToken:
-    description: HTTP Only Cookie access_token для авторизации
-    in: header
-    name: access_token
-    type: apiKey
 swagger: "2.0"

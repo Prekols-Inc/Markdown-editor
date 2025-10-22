@@ -21,17 +21,12 @@ type App struct {
 	DB *pgxpool.Pool
 }
 
-// @title                       Markdown auth
-// @version                     1.0
-// @description                 Auth Server for Markdown-editor
+// @title           Markdown auth
+// @version         1.0
+// @description     Auth Server for Markdown-editor
 
-// @host                        localhost:8080
-// @BasePath                    /
-
-// @securityDefinitions.apikey CookieRefreshToken
-// @in header
-// @name refresh_token
-// @description HTTP Only Cookie refresh_token для запроса /v1/refresh
+// @host            localhost:8080
+// @BasePath        /
 func main() {
 	var host, port string
 	flag.StringVar(&host, "host", "", "Host to bind")

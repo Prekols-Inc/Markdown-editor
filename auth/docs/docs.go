@@ -114,11 +114,6 @@ const docTemplate = `{
         },
         "/v1/refresh": {
             "post": {
-                "security": [
-                    {
-                        "CookieRefreshToken": []
-                    }
-                ],
                 "description": "Refresh access and refresh tokens",
                 "produces": [
                     "application/json"
@@ -244,13 +239,7 @@ const docTemplate = `{
         "main.LoginResponse": {
             "type": "object",
             "properties": {
-                "access_token": {
-                    "type": "string"
-                },
                 "message": {
-                    "type": "string"
-                },
-                "refresh_token": {
                     "type": "string"
                 }
             }
@@ -273,14 +262,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        }
-    },
-    "securityDefinitions": {
-        "CookieRefreshToken": {
-            "description": "HTTP Only Cookie refresh_token для запроса /v1/refresh",
-            "type": "apiKey",
-            "name": "refresh_token",
-            "in": "header"
         }
     }
 }`
