@@ -11,7 +11,7 @@ import (
 
 var (
 	JWT_SECRET        = []byte(os.Getenv("JWT_SECRET"))
-	ACCESS_TOKEN_TTL  = time.Minute * 15
+	ACCESS_TOKEN_TTL  = time.Second * 8
 	REFRESH_TOKEN_TTL = time.Hour * 24
 )
 

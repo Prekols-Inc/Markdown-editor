@@ -59,6 +59,7 @@ func main() {
 	r.GET("/v1/check_auth", app.checkAuthHandler)
 	r.POST("/v1/register", app.registerHandler)
 	r.POST("/v1/login", app.loginHandler)
+	r.POST("/v1/refresh", app.refreshHandler)
 
 	err = app.DB.Ping(context.Background())
 	if err != nil {
