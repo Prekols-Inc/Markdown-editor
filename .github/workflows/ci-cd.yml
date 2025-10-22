@@ -169,6 +169,7 @@ jobs:
         run: npm run build
 
   build-and-push-docker-images:
+    if: github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
     needs: [test-backend, build-frontend, test-auth-service]
 
@@ -210,6 +211,7 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-frontend:latest
 
   test-docker-compose:
+    if: github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
     needs: build-and-push-docker-images
 
