@@ -12,9 +12,6 @@ import (
 )
 
 const (
-	USERNAME          = "admin"
-	PASSWORD          = "password"
-	UUID              = "123e4567-e89b-12d3-a456-426614174000"
 	TOKEN_COOKIE_NAME = "access_token"
 )
 
@@ -75,6 +72,11 @@ func (a *App) loginHandler(c *gin.Context) {
 
 	c.SetCookie(TOKEN_COOKIE_NAME, token, 24*60*60, "/", "", false, true)
 	c.JSON(http.StatusOK, LoginResponse{Message: "login successful", Token: token})
+}
+
+func (a *App) logoutHandler(c *gin.Context) {
+	c.SetCookie(TOKEN_COOKIE_NAME, "", -1, "/", "", false, true)
+	c.JSON(http.StatusOK, LogoutResponse{Message: "logout successful"})
 }
 
 // @Summary Check auth
