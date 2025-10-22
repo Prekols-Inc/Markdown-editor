@@ -80,6 +80,15 @@ go run . --host=localhost --port=YOUR_PORT
 
 #### Swagger
 
+Requirements:
+- `swag` utility
+Install it using:
+```bash
+$ go install github.com/swaggo/swag/cmd/swag@latest
+# swag must be in $GOPATH/bin
+```
+Docs generation:
+
 1. To generate documentation run:
 ```
 cd backend

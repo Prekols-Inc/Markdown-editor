@@ -15,6 +15,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./auth/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
       
   backend:
     image: sid00r/markdown-backend:latest
@@ -41,8 +44,6 @@ services:
       timeout: 10s
       retries: 5
       start_period: 40s
-
-  # TODO: add PostgreSQL image
 
   auth:
     image: sid00r/markdown-auth:latest
@@ -95,3 +96,4 @@ networks:
     
 volumes:
   storage:
+  db-data:

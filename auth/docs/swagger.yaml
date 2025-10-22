@@ -31,6 +31,18 @@ definitions:
       token:
         type: string
     type: object
+  main.RegisterRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  main.RegisterResponse:
+    properties:
+      message:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -99,6 +111,40 @@ paths:
           schema:
             $ref: '#/definitions/main.ErrorResponse'
       summary: Sign in
+      tags:
+      - auth
+  /v1/register:
+    post:
+      consumes:
+      - application/json
+      description: Register new user
+      parameters:
+      - description: Register fields
+        in: body
+        name: register
+        required: true
+        schema:
+          $ref: '#/definitions/main.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Login responce
+          schema:
+            $ref: '#/definitions/main.RegisterResponse'
+        "400":
+          description: Error responce
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "409":
+          description: Error responce
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Error responce
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Register
       tags:
       - auth
 swagger: "2.0"
