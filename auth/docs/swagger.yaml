@@ -26,9 +26,11 @@ definitions:
     type: object
   main.LoginResponse:
     properties:
+      access_token:
+        type: string
       message:
         type: string
-      token:
+      refresh_token:
         type: string
     type: object
   main.RegisterRequest:
@@ -70,11 +72,11 @@ paths:
       - application/json
       responses:
         "200":
-          description: Login responce
+          description: Login response
           schema:
             $ref: '#/definitions/main.CheckAuthResponse'
         "401":
-          description: Error responce
+          description: Error response
           schema:
             $ref: '#/definitions/main.ErrorResponse'
       summary: Check auth
@@ -113,6 +115,29 @@ paths:
       summary: Sign in
       tags:
       - auth
+  /v1/refresh:
+    post:
+      description: Refresh access and refresh tokens
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login response
+          schema:
+            $ref: '#/definitions/main.LoginResponse'
+        "401":
+          description: Error response
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Error response
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - CookieRefreshToken: []
+      summary: Refresh tokens
+      tags:
+      - auth
   /v1/register:
     post:
       consumes:
@@ -129,22 +154,28 @@ paths:
       - application/json
       responses:
         "201":
-          description: Login responce
+          description: Login response
           schema:
             $ref: '#/definitions/main.RegisterResponse'
         "400":
-          description: Error responce
+          description: Error response
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "409":
-          description: Error responce
+          description: Error response
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "500":
-          description: Error responce
+          description: Error response
           schema:
             $ref: '#/definitions/main.ErrorResponse'
       summary: Register
       tags:
       - auth
+securityDefinitions:
+  CookieRefreshToken:
+    description: HTTP Only Cookie refresh_token для запроса /v1/refresh
+    in: header
+    name: refresh_token
+    type: apiKey
 swagger: "2.0"

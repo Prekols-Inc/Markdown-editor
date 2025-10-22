@@ -1,39 +1,44 @@
+basePath: /
 definitions:
-  main.DeleteResponce:
+  main.DeleteResponse:
     properties:
       filename:
         type: string
       message:
         type: string
     type: object
-  main.EditResponce:
+  main.EditResponse:
     properties:
       filename:
         type: string
       message:
         type: string
     type: object
-  main.ErrorResponce:
+  main.ErrorResponse:
     properties:
       error:
         type: string
     type: object
-  main.HealthResponce:
+  main.HealthResponse:
     properties:
       status:
         type: string
       time:
         type: string
     type: object
-  main.UploadResponce:
+  main.UploadResponse:
     properties:
       filename:
         type: string
       message:
         type: string
     type: object
+host: localhost:1234
 info:
   contact: {}
+  description: Backend for Markdown-editor
+  title: Markdown backend
+  version: "1.0"
 paths:
   /api/file/{filename}:
     delete:
@@ -48,27 +53,27 @@ paths:
       - application/json
       responses:
         "200":
-          description: Delete responce
+          description: Delete response
           schema:
-            $ref: '#/definitions/main.DeleteResponce'
+            $ref: '#/definitions/main.DeleteResponse'
         "400":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
         "401":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
         "404":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
       security:
-      - AuthApiKey: []
+      - CookieAccessToken: []
       summary: Delete file
       tags:
       - files
@@ -88,23 +93,23 @@ paths:
           schema:
             type: file
         "400":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
         "401":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
         "404":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - CookieAccessToken: []
       summary: Download file
       tags:
       - files
@@ -125,23 +130,23 @@ paths:
       - application/json
       responses:
         "200":
-          description: Upload responce
+          description: Upload response
           schema:
-            $ref: '#/definitions/main.UploadResponce'
+            $ref: '#/definitions/main.UploadResponse'
         "400":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
         "401":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
       security:
-      - AuthApiKey: []
+      - CookieAccessToken: []
       summary: Upload file
       tags:
       - files
@@ -162,27 +167,27 @@ paths:
       - application/json
       responses:
         "200":
-          description: Edit responce
+          description: Edit response
           schema:
-            $ref: '#/definitions/main.EditResponce'
+            $ref: '#/definitions/main.EditResponse'
         "400":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
         "401":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
         "404":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
       security:
-      - AuthApiKey: []
+      - CookieAccessToken: []
       summary: Edit file
       tags:
       - files
@@ -193,23 +198,23 @@ paths:
       - application/json
       responses:
         "200":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
         "400":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
         "401":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponce'
+            $ref: '#/definitions/main.ErrorResponse'
       security:
-      - AuthApiKey: []
+      - CookieAccessToken: []
       summary: User files
       tags:
       - files
@@ -222,8 +227,14 @@ paths:
         "200":
           description: Server health status
           schema:
-            $ref: '#/definitions/main.HealthResponce'
+            $ref: '#/definitions/main.HealthResponse'
       summary: Check server health
       tags:
       - health
+securityDefinitions:
+  CookieAccessToken:
+    description: HTTP Only Cookie access_token для авторизации
+    in: header
+    name: access_token
+    type: apiKey
 swagger: "2.0"

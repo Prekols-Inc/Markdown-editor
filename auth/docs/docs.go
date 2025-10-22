@@ -47,13 +47,13 @@ const docTemplate = `{
                 "summary": "Check auth",
                 "responses": {
                     "200": {
-                        "description": "Login responce",
+                        "description": "Login response",
                         "schema": {
                             "$ref": "#/definitions/main.CheckAuthResponse"
                         }
                     },
                     "401": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -112,6 +112,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/refresh": {
+            "post": {
+                "security": [
+                    {
+                        "CookieRefreshToken": []
+                    }
+                ],
+                "description": "Refresh access and refresh tokens",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh tokens",
+                "responses": {
+                    "200": {
+                        "description": "Login response",
+                        "schema": {
+                            "$ref": "#/definitions/main.LoginResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Error response",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Error response",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/register": {
             "post": {
                 "description": "Register new user",
@@ -138,25 +175,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Login responce",
+                        "description": "Login response",
                         "schema": {
                             "$ref": "#/definitions/main.RegisterResponse"
                         }
                     },
                     "400": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "409": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -207,10 +244,13 @@ const docTemplate = `{
         "main.LoginResponse": {
             "type": "object",
             "properties": {
+                "access_token": {
+                    "type": "string"
+                },
                 "message": {
                     "type": "string"
                 },
-                "token": {
+                "refresh_token": {
                     "type": "string"
                 }
             }
@@ -233,6 +273,14 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "CookieRefreshToken": {
+            "description": "HTTP Only Cookie refresh_token для запроса /v1/refresh",
+            "type": "apiKey",
+            "name": "refresh_token",
+            "in": "header"
         }
     }
 }`

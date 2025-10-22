@@ -72,8 +72,8 @@ func TestLoginHandler(t *testing.T) {
 			},
 			loginFunc: func(req LoginRequest, c *gin.Context) {
 				c.JSON(http.StatusOK, LoginResponse{
-					Message: "login successful",
-					Token:   "fake_token_" + userID.String(),
+					Message:     "login successful",
+					AccessToken: "fake_token_" + userID.String(),
 				})
 			},
 			expectedCode: http.StatusOK,

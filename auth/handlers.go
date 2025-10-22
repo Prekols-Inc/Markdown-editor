@@ -81,7 +81,7 @@ func (a *App) loginHandler(c *gin.Context) {
 	}
 
 	setCookieTokens(c, accessToken, refreshToken)
-	c.JSON(http.StatusOK, LoginResponse{Message: "Login successful", Token: accessToken})
+	c.JSON(http.StatusOK, LoginResponse{Message: "Login successful", AccessToken: accessToken, RefreshToken: refreshToken})
 }
 
 // @Summary Register
@@ -162,6 +162,15 @@ func (a *App) checkAuthHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, CheckAuthResponse{Authenticated: true})
 }
 
+// @Summary Refresh tokens
+// @Tags auth
+// @Description Refresh access and refresh tokens
+// @Security CookieRefreshToken
+// @Produce json
+// @Success 200 {object} LoginResponse "Login response"
+// @Failure 401 {object} ErrorResponse "Error response"
+// @Failure 500 {object} ErrorResponse "Error response"
+// @Router /v1/refresh [post]
 func (a *App) refreshHandler(c *gin.Context) {
 	refreshTokenStr, err := c.Cookie(REFRESH_TOKEN_COOKIE_NAME)
 	if err != nil {
@@ -198,5 +207,5 @@ func (a *App) refreshHandler(c *gin.Context) {
 	}
 
 	setCookieTokens(c, accessToken, refreshToken)
-	c.JSON(http.StatusOK, LoginResponse{Message: "Login successful", Token: accessToken})
+	c.JSON(http.StatusOK, RefreshResponse{Message: "Refresh success", AccessToken: accessToken, RefreshToken: refreshToken})
 }

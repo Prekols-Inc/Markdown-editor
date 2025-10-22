@@ -19,7 +19,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "CookieAccessToken": []
                     }
                 ],
                 "description": "Download a file by filename",
@@ -47,27 +47,27 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -75,7 +75,7 @@ const docTemplate = `{
             "put": {
                 "security": [
                     {
-                        "AuthApiKey": []
+                        "CookieAccessToken": []
                     }
                 ],
                 "description": "Send edited file to server",
@@ -104,33 +104,33 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Edit responce",
+                        "description": "Edit response",
                         "schema": {
-                            "$ref": "#/definitions/main.EditResponce"
+                            "$ref": "#/definitions/main.EditResponse"
                         }
                     },
                     "400": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -138,7 +138,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "AuthApiKey": []
+                        "CookieAccessToken": []
                     }
                 ],
                 "description": "Upload new file to server",
@@ -167,27 +167,27 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Upload responce",
+                        "description": "Upload response",
                         "schema": {
-                            "$ref": "#/definitions/main.UploadResponce"
+                            "$ref": "#/definitions/main.UploadResponse"
                         }
                     },
                     "400": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -195,7 +195,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "AuthApiKey": []
+                        "CookieAccessToken": []
                     }
                 ],
                 "description": "Delete file from server",
@@ -217,33 +217,33 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Delete responce",
+                        "description": "Delete response",
                         "schema": {
-                            "$ref": "#/definitions/main.DeleteResponce"
+                            "$ref": "#/definitions/main.DeleteResponse"
                         }
                     },
                     "400": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -253,7 +253,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "AuthApiKey": []
+                        "CookieAccessToken": []
                     }
                 ],
                 "description": "Get all user files from server",
@@ -266,27 +266,27 @@ const docTemplate = `{
                 "summary": "User files",
                 "responses": {
                     "200": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "400": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -306,7 +306,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Server health status",
                         "schema": {
-                            "$ref": "#/definitions/main.HealthResponce"
+                            "$ref": "#/definitions/main.HealthResponse"
                         }
                     }
                 }
@@ -314,7 +314,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "main.DeleteResponce": {
+        "main.DeleteResponse": {
             "type": "object",
             "properties": {
                 "filename": {
@@ -325,7 +325,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.EditResponce": {
+        "main.EditResponse": {
             "type": "object",
             "properties": {
                 "filename": {
@@ -336,7 +336,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.ErrorResponce": {
+        "main.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -344,7 +344,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.HealthResponce": {
+        "main.HealthResponse": {
             "type": "object",
             "properties": {
                 "status": {
@@ -355,7 +355,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.UploadResponce": {
+        "main.UploadResponse": {
             "type": "object",
             "properties": {
                 "filename": {
@@ -366,17 +366,25 @@ const docTemplate = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "CookieAccessToken": {
+            "description": "HTTP Only Cookie access_token для авторизации",
+            "type": "apiKey",
+            "name": "access_token",
+            "in": "header"
+        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
+	Version:          "1.0",
+	Host:             "localhost:1234",
+	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "Markdown backend",
+	Description:      "Backend for Markdown-editor",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

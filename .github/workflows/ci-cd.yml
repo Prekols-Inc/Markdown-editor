@@ -6,11 +6,6 @@ on:
   pull_request:
     branches: ["*"]
   workflow_dispatch:
-    inputs:
-      debug:
-        description: "Enable debug mode"
-        required: false
-        type: boolean
 
 env:
   BACKEND_HOST: ${{ secrets.BACKEND_HOST }}

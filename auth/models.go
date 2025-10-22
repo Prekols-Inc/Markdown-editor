@@ -13,8 +13,9 @@ type HealthResponse struct {
 }
 
 type LoginResponse struct {
-	Token   string `json:"token"`
-	Message string `json:"message"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	Message      string `json:"message"`
 }
 
 type CheckAuthResponse struct {
@@ -34,6 +35,8 @@ type RegisterResponse struct {
 	Message string `json:"message"`
 }
 
-type RefreshResponce struct {
-	Message string `json:"message"`
+type RefreshResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	Message      string `json:"message"`
 }

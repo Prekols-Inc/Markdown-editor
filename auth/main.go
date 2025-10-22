@@ -27,6 +27,11 @@ type App struct {
 
 // @host                        localhost:8080
 // @BasePath                    /
+
+// @securityDefinitions.apikey CookieRefreshToken
+// @in header
+// @name refresh_token
+// @description HTTP Only Cookie refresh_token для запроса /v1/refresh
 func main() {
 	var host, port string
 	flag.StringVar(&host, "host", "", "Host to bind")
