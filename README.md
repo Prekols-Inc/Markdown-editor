@@ -61,15 +61,42 @@ go run . --host=localhost --port=YOUR_PORT
 
 #### Auth service
 
-> Prerequisites: **Go ≥ 1.23**.
+> Prerequisites: **Go ≥ 1.23**, PostgreSQL.
 
 1. Create JWT_SECRET in .env file
-2. Run:
+2. Run PostgreSQL instance:
 ```bash
 cd auth
+sudo apt install posgtresql
+sudo -u postgres createdb auth_db # creates database
+sudo -u postgres psql -d auth_db -f db/init.sql # creates table 'users'
+```
+3. Run:
+```bash
+export DB_ variables # env variables from .env.example
 go mod tidy
 go run . --host=localhost --port=YOUR_PORT
 ```
+
+#### Swagger
+
+Requirements:
+- `swag` utility
+Install it using:
+```bash
+$ go install github.com/swaggo/swag/cmd/swag@latest
+# swag must be in $GOPATH/bin
+```
+Docs generation:
+
+1. To generate documentation run:
+```
+cd backend
+swag init
+cd ../auth
+swag init
+```
+2. To use see http://localhost:YOUR_PORT/swagger/index.html for auth and backend
 
 ---
 ## Tests

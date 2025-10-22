@@ -13,4 +13,5 @@ EXPOSE ${BACKEND_PORT}
 
 WORKDIR /root/
 COPY --from=builder /markdown-backend/backend .
+COPY ./docs ./docs
 CMD ./backend --port=${BACKEND_PORT} --host=${BACKEND_HOST}

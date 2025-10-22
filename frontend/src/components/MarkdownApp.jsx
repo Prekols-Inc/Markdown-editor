@@ -5,6 +5,7 @@ import OptionsEditor from './OptionsEditor';
 import MarkdownPreview from './MarkdownPreview';
 import { marked } from 'marked';
 import API from '../API';
+import NewFileModal from './NewFileModal';
 
 export const DEFAULT_MD = `# Marked - Markdown Parser
 
@@ -89,11 +90,10 @@ export default function App() {
         setUnsaved(false);
     }, []);
 
-    const handleNewFile = useCallback(async () => {
-        try {
-            let filename = prompt('Введите имя нового файла', 'untitled.md');
-            if (!filename) return;
+    const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false);
 
+    const handleNewFile = useCallback(async (filename) => {
+        try {
             if (!/\.(md|markdown|txt|html)$/i.test(filename)) {
                 filename += '.md';
             }
@@ -116,7 +116,6 @@ export default function App() {
             alert('Не удалось создать файл');
         }
     }, []);
-
 
     const handleSave = useCallback(
         async (refreshFiles) => {
@@ -162,58 +161,68 @@ export default function App() {
         [markdown, options, fileHandle]
     );
 
-
     return (
-        <div
-            className="app-grid"
-            style={{
-                gridTemplateColumns: `${sidebarOpen ? 260 : 48}px ${leftWidth}px 5px 1fr`
-            }}
-        >
-            <FileSidebar
-                ref={sidebarRef}
-                current={fileHandle}
-                onOpenFile={handleOpenFile}
-                onSave={handleSave}
-                onNewFile={handleNewFile}
-                unsaved={unsaved}
-                setUnsaved={setUnsaved}
-                collapsed={!sidebarOpen}
-                onToggle={toggleSidebar}
-            />
+        <>
+            <div
+                className="app-grid"
+                style={{
+                    gridTemplateColumns: `${sidebarOpen ? 260 : 48}px ${leftWidth}px 5px 1fr`
+                }}
+            >
+                <FileSidebar
+                    ref={sidebarRef}
+                    current={fileHandle}
+                    onOpenFile={handleOpenFile}
+                    onSave={handleSave}
+                    onNewFile={() => setIsNewFileModalOpen(true)}
+                    unsaved={unsaved}
+                    setUnsaved={setUnsaved}
+                    collapsed={!sidebarOpen}
+                    onToggle={toggleSidebar}
+                />
 
-            <div className="left-panel">
-                <div className="tabs">
-                    <button
-                        className={tab === 'markdown' ? 'tab active' : 'tab'}
-                        onClick={() => setTab('markdown')}
-                    >
-                        Markdown
-                    </button>
-                    <button
-                        className={tab === 'options' ? 'tab active' : 'tab'}
-                        onClick={() => setTab('options')}
-                    >
-                        Options
-                    </button>
+                <div className="left-panel">
+                    <div className="tabs">
+                        <button
+                            className={tab === 'markdown' ? 'tab active' : 'tab'}
+                            onClick={() => setTab('markdown')}
+                        >
+                            Markdown
+                        </button>
+                        <button
+                            className={tab === 'options' ? 'tab active' : 'tab'}
+                            onClick={() => setTab('options')}
+                        >
+                            Options
+                        </button>
+                    </div>
+
+                    {tab === 'markdown' ? (
+                        <MarkdownEditor value={markdown} onChange={setMarkdown} />
+                    ) : (
+                        <OptionsEditor
+                            value={options}
+                            onChange={handleOptionsChange}
+                        />
+                    )}
                 </div>
 
-                {tab === 'markdown' ? (
-                    <MarkdownEditor value={markdown} onChange={setMarkdown} />
-                ) : (
-                    <OptionsEditor
-                        value={options}
-                        onChange={handleOptionsChange}
-                    />
-                )}
+                <div
+                    className="resizer"
+                    onMouseDown={handleMouseDown}
+                />
+
+                <MarkdownPreview markdown={markdown} options={options} />
             </div>
 
-            <div
-                className="resizer"
-                onMouseDown={handleMouseDown}
+            <NewFileModal
+                open={isNewFileModalOpen}
+                onClose={() => setIsNewFileModalOpen(false)}
+                onConfirm={(filename) => {
+                    setIsNewFileModalOpen(false);
+                    handleNewFile(filename);
+                }}
             />
-
-            <MarkdownPreview markdown={markdown} options={options} />
-        </div>
+        </>
     );
 }

@@ -21,6 +21,13 @@ env:
   FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
   VITE_STORAGE_API_BASE_URL: http://localhost:${{ secrets.BACKEND_PORT }}
   VITE_AUTH_API_BASE_URL: http://localhost:${{ secrets.AUTH_PORT }}
+  
+  DB_HOST: markdown-db
+  DB_PORT: ${{ secrets.DB_PORT }}
+  DB_USER: ${{ secrets.DB_USER }}
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+  DB_NAME: ${{ secrets.DB_NAME }}
+  DB_SSLMODE: disable
 
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
@@ -222,6 +229,12 @@ jobs:
           VITE_STORAGE_API_BASE_URL=$VITE_STORAGE_API_BASE_URL
           VITE_AUTH_API_BASE_URL=$VITE_AUTH_API_BASE_URL
           JWT_SECRET=$JWT_SECRET
+          DB_HOST=$DB_HOST
+          DB_PORT=$DB_PORT
+          DB_USER=$DB_USER
+          DB_PASSWORD=$DB_PASSWORD
+          DB_NAME=$DB_NAME
+          DB_SSLMODE=$DB_SSLMODE
           EOF
 
       - name: Deploy with Docker Compose

@@ -1,4 +1,24 @@
 services:
+  db:
+    image: postgres:17
+    container_name: markdown-db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:${DB_PORT}"
+    networks:
+      - markdown-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./auth/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      
   backend:
     image: sid00r/markdown-backend:latest
     build: ./backend
@@ -11,6 +31,8 @@ services:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     networks:
       - markdown-network
+    volumes:
+      - storage:/root/storage
     restart: unless-stopped
     healthcheck:
       test:
@@ -31,8 +53,11 @@ services:
       - AUTH_HOST=${AUTH_HOST}
       - AUTH_PORT=${AUTH_PORT}
       - JWT_SECRET=${JWT_SECRET}
+      - AUTH_DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}
     ports:
       - "${AUTH_PORT}:${AUTH_PORT}"
+    depends_on: 
+      - db
     networks:
       - markdown-network
     restart: unless-stopped
@@ -68,3 +93,7 @@ services:
 networks:
   markdown-network:
     driver: bridge
+    
+volumes:
+  storage:
+  db-data:

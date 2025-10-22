@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import LoginPage from './components/LoginPage';
 import MarkdownApp from './components/MarkdownApp';
+import API from './API';
 
 export default function App() {
   const [isAuth, setIsAuth] = useState(null);
