@@ -67,20 +67,20 @@ func authMiddleware() gin.HandlerFunc {
 func getFile(c *gin.Context) *File {
 	filename := c.Param("filename")
 	if filename == "" {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Filename not provided"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: "Filename not provided"})
 		return nil
 	}
 
 	file, _, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "File not provided"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: "File not provided"})
 		return nil
 	}
 	defer file.Close()
 
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to read file: " + err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to read file: " + err.Error()})
 		return nil
 	}
 
@@ -90,19 +90,19 @@ func getFile(c *gin.Context) *File {
 func getUserId(c *gin.Context) *uuid.UUID {
 	userIdField, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "user_id not found in jwt claims"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: "user_id not found in jwt claims"})
 		return nil
 	}
 
 	userIdStr, ok := userIdField.(string)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "invalid type for user_id"})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: "invalid type for user_id"})
 		return nil
 	}
 
 	userId, err := uuid.Parse(userIdStr)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "user_id parse error: " + err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: "user_id parse error: " + err.Error()})
 		return nil
 	}
 
@@ -119,6 +119,7 @@ func getUserId(c *gin.Context) *uuid.UUID {
 // @Success 200 {object} UploadResponce "Upload responce"
 // @Failure 400 {object} ErrorResponce "Error responce"
 // @Failure 401 {object} ErrorResponce "Error responce"
+// @Failure 409 {object} ErrorResponce "Error responce"
 // @Failure 500 {object} ErrorResponce "Error responce"
 // @Router /api/file/{filename} [post]
 func uploadFileHandler(c *gin.Context, repo repodb.FileRepository) {
@@ -133,7 +134,11 @@ func uploadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	}
 	fmt.Printf("filename: %s", file.name)
 	if err := repo.Create(file.name, *userId, file.bytes); err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create file: " + err.Error()})
+		if errors.Is(err, repodb.ErrUserSpaceIsFull) || errors.Is(err, repodb.ErrFileNumberLimitReached) {
+			c.AbortWithStatusJSON(http.StatusConflict, ErrorResponse{Error: "Failed to create file: " + err.Error()})
+			return
+		}
+		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create file: " + err.Error()})
 		return
 	}
 
@@ -154,6 +159,7 @@ func uploadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 // @Failure 400 {object} ErrorResponce "Error responce"
 // @Failure 401 {object} ErrorResponce "Error responce"
 // @Failure 404 {object} ErrorResponce "Error responce"
+// @Failure 409 {object} ErrorResponce "Error responce"
 // @Failure 500 {object} ErrorResponce "Error responce"
 // @Router /api/file/{filename} [put]
 func editFileHandler(c *gin.Context, repo repodb.FileRepository) {
@@ -169,11 +175,15 @@ func editFileHandler(c *gin.Context, repo repodb.FileRepository) {
 
 	if err := repo.Save(file.name, *userId, file.bytes); err != nil {
 		if errors.Is(err, repodb.ErrFileNotFound) {
-			c.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
+			c.AbortWithStatusJSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
+			return
+		}
+		if errors.Is(err, repodb.ErrUserSpaceIsFull) {
+			c.AbortWithStatusJSON(http.StatusConflict, ErrorResponse{Error: "Failed to create file: " + err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to save file: " + err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to save file: " + err.Error()})
 		return
 	}
 
@@ -206,11 +216,11 @@ func downloadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	bytes, err := repo.Get(filename, *userId)
 	if err != nil {
 		if errors.Is(err, repodb.ErrFileNotFound) {
-			c.JSON(http.StatusNotFound, ErrorResponse{Error: "File not found"})
+			c.AbortWithStatusJSON(http.StatusNotFound, ErrorResponse{Error: "File not found"})
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -239,7 +249,7 @@ func deleteFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	}
 
 	if err := repo.Delete(filename, *userId); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to delete file: " + err.Error()})
+		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to delete file: " + err.Error()})
 		return
 	}
 
@@ -267,7 +277,7 @@ func getAllFilesHandler(c *gin.Context, repo repodb.FileRepository) {
 
 	fileNames, err := repo.GetList(*userId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to load file list: " + err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to load file list: " + err.Error()})
 		return
 	}
 
