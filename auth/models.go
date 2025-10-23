@@ -13,7 +13,6 @@ type HealthResponse struct {
 }
 
 type LoginResponse struct {
-	Token   string `json:"token"`
 	Message string `json:"message"`
 }
 
@@ -31,5 +30,9 @@ type RegisterRequest struct {
 }
 
 type RegisterResponse struct {
+	Message string `json:"message"`
+}
+
+type RefreshResponse struct {
 	Message string `json:"message"`
 }

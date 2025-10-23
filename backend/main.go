@@ -46,6 +46,12 @@ func validatePort(portStr string) error {
 	return nil
 }
 
+// @title           Markdown backend
+// @version         1.0
+// @description     Backend for Markdown-editor
+
+// @host            localhost:1234
+// @BasePath        /
 func main() {
 	var host, port string
 	flag.StringVar(&host, "host", "", "Host to bind")

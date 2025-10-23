@@ -10,7 +10,6 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -55,8 +54,6 @@ func setupRouter(app *mockApp) *gin.Engine {
 func TestLoginHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	userID := uuid.MustParse(UUID)
-
 	tests := []struct {
 		name         string
 		requestBody  any
@@ -73,7 +70,6 @@ func TestLoginHandler(t *testing.T) {
 			loginFunc: func(req LoginRequest, c *gin.Context) {
 				c.JSON(http.StatusOK, LoginResponse{
 					Message: "login successful",
-					Token:   "fake_token_" + userID.String(),
 				})
 			},
 			expectedCode: http.StatusOK,

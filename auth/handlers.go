@@ -7,15 +7,17 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 const (
-	USERNAME          = "admin"
-	PASSWORD          = "password"
-	UUID              = "123e4567-e89b-12d3-a456-426614174000"
-	TOKEN_COOKIE_NAME = "access_token"
+	USERNAME                  = "admin"
+	PASSWORD                  = "password"
+	UUID                      = "123e4567-e89b-12d3-a456-426614174000"
+	ACCESS_TOKEN_COOKIE_NAME  = "access_token"
+	REFRESH_TOKEN_COOKIE_NAME = "refresh_token"
 )
 
 // @Summary Check auth health
@@ -31,6 +33,11 @@ func healthHandler(c *gin.Context) {
 	})
 }
 
+func setCookieTokens(c *gin.Context, accessToken string, refreshToken string) {
+	c.SetCookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, int(REFRESH_TOKEN_TTL.Seconds()), "/", "", false, true)
+	c.SetCookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, int(REFRESH_TOKEN_TTL.Seconds()), "/v1/refresh", "", false, true)
+}
+
 // @Summary Sign in
 // @Tags auth
 // @Accept json
@@ -44,7 +51,7 @@ func healthHandler(c *gin.Context) {
 func (a *App) loginHandler(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid request body"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid request body"})
 		return
 	}
 
@@ -58,46 +65,23 @@ func (a *App) loginHandler(c *gin.Context) {
 		Scan(&id, &passwordHash)
 
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid username or password"})
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid username or password"})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(req.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid username or password"})
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid username or password"})
 		return
 	}
 
-	token, err := generateToken(id)
+	accessToken, refreshToken, err := generateTokens(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to generate jwt token"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate token"})
 		return
 	}
 
-	c.SetCookie(TOKEN_COOKIE_NAME, token, 24*60*60, "/", "", false, true)
-	c.JSON(http.StatusOK, LoginResponse{Message: "login successful", Token: token})
-}
-
-// @Summary Check auth
-// @Tags auth
-// @Description Check if user authenticated
-// @Produce json
-// @Success 200 {object} CheckAuthResponse "Login response"
-// @Failure 401 {object} ErrorResponse "Error response"
-// @Router /v1/check_auth [get]
-func (a *App) checkAuthHandler(c *gin.Context) {
-	tokenStr, err := c.Cookie(TOKEN_COOKIE_NAME)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "missing token"})
-		return
-	}
-
-	_, err = parseToken(tokenStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid or expired token"})
-		return
-	}
-
-	c.JSON(http.StatusOK, CheckAuthResponse{Authenticated: true})
+	setCookieTokens(c, accessToken, refreshToken)
+	c.JSON(http.StatusOK, LoginResponse{Message: "Login successful"})
 }
 
 // @Summary Register
@@ -114,7 +98,7 @@ func (a *App) checkAuthHandler(c *gin.Context) {
 func (a *App) registerHandler(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid request body"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid request body"})
 		return
 	}
 
@@ -123,17 +107,17 @@ func (a *App) registerHandler(c *gin.Context) {
 		"SELECT EXISTS(SELECT 1 FROM users WHERE username=$1)", req.Username).Scan(&exists)
 	if err != nil {
 		log.Println(err.Error())
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "internal server error (DB)"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Internal server error (DB)"})
 		return
 	}
 	if exists {
-		c.JSON(http.StatusConflict, ErrorResponse{Error: "user already exists"})
+		c.JSON(http.StatusConflict, ErrorResponse{Error: "User already exists"})
 		return
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to hash password"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to hash password"})
 		return
 	}
 
@@ -141,9 +125,86 @@ func (a *App) registerHandler(c *gin.Context) {
 		"INSERT INTO users (username, password_hash, created_at) VALUES ($1, $2, $3)",
 		req.Username, string(hashed), time.Now())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "failed to create user"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create user"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, RegisterResponse{Message: "user registered successfully"})
+	c.JSON(http.StatusCreated, RegisterResponse{Message: "User registered successfully"})
+}
+
+// @Summary Check auth
+// @Tags auth
+// @Description Check if user authenticated
+// @Produce json
+// @Success 200 {object} CheckAuthResponse "Login response"
+// @Failure 401 {object} ErrorResponse "Error response"
+// @Router /v1/check_auth [get]
+func (a *App) checkAuthHandler(c *gin.Context) {
+	accessTokenStr, err := c.Cookie(ACCESS_TOKEN_COOKIE_NAME)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Missing access token"})
+		return
+	}
+
+	claims, err := parseToken(accessTokenStr)
+	if err != nil || claims == nil {
+		if ve, ok := err.(*jwt.ValidationError); ok {
+			if ve.Errors&jwt.ValidationErrorExpired != 0 {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{Error: "Token has expired"})
+				return
+			}
+		}
+
+		c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{Error: "Wrong jwt"})
+		return
+	}
+
+	c.JSON(http.StatusOK, CheckAuthResponse{Authenticated: true})
+}
+
+// @Summary Refresh tokens
+// @Tags auth
+// @Description Refresh access and refresh tokens
+// @Produce json
+// @Success 200 {object} LoginResponse "Login response"
+// @Failure 401 {object} ErrorResponse "Error response"
+// @Failure 500 {object} ErrorResponse "Error response"
+// @Router /v1/refresh [post]
+func (a *App) refreshHandler(c *gin.Context) {
+	refreshTokenStr, err := c.Cookie(REFRESH_TOKEN_COOKIE_NAME)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Missing refresh token"})
+		return
+	}
+
+	claims, err := parseToken(refreshTokenStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid or expired refresh token"})
+		return
+	}
+
+	userIdObj, exists := claims["user_id"]
+	if !exists {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid token claims"})
+		return
+	}
+	userIdStr, ok := userIdObj.(string)
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid token claims"})
+		return
+	}
+	userId, err := uuid.Parse(userIdStr)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid token claims"})
+		return
+	}
+
+	accessToken, refreshToken, err := generateTokens(userId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate token"})
+		return
+	}
+
+	setCookieTokens(c, accessToken, refreshToken)
+	c.JSON(http.StatusOK, RefreshResponse{Message: "Refresh success"})
 }
