@@ -21,12 +21,12 @@ type App struct {
 	DB *pgxpool.Pool
 }
 
-// @title                       Markdown auth
-// @version                     1.0
-// @description                 Auth Server for Markdown-editor
+// @title           Markdown auth
+// @version         1.0
+// @description     Auth Server for Markdown-editor
 
-// @host                        localhost:8080
-// @BasePath                    /
+// @host            localhost:8080
+// @BasePath        /
 func main() {
 	var host, port string
 	flag.StringVar(&host, "host", "", "Host to bind")
@@ -59,6 +59,7 @@ func main() {
 	r.GET("/v1/check_auth", app.checkAuthHandler)
 	r.POST("/v1/register", app.registerHandler)
 	r.POST("/v1/login", app.loginHandler)
+	r.POST("/v1/refresh", app.refreshHandler)
 
 	err = app.DB.Ping(context.Background())
 	if err != nil {

@@ -17,7 +17,7 @@ import (
 // @Tags health
 // @Description Check if server respond
 // @Produce json
-// @Success 200 {object} HealthResponce "Server health status"
+// @Success 200 {object} HealthResponse "Server health status"
 // @Router /health [get]
 func healthHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, HealthResponse{
@@ -112,7 +112,6 @@ func getUserId(c *gin.Context) *uuid.UUID {
 // @Summary Upload file
 // @Tags files
 // @Description Upload new file to server
-// @Security AuthApiKey
 // @Param filename path string true "Filename to save"
 // @Param file formData file true "File to upload"
 // @Produce json
@@ -151,7 +150,6 @@ func uploadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 // @Summary Edit file
 // @Tags files
 // @Description Send edited file to server
-// @Security AuthApiKey
 // @Param filename path string true "Filename to save"
 // @Param file formData file true "File to save"
 // @Produce json
@@ -196,14 +194,13 @@ func editFileHandler(c *gin.Context, repo repodb.FileRepository) {
 // @Summary Download file
 // @Tags files
 // @Description Download a file by filename
-// @Security ApiKeyAuth
 // @Param filename path string true "Filename to download"
 // @Produce octet-stream
 // @Success 200 {file} file "File content"
-// @Failure 400 {object} ErrorResponce "Error responce"
-// @Failure 401 {object} ErrorResponce "Error responce"
-// @Failure 404 {object} ErrorResponce "Error responce"
-// @Failure 500 {object} ErrorResponce "Error responce"
+// @Failure 400 {object} ErrorResponse "Error response"
+// @Failure 401 {object} ErrorResponse "Error response"
+// @Failure 404 {object} ErrorResponse "Error response"
+// @Failure 500 {object} ErrorResponse "Error response"
 // @Router /api/file/{filename} [get]
 func downloadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	filename := c.Param("filename")
@@ -231,14 +228,13 @@ func downloadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 // @Summary Delete file
 // @Tags files
 // @Description Delete file from server
-// @Security AuthApiKey
 // @Produce json
 // @Param filename path string true "Filename to delete"
-// @Success 200 {object} DeleteResponce "Delete responce"
-// @Failure 400 {object} ErrorResponce "Error responce"
-// @Failure 401 {object} ErrorResponce "Error responce"
-// @Failure 404 {object} ErrorResponce "Error responce"
-// @Failure 500 {object} ErrorResponce "Error responce"
+// @Success 200 {object} DeleteResponse "Delete response"
+// @Failure 400 {object} ErrorResponse "Error response"
+// @Failure 401 {object} ErrorResponse "Error response"
+// @Failure 404 {object} ErrorResponse "Error response"
+// @Failure 500 {object} ErrorResponse "Error response"
 // @Router /api/file/{filename} [delete]
 func deleteFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	filename := c.Param("filename")
@@ -262,12 +258,11 @@ func deleteFileHandler(c *gin.Context, repo repodb.FileRepository) {
 // @Summary User files
 // @Tags files
 // @Description Get all user files from server
-// @Security AuthApiKey
 // @Produce json
-// @Success 200 {object} ErrorResponce "Error responce"
-// @Failure 400 {object} ErrorResponce "Error responce"
-// @Failure 401 {object} ErrorResponce "Error responce"
-// @Failure 500 {object} ErrorResponce "Error responce"
+// @Success 200 {object} ErrorResponse "Error response"
+// @Failure 400 {object} ErrorResponse "Error response"
+// @Failure 401 {object} ErrorResponse "Error response"
+// @Failure 500 {object} ErrorResponse "Error response"
 // @Router /api/files [get]
 func getAllFilesHandler(c *gin.Context, repo repodb.FileRepository) {
 	userId := getUserId(c)

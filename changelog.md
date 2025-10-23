@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.0.3
+
+- User registration
+- Swagger
+- Volumes for auth and backend
+- React notifications
+- Modal window for file creation
+
 ## v0.0.2
 
 - File storage for multiple users
