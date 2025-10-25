@@ -1,16 +1,16 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "Backend for Markdown-editor",
+        "title": "Markdown backend",
+        "contact": {},
+        "version": "1.0"
     },
+    "host": "localhost:1234",
+    "basePath": "/",
     "paths": {
         "/api/file/{filename}": {
             "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Download a file by filename",
                 "produces": [
                     "application/octet-stream"
@@ -36,37 +36,32 @@
                         }
                     },
                     "400": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
             },
             "put": {
-                "security": [
-                    {
-                        "AuthApiKey": []
-                    }
-                ],
                 "description": "Send edited file to server",
                 "produces": [
                     "application/json"
@@ -93,43 +88,38 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Edit responce",
+                        "description": "Edit response",
                         "schema": {
-                            "$ref": "#/definitions/main.EditResponce"
+                            "$ref": "#/definitions/main.EditResponse"
                         }
                     },
                     "400": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
             },
             "post": {
-                "security": [
-                    {
-                        "AuthApiKey": []
-                    }
-                ],
                 "description": "Upload new file to server",
                 "produces": [
                     "application/json"
@@ -156,37 +146,32 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Upload responce",
+                        "description": "Upload response",
                         "schema": {
-                            "$ref": "#/definitions/main.UploadResponce"
+                            "$ref": "#/definitions/main.UploadResponse"
                         }
                     },
                     "400": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
             },
             "delete": {
-                "security": [
-                    {
-                        "AuthApiKey": []
-                    }
-                ],
                 "description": "Delete file from server",
                 "produces": [
                     "application/json"
@@ -206,33 +191,33 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Delete responce",
+                        "description": "Delete response",
                         "schema": {
-                            "$ref": "#/definitions/main.DeleteResponce"
+                            "$ref": "#/definitions/main.DeleteResponse"
                         }
                     },
                     "400": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -240,11 +225,6 @@
         },
         "/api/files": {
             "get": {
-                "security": [
-                    {
-                        "AuthApiKey": []
-                    }
-                ],
                 "description": "Get all user files from server",
                 "produces": [
                     "application/json"
@@ -255,27 +235,27 @@
                 "summary": "User files",
                 "responses": {
                     "200": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "400": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Error responce",
+                        "description": "Error response",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponce"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -295,7 +275,7 @@
                     "200": {
                         "description": "Server health status",
                         "schema": {
-                            "$ref": "#/definitions/main.HealthResponce"
+                            "$ref": "#/definitions/main.HealthResponse"
                         }
                     }
                 }
@@ -303,7 +283,7 @@
         }
     },
     "definitions": {
-        "main.DeleteResponce": {
+        "main.DeleteResponse": {
             "type": "object",
             "properties": {
                 "filename": {
@@ -314,7 +294,7 @@
                 }
             }
         },
-        "main.EditResponce": {
+        "main.EditResponse": {
             "type": "object",
             "properties": {
                 "filename": {
@@ -325,7 +305,7 @@
                 }
             }
         },
-        "main.ErrorResponce": {
+        "main.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -333,7 +313,7 @@
                 }
             }
         },
-        "main.HealthResponce": {
+        "main.HealthResponse": {
             "type": "object",
             "properties": {
                 "status": {
@@ -344,7 +324,7 @@
                 }
             }
         },
-        "main.UploadResponce": {
+        "main.UploadResponse": {
             "type": "object",
             "properties": {
                 "filename": {
