@@ -154,6 +154,70 @@ body,
   font-weight: 600;
 }
 
+/* Split Save button (+dropdown) */
+ .btn-group {
+   position: relative;
+   display: inline-flex;
+   border-radius: 6px;
+   overflow: visible;
+ }
+
+.btn-group .btn { border-radius: 0; }
+
+/* left side (Save) */
+.btn-group .split-main {
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+
+.btn-group .split-toggle {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  width: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.btn-group .split-toggle::after {
+  content: "▾";
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+/* save drop-down menu */
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  min-width: 180px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 12px 24px rgba(0,0,0,.12);
+  display: none;
+  z-index: 1000;
+}
+.menu.open { display: block; }
+
+.menu .menu-item {
+  width: 100%;
+  text-align: left;
+  background: #fff;
+  color: #111827;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.menu .menu-item:hover { background: #f3f4f6; }
+.menu .menu-item:disabled { opacity: .55; cursor: default; }
+
+
+/* editor */
 .editor {
   flex: 1;
   width: 100%;
@@ -291,6 +355,7 @@ body,
   background: #d1d5db;
 }
 
+/* errors JSON in Options */
 .error {
   padding: 0.25rem 0.75rem;
   background: #fef2f2;
