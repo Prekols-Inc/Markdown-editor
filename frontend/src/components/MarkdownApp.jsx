@@ -13,80 +13,22 @@ export const DEFAULT_MD = `# Marked - Markdown Parser
 `;
 
 const DEFAULT_LEFT = Math.round(window.innerWidth * 0.4);
-const DEFAULT_OPTIONS = { breaks: false, gfm: true, pedantic: false, silent: false };
 
-function TopBar({ onNew, onSave, onToggleSidebar, onLogout, sidebarOpen, unsaved }) {
-    return (
-        <header
-            className="topbar"
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: '#f7f7f7',
-                borderBottom: '1px solid #ddd',
-                padding: '8px 16px',
-                height: '48px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            }}
-        >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                    className="btn secondary"
-                    onClick={onToggleSidebar}
-                    title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-                    style={{ width: 32 }}
-                >
-                    {sidebarOpen ? '«' : '»'}
-                </button>
-
-                <button className="btn" onClick={onNew}>New</button>
-
-                <button
-                    className="btn"
-                    disabled={!unsaved}
-                    onClick={onSave}
-                >
-                    Save
-                </button>
-            </div>
-
-            <button
-                className="btn logout"
-                onClick={onLogout}
-                style={{
-                    backgroundColor: '#ff5252',
-                    color: 'white',
-                    border: 'none',
-                    padding: '6px 14px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: 500,
-                }}
-            >
-                Logout
-            </button>
-        </header>
-    );
-}
+const DEFAULT_OPTIONS = {
+    breaks: false,
+    gfm: true,
+    pedantic: false,
+    silent: false
+};
 
 export default function App() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const toggleSidebar = () => setSidebarOpen(o => !o);
     const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT);
     const isResizing = useRef(false);
-    const [markdown, setMarkdown] = useState(() => localStorage.getItem('md-draft') ?? DEFAULT_MD);
-    const [options, setOptions] = useState(() => {
-        try {
-            const stored = JSON.parse(localStorage.getItem('md-options'));
-            if (!stored || typeof stored !== 'object' || !Object.keys(stored).length) {
-                return DEFAULT_OPTIONS;
-            }
-            return stored;
-        } catch {
-            return DEFAULT_OPTIONS;
-        }
-    });
+    const [markdown, setMarkdown] = useState(
+        () => localStorage.getItem('md-draft') ?? DEFAULT_MD
+    );
 
     useEffect(() => {
         const id = setTimeout(() => localStorage.setItem('md-draft', markdown), 400);
@@ -114,14 +56,28 @@ export default function App() {
         };
     }, [sidebarOpen]);
 
+    const [options, setOptions] = useState(() => {
+        try {
+            const stored = JSON.parse(localStorage.getItem('md-options'));
+            if (!stored || typeof stored !== 'object' || !Object.keys(stored).length) {
+                return DEFAULT_OPTIONS;
+            }
+            return stored;
+        } catch {
+            return DEFAULT_OPTIONS;
+        }
+    });
+
     const handleOptionsChange = useCallback((obj) => {
         setOptions(obj);
         localStorage.setItem('md-options', JSON.stringify(obj));
     }, []);
 
     const [tab, setTab] = useState('markdown');
+
     const [fileHandle, setFileHandle] = useState(null);
     const [unsaved, setUnsaved] = useState(false);
+
     const sidebarRef = useRef(null);
 
     useEffect(() => {
@@ -153,6 +109,7 @@ export default function App() {
             setMarkdown(DEFAULT_MD);
             setFileHandle({ name: filename });
             setUnsaved(false);
+
             sidebarRef.current?.refresh();
         } catch (err) {
             console.error('Ошибка создания файла', err);
@@ -204,33 +161,12 @@ export default function App() {
         [markdown, options, fileHandle]
     );
 
-    const handleLogout = useCallback(async () => {
-        try {
-            await API.AUTH.post('/v1/logout');
-            window.location.href = '/login';
-        } catch (err) {
-            alert('Не удалось выполнить выход');
-        }
-    }, []);
-
     return (
-        <div className="app-wrapper" style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-            <TopBar
-                onNew={() => setIsNewFileModalOpen(true)}
-                onSave={() => handleSave(sidebarRef.current?.refresh)}
-                onLogout={handleLogout}
-                onToggleSidebar={toggleSidebar}
-                sidebarOpen={sidebarOpen}
-                unsaved={unsaved}
-            />
-
+        <>
             <div
                 className="app-grid"
                 style={{
-                    flex: 1,
-                    display: 'grid',
-                    gridTemplateColumns: `${sidebarOpen ? 260 : 48}px ${leftWidth}px 5px 1fr`,
-                    height: 'calc(100vh - 48px)',
+                    gridTemplateColumns: `${sidebarOpen ? 260 : 48}px ${leftWidth}px 5px 1fr`
                 }}
             >
                 <FileSidebar
@@ -264,11 +200,18 @@ export default function App() {
                     {tab === 'markdown' ? (
                         <MarkdownEditor value={markdown} onChange={setMarkdown} />
                     ) : (
-                        <OptionsEditor value={options} onChange={handleOptionsChange} />
+                        <OptionsEditor
+                            value={options}
+                            onChange={handleOptionsChange}
+                        />
                     )}
                 </div>
 
-                <div className="resizer" onMouseDown={handleMouseDown} />
+                <div
+                    className="resizer"
+                    onMouseDown={handleMouseDown}
+                />
+
                 <MarkdownPreview markdown={markdown} options={options} />
             </div>
 
@@ -280,6 +223,6 @@ export default function App() {
                     handleNewFile(filename);
                 }}
             />
-        </div>
+        </>
     );
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -83,34 +84,6 @@ func (a *App) loginHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, LoginResponse{Message: "Login successful"})
 }
 
-func (a *App) logoutHandler(c *gin.Context) {
-	setCookieTokens(c, "", "")
-	c.JSON(http.StatusOK, LogoutResponse{Message: "logout successful"})
-}
-
-// @Summary Check auth
-// @Tags auth
-// @Description Check if user authenticated
-// @Produce json
-// @Success 200 {object} CheckAuthResponse "Login response"
-// @Failure 401 {object} ErrorResponse "Error response"
-// @Router /v1/check_auth [get]
-func (a *App) checkAuthHandler(c *gin.Context) {
-	tokenStr, err := c.Cookie(ACCESS_TOKEN_COOKIE_NAME)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "missing token"})
-		return
-	}
-
-	_, err = parseToken(tokenStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid or expired token"})
-		return
-	}
-
-	c.JSON(http.StatusOK, CheckAuthResponse{Authenticated: true})
-}
-
 // @Summary Register
 // @Tags auth
 // @Description Register new user
@@ -157,6 +130,36 @@ func (a *App) registerHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, RegisterResponse{Message: "User registered successfully"})
+}
+
+// @Summary Check auth
+// @Tags auth
+// @Description Check if user authenticated
+// @Produce json
+// @Success 200 {object} CheckAuthResponse "Login response"
+// @Failure 401 {object} ErrorResponse "Error response"
+// @Router /v1/check_auth [get]
+func (a *App) checkAuthHandler(c *gin.Context) {
+	accessTokenStr, err := c.Cookie(ACCESS_TOKEN_COOKIE_NAME)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Missing access token"})
+		return
+	}
+
+	claims, err := parseToken(accessTokenStr)
+	if err != nil || claims == nil {
+		if ve, ok := err.(*jwt.ValidationError); ok {
+			if ve.Errors&jwt.ValidationErrorExpired != 0 {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{Error: "Token has expired"})
+				return
+			}
+		}
+
+		c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{Error: "Wrong jwt"})
+		return
+	}
+
+	c.JSON(http.StatusOK, CheckAuthResponse{Authenticated: true})
 }
 
 // @Summary Refresh tokens

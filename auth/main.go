@@ -60,7 +60,6 @@ func main() {
 	r.POST("/v1/register", app.registerHandler)
 	r.POST("/v1/login", app.loginHandler)
 	r.POST("/v1/refresh", app.refreshHandler)
-	r.POST("/v1/logout", app.logoutHandler)
 
 	err = app.DB.Ping(context.Background())
 	if err != nil {
