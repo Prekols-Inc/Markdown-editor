@@ -1,4 +1,4 @@
-import { useEffect, useState, forwardRef, useImperativeHandle, cache } from 'react';
+import { useEffect, useState, forwardRef, useImperativeHandle, cache, useRef } from 'react';
 import API from '../API';
 
 const FileSidebar = forwardRef(function FileSidebar(
@@ -15,6 +15,36 @@ const FileSidebar = forwardRef(function FileSidebar(
   ref
 ) {
   const [entries, setEntries] = useState([]);
+  const [saveMenuOpen, setSaveMenuOpen] = useState(false);
+  const saveGroupRef = useRef(null);
+
+  const downloadFile = async (file) => {
+    try {
+      const resp = await API.STORAGE.get(
+        `/file/${encodeURIComponent(file.name)}`,
+        { responseType: 'blob' }
+      );
+
+      let filename = file.name;
+      const cd = resp.headers?.['content-disposition'];
+      if (cd) {
+        const m = /filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i.exec(cd);
+        if (m) filename = decodeURIComponent(m[1] || m[2]);
+      }
+
+      const url = window.URL.createObjectURL(resp.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('File download error', err);
+      alert('Failed to download file');
+    }
+  };
 
   const fetchFiles = async () => {
     try {
@@ -76,6 +106,16 @@ const FileSidebar = forwardRef(function FileSidebar(
     fetchFiles();
   }, []);
 
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (saveGroupRef.current && !saveGroupRef.current.contains(e.target)) {
+        setSaveMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
+
   useImperativeHandle(ref, () => ({
     refresh: fetchFiles,
   }));
@@ -98,13 +138,41 @@ const FileSidebar = forwardRef(function FileSidebar(
         {!collapsed && (
           <>
             <button className="btn" onClick={onNewFile}>New</button>
-            <button
-              className="btn"
-              disabled={!current && !unsaved}
-              onClick={() => onSave(fetchFiles)}
-            >
-              Save
-            </button>
+            <div className="btn-group" ref={saveGroupRef}>
+              <button
+                className="btn split-main"
+                disabled={!current && !unsaved}
+                onClick={() => {
+                  onSave(fetchFiles);
+                  setSaveMenuOpen(false);
+                }}
+              >
+                Save
+              </button>
+              <button
+                className="btn split-toggle"
+                disabled={!current && !unsaved}
+                onClick={() => setSaveMenuOpen(v => !v)}
+                aria-haspopup="menu"
+                aria-expanded={saveMenuOpen}
+              />
+              <div
+                className={`menu ${saveMenuOpen ? 'open' : ''}`}
+                role="menu"
+              >
+                <button
+                  className="menu-item"
+                  role="menuitem"
+                  onClick={() => {
+                    if (current) downloadFile(current);
+                    setSaveMenuOpen(false);
+                  }}
+                  disabled={!current}
+                >
+                  Download
+                </button>
+              </div>
+            </div>
           </>
         )}
       </div>
