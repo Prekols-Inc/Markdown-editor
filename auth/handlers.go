@@ -84,7 +84,7 @@ func (a *App) loginHandler(c *gin.Context) {
 }
 
 func (a *App) logoutHandler(c *gin.Context) {
-	c.SetCookie(ACCESS_TOKEN_COOKIE_NAME, "", -1, "/", "", false, true)
+	setCookieTokens(c, "", "")
 	c.JSON(http.StatusOK, LogoutResponse{Message: "logout successful"})
 }
 
