@@ -5,12 +5,9 @@ const FileSidebar = forwardRef(function FileSidebar(
   {
     current,
     onOpenFile,
-    onSave,
-    onNewFile,
     unsaved,
     setUnsaved,
     collapsed = false,
-    onToggle
   },
   ref
 ) {
@@ -69,8 +66,7 @@ const FileSidebar = forwardRef(function FileSidebar(
       if (cachedFile != null) {
         onOpenFile(cachedFile, { name: file.name });
         setUnsaved(true);
-      }
-      else {
+      } else {
         const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`);
         onOpenFile(response.data, { name: file.name });
         setUnsaved(false);
@@ -123,7 +119,6 @@ const FileSidebar = forwardRef(function FileSidebar(
   return (
     <aside
       className={collapsed ? 'sidebar collapsed' : 'sidebar'}
-      style={{ width: collapsed ? 48 : 260 }}
     >
       <div className="toolbar">
         <button
@@ -200,7 +195,7 @@ const FileSidebar = forwardRef(function FileSidebar(
           </button>
         </div>
       ))}
-    </aside >
+    </aside>
   );
 });
 
