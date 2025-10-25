@@ -41,8 +41,8 @@ const FileSidebar = forwardRef(function FileSidebar(
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('File download error', err);
-      alert('Failed to download file');
+      console.error('Ошибка скачивания файла', err);
+      alert('Не удалось скачать файл');
     }
   };
 
