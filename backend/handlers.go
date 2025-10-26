@@ -280,3 +280,40 @@ func getAllFilesHandler(c *gin.Context, repo repodb.FileRepository) {
 		Files: fileNames,
 	})
 }
+
+// @Summary User files
+// @Tags files
+// @Description Get all user files from server
+// @Produce json
+// @Success 200 {object} ErrorResponse "Error response"
+// @Failure 400 {object} ErrorResponse "Error response"
+// @Failure 401 {object} ErrorResponse "Error response"
+// @Failure 500 {object} ErrorResponse "Error response"
+// @Router /api/files [get]
+func renameFileHandler(c *gin.Context, repo repodb.FileRepository) {
+	oldFilename := c.Param("oldName")
+	if oldFilename == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: "Filename not provided"})
+		return
+	}
+	newFilename := c.Param("newName")
+	if newFilename == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: "Filename not provided"})
+		return
+	}
+
+	userId := getUserId(c)
+	if userId == nil {
+		return
+	}
+
+	err := repo.Rename(oldFilename, newFilename, *userId)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to rename file: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, MessageReponse{
+		Message: "File renamed successfully!",
+	})
+}

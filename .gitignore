@@ -14,6 +14,7 @@ coverage/
 *.local
 
 *log
+*.patch
 
 npm-debug.log*
 yarn-debug.log*
@@ -29,3 +30,4 @@ pnpm-debug.log*
 backend/db/storage/*
 !backend/db/storage/test*.md
 backend/test.bat
+backend/storage

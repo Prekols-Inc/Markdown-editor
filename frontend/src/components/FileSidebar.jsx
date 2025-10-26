@@ -19,6 +19,42 @@ const FileSidebar = forwardRef(function FileSidebar(
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
   const saveGroupRef = useRef(null);
+  const [editingFile, setEditingFile] = useState(null);
+  const [newFileName, setNewFileName] = useState("");
+
+  const startRename = (file) => {
+    setEditingFile(file.name);
+    setNewFileName(file.name);
+  };
+
+  const cancelRename = () => {
+    setEditingFile(null);
+    setNewFileName("");
+  };
+
+  const confirmRename = async (oldName, newName) => {
+    if (!newName.trim() || newName === oldName) {
+      cancelRename();
+      return;
+    }
+
+    try {
+      await API.STORAGE.put(`/rename/${oldName}/${newName}`);
+      await fetchFiles();
+      if (current?.name === oldName) {
+        onOpenFile(localStorage.getItem(oldName) || "", { name: newName });
+        localStorage.setItem(newName, localStorage.getItem(oldName));
+        localStorage.removeItem(oldName);
+      }
+    } catch (err) {
+      console.error("Ошибка при переименовании файла", err);
+      alert("Не удалось переименовать файл");
+    } finally {
+      cancelRename();
+    }
+  };
+
+
 
   const downloadFile = async (file) => {
     try {
@@ -208,10 +244,36 @@ const FileSidebar = forwardRef(function FileSidebar(
           className={'fs-item' + (current?.name === file.name ? ' active' : '')}
           title={file.name}
           onClick={() => openFile(file)}
+          onDoubleClick={() => startRename(file)}
         >
-          <span className="fs-name">
-            {file.name}
-            {unsaved && current?.name === file.name && ' ●'}
+          <span className="fs-name" onDoubleClick={(e) => { e.stopPropagation(); startRename(file); }}>
+            {editingFile === file.name ? (
+              <input
+                type="text"
+                value={newFileName}
+                autoFocus
+                onChange={(e) => setNewFileName(e.target.value)}
+                onBlur={() => confirmRename(file.name, newFileName)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") confirmRename(file.name, newFileName);
+                  if (e.key === "Escape") cancelRename();
+                }}
+                className="rename-input"
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  color: "inherit",
+                  border: "1px solid #555",
+                  borderRadius: 4,
+                  padding: "2px 4px",
+                }}
+              />
+            ) : (
+              <>
+                {file.name}
+                {unsaved && current?.name === file.name && ' ●'}
+              </>
+            )}
           </span>
           <button
             className="fs-close"
@@ -225,6 +287,7 @@ const FileSidebar = forwardRef(function FileSidebar(
           </button>
         </div>
       ))}
+
     </aside >
   );
 });

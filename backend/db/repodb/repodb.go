@@ -39,6 +39,7 @@ type FileRepository interface {
 	Get(filename string, userId uuid.UUID) ([]byte, error)
 	Delete(filename string, userId uuid.UUID) error
 	GetList(userId uuid.UUID) ([]string, error)
+	Rename(filename string, newFilename string, userId uuid.UUID) error
 }
 
 func containsChars(filename string, сhars []string) bool {
@@ -73,7 +74,7 @@ func isValidFilename(filename string) bool {
 
 func validateFile(filename string) error {
 	if !isValidFilename(filename) {
-		return &ErrInvalidFilename{Reason: "invalid characters"}
+		return &ErrInvalidFilename{Reason: "filename contains invalid characters"}
 	}
 
 	if filepath.Base(filename) != filename {
@@ -86,7 +87,7 @@ func validateFile(filename string) error {
 	}
 
 	if strings.TrimSuffix(filename, ext) == "" {
-		return &ErrInvalidFilename{Reason: "file name must not be empty"}
+		return &ErrInvalidFilename{Reason: "filename must not be empty"}
 	}
 
 	return nil
