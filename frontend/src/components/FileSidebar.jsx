@@ -40,7 +40,9 @@ const FileSidebar = forwardRef(function FileSidebar(
 
     try {
       await API.STORAGE.put(`/rename/${oldName}/${newName}`);
-      await fetchFiles();
+      setEntries((prev) =>
+        prev.map((f) => (f.name === oldName ? { ...f, name: newName } : f))
+      );
       if (current?.name === oldName) {
         onOpenFile(localStorage.getItem(oldName) || "", { name: newName });
         localStorage.setItem(newName, localStorage.getItem(oldName));

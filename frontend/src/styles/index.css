@@ -377,3 +377,8 @@ body,
   color: #dc2626;
   font-size: 0.85rem;
 }
+
+.rename-input {
+  outline: none;
+  font: inherit;
+}
