@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	USER_SPACE_SIZE = 1 << 9
+	USER_SPACE_SIZE = 1 << 10 // 1 Кб
 	MAX_USER_FILES  = 3
 )
 
