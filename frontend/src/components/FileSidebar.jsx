@@ -1,4 +1,5 @@
-import { useEffect, useState, forwardRef, useImperativeHandle, cache, useRef } from 'react';
+import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
+import LogoutConfirmModal from "./LogoutConfirmModal";
 import API from '../API';
 
 const FileSidebar = forwardRef(function FileSidebar(
@@ -15,6 +16,7 @@ const FileSidebar = forwardRef(function FileSidebar(
   ref
 ) {
   const [entries, setEntries] = useState([]);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
   const saveGroupRef = useRef(null);
 
@@ -120,6 +122,15 @@ const FileSidebar = forwardRef(function FileSidebar(
     refresh: fetchFiles,
   }));
 
+  const handleLogout = async () => {
+    try {
+      await API.AUTH.post('/v1/logout');
+      window.location.href = '/login';
+    } catch (err) {
+      alert('Не удалось выполнить выход');
+    }
+  };
+
   return (
     <aside
       className={collapsed ? 'sidebar collapsed' : 'sidebar'}
@@ -173,6 +184,20 @@ const FileSidebar = forwardRef(function FileSidebar(
                 </button>
               </div>
             </div>
+
+            <button
+              className="btn danger"
+              style={{ backgroundColor: "#e74c3c", color: "white" }}
+              onClick={() => setShowLogoutConfirm(true)}
+            >
+              Logout
+            </button>
+
+            <LogoutConfirmModal
+              open={showLogoutConfirm}
+              onClose={() => setShowLogoutConfirm(false)}
+              onConfirm={handleLogout}
+            />
           </>
         )}
       </div>
