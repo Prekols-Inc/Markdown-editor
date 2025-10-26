@@ -11,9 +11,16 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	USER_SPACE_SIZE = 1 << 10 // 1 Кб
+	MAX_USER_FILES  = 3
+)
+
 var ErrFileNotFound = errors.New("file not found")
 var ErrFileExists = errors.New("file already exists")
 var ErrUserNotFound = errors.New("user not found")
+var ErrUserSpaceIsFull = errors.New("user space is full")
+var ErrFileNumberLimitReached = errors.New("file number limit has been reached")
 
 type ErrInvalidFilename struct {
 	Reason string
