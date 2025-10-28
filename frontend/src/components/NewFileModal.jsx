@@ -32,7 +32,7 @@ export default function NewFileModal({ open, onClose, onConfirm }) {
                 />
 
                 <p className="modal-hint">
-                    Допустимые расширения: .md, .txt
+                    Допустимые расширения: .md
                 </p>
 
                 <div className="modal-buttons">

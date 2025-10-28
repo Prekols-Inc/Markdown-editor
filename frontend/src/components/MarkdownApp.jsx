@@ -6,6 +6,7 @@ import MarkdownPreview from './MarkdownPreview';
 import { marked } from 'marked';
 import API from '../API';
 import NewFileModal from './NewFileModal';
+import { isValidFilename } from '../utils';
 
 export const DEFAULT_MD = `# Marked - Markdown Parser
 
@@ -94,9 +95,15 @@ export default function App() {
 
     const handleNewFile = useCallback(async (filename) => {
         try {
-            if (!/\.(md|markdown|txt|html)$/i.test(filename)) {
-                filename += '.md';
+            const isValidName = isValidFilename(filename);
+            if (!isValidName) {
+                alert('Недопустимое имя файла!'); // todo: change with notification
+                return;
             }
+
+            // if (!/\.(md|markdown|txt|html)$/i.test(filename)) {
+            //     filename += '.md';
+            // }
 
             const blob = new Blob([DEFAULT_MD], { type: 'text/plain' });
             const formData = new FormData();
