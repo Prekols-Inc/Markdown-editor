@@ -1,6 +1,7 @@
 import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import API from '../API';
+import { isValidFilename } from '../utils';
 
 const FileSidebar = forwardRef(function FileSidebar(
   {
@@ -33,7 +34,15 @@ const FileSidebar = forwardRef(function FileSidebar(
   };
 
   const confirmRename = async (oldName, newName) => {
+    if (!newName.endsWith('.md')) {
+      newName += '.md';
+    }
     if (!newName.trim() || newName === oldName) {
+      cancelRename();
+      return;
+    }
+    if (!isValidFilename(newName)) {
+      alert("Недопустимое имя файла!");  // todo: change with notification
       cancelRename();
       return;
     }
@@ -50,7 +59,7 @@ const FileSidebar = forwardRef(function FileSidebar(
       }
     } catch (err) {
       console.error("Ошибка при переименовании файла", err);
-      alert("Не удалось переименовать файл");
+      alert("Не удалось переименовать файл"); // todo: change with notification
     } finally {
       cancelRename();
     }
@@ -82,7 +91,7 @@ const FileSidebar = forwardRef(function FileSidebar(
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('File download error', err);
-      alert('Failed to download file');
+      alert('Failed to download file'); // todo: change with notification
     }
   };
 
@@ -138,7 +147,7 @@ const FileSidebar = forwardRef(function FileSidebar(
       }
     } catch (err) {
       console.error('Ошибка удаления файла', err);
-      alert('Не удалось удалить файл');
+      alert('Не удалось удалить файл'); // todo: change with notification
     }
   };
 
@@ -165,7 +174,7 @@ const FileSidebar = forwardRef(function FileSidebar(
       await API.AUTH.post('/v1/logout');
       window.location.href = '/login';
     } catch (err) {
-      alert('Не удалось выполнить выход');
+      alert('Не удалось выполнить выход'); // todo: change with notification
     }
   };
 

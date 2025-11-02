@@ -95,15 +95,13 @@ export default function App() {
 
     const handleNewFile = useCallback(async (filename) => {
         try {
-            const isValidName = isValidFilename(filename);
-            if (!isValidName) {
+            if (!filename.endsWith('.md')) {
+                filename += '.md';
+            }
+            if (!isValidFilename(filename)) {
                 alert('Недопустимое имя файла!'); // todo: change with notification
                 return;
             }
-
-            // if (!/\.(md|markdown|txt|html)$/i.test(filename)) {
-            //     filename += '.md';
-            // }
 
             const blob = new Blob([DEFAULT_MD], { type: 'text/plain' });
             const formData = new FormData();
@@ -120,7 +118,7 @@ export default function App() {
             sidebarRef.current?.refresh();
         } catch (err) {
             console.error('Ошибка создания файла', err);
-            alert('Не удалось создать файл');
+            alert('Не удалось создать файл'); // todo: change with notification
         }
     }, []);
 
@@ -162,7 +160,7 @@ export default function App() {
                 }
             } catch (err) {
                 console.error('Ошибка сохранения файла', err);
-                alert('Не удалось сохранить файл');
+                alert('Не удалось сохранить файл'); // todo: change with notification
             }
         },
         [markdown, options, fileHandle]

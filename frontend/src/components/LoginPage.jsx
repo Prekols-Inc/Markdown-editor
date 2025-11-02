@@ -79,7 +79,6 @@ export default function AuthPage({ onLogin }) {
 
     return (
         <div className="login-page">
-            {/* Контейнер для тостов (ставится один раз в приложении, можно и в App.jsx) */}
             <Toaster position="top-right" reverseOrder={false} />
 
             <form onSubmit={handleSubmit} className="login-form">
