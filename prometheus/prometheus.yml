@@ -13,6 +13,3 @@ scrape_configs:
   - job_name: 'go_metrics'
     static_configs:
       - targets: ['markdown-backend:1234']
-
-# rule_files:
-#   - /etc/prometheus/rules/alerts.yaml

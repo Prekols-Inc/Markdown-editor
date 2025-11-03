@@ -105,16 +105,18 @@ services:
 
   grafana:
     image: grafana/grafana:latest
-    container_name: markdown-grafana 
+    container_name: markdown-grafana
     ports: 
       - "3000:3000" 
+    depends_on:
+      - prometheus
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=password 
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+    user: "1000"
     volumes: 
-      - grafana-data:/var/l1b/grafana
+      - ./grafana/data:/var/lib/grafana
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini:ro
-      - ./grafana/dashboards:/var/lib/grafana/dashboards
       - ./grafana/provisioning:/etc/grafana/provisioning
     networks:
       - markdown-network
@@ -136,4 +138,3 @@ networks:
 volumes:
   storage:
   db-data:
-  grafana-data:
