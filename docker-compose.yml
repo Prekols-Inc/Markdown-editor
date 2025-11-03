@@ -90,6 +90,45 @@ services:
       - markdown-network
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: markdown-prometheus
+    volumes: 
+      - ./prometheus/:/etc/prometheus/ 
+    ports: 
+      - "9090:9090"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml 
+    networks:
+      - markdown-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: markdown-grafana 
+    ports: 
+      - "3000:3000" 
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password 
+    volumes: 
+      - grafana-data:/var/l1b/grafana
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - markdown-network
+    restart: unless-stopped
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: markdown-node-exporter
+    ports:
+      - "9100:9100"
+    networks:
+      - markdown-network
+    restart: unless-stopped
+
 networks:
   markdown-network:
     driver: bridge
@@ -97,3 +136,4 @@ networks:
 volumes:
   storage:
   db-data:
+  grafana-data:

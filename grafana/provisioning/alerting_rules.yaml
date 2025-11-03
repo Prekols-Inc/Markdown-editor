@@ -1,0 +1,4 @@
+apiVersion: 1
+
+rulesFiles:
+  - /etc/grafana/provisioning/rules/alerts.yml
