@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -79,33 +80,7 @@ func getNewLocalFileTestRepo() (repodb.FileRepository, CleanupFunc, error) {
 	return repo, func() { os.RemoveAll(tempDir) }, nil
 }
 
-func TestMain(m *testing.M) {
-	err := godotenv.Load()
-	if err != nil {
-		panic("Fail loading .env file")
-	}
-
-	testUUID = uuid.New()
-	testToken, err = generateToken(testUUID)
-	if err != nil {
-		panic("Fail to generate test token")
-	}
-
-	code := m.Run()
-
-	os.Exit(code)
-}
-
-func TestUploadFile(t *testing.T) {
-	repo, cleanup, err := getNewLocalFileTestRepo()
-	assert.NoError(t, err)
-	defer cleanup()
-
-	router := setupTestRouter(repo)
-
-	testContent := "Hello, World!"
-	testFilename := "test.md"
-
+func LoadFile(t *testing.T, r *gin.Engine, repo repodb.FileRepository, testFilename string, testContent string) *httptest.ResponseRecorder {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -128,7 +103,39 @@ func TestUploadFile(t *testing.T) {
 	})
 
 	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	r.ServeHTTP(w, req)
+
+	return w
+}
+
+func TestMain(m *testing.M) {
+	err := godotenv.Load()
+	if err != nil {
+		panic("Fail loading .env file")
+	}
+
+	testUUID = uuid.New()
+	testToken, err = generateToken(testUUID)
+	if err != nil {
+		panic("Fail to generate test token")
+	}
+
+	code := m.Run()
+
+	os.Exit(code)
+}
+
+func TestUploadFile(t *testing.T) {
+	repo, cleanup, err := getNewLocalFileTestRepo()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	r := setupTestRouter(repo)
+
+	testContent := "Hello, World!"
+	testFilename := "test.md"
+
+	w := LoadFile(t, r, repo, testFilename, testContent)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -447,4 +454,74 @@ func TestGetAllFilesEmpty(t *testing.T) {
 	files, exists := response["files"]
 	assert.True(t, exists, "Response should contain 'files' field")
 	assert.Equal(t, 0, len(files.([]interface{})))
+}
+
+func TestSpaceLimit(t *testing.T) {
+	repo, cleanup, err := getNewLocalFileTestRepo()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	r := setupTestRouter(repo)
+
+	testContent := make([]byte, repodb.USER_SPACE_SIZE+1)
+	for i := range testContent {
+		testContent[i] = 1
+	}
+	testFilename := "test.md"
+
+	w := LoadFile(t, r, repo, testFilename, string(testContent))
+
+	assert.Equal(t, http.StatusConflict, w.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "Failed to create file: user space is full", response["error"])
+
+	_, err = repo.Get(testFilename, testUUID)
+	assert.Error(t, err)
+	assert.Equal(t, repodb.ErrFileNotFound, err)
+}
+
+func TestFileNumberFile(t *testing.T) {
+	repo, cleanup, err := getNewLocalFileTestRepo()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	r := setupTestRouter(repo)
+
+	for i := range repodb.MAX_USER_FILES {
+		testFilename := fmt.Sprintf("file%d.md", i)
+		testContent := "content"
+		w := LoadFile(t, r, repo, testFilename, testContent)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response UploadResponse
+		err = json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "File uploaded successfully", response.Message)
+		assert.Equal(t, testFilename, response.Filename)
+
+		savedContent, err := repo.Get(testFilename, testUUID)
+		assert.NoError(t, err)
+		assert.Equal(t, testContent, string(savedContent))
+	}
+
+	testFilename := "last_file.md"
+	testContent := "content"
+	w := LoadFile(t, r, repo, testFilename, testContent)
+
+	assert.Equal(t, http.StatusConflict, w.Code)
+
+	var response ErrorResponse
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "Failed to create file: file number limit has been reached", response.Error)
+
+	_, err = repo.Get(testFilename, testUUID)
+	assert.Error(t, err)
+	assert.Equal(t, repodb.ErrFileNotFound, err)
 }
