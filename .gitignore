@@ -29,3 +29,6 @@ pnpm-debug.log*
 backend/db/storage/*
 !backend/db/storage/test*.md
 backend/test.bat
+vendor/
+
+*.pem

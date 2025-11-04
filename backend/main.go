@@ -16,7 +16,9 @@ import (
 )
 
 const (
-	DB_PATH = "storage"
+	DB_PATH       = "storage"
+	TLS_CERT_FILE = "tls/cert.pem"
+	TLS_KEY_FILE  = "tls/key.pem"
 )
 
 var (
@@ -105,7 +107,7 @@ func main() {
 	})
 
 	serverAddr := fmt.Sprintf("%s:%s", host, port)
-	if err := router.Run(serverAddr); err != nil {
+	if err := router.RunTLS(serverAddr, TLS_CERT_FILE, TLS_KEY_FILE); err != nil {
 		panic(fmt.Sprintf("Failed to run server: %v", err))
 	}
 	fmt.Printf("Server started on %s\n", serverAddr)

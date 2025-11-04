@@ -17,6 +17,11 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+const (
+	TLS_CERT_FILE = "tls/cert.pem"
+	TLS_KEY_FILE  = "tls/key.pem"
+)
+
 type App struct {
 	DB *pgxpool.Pool
 }
@@ -68,8 +73,8 @@ func main() {
 	}
 
 	serverAddr := fmt.Sprintf("%s:%s", host, port)
-	if err := r.Run(serverAddr); err != nil {
+	if err := r.RunTLS(serverAddr, TLS_CERT_FILE, TLS_KEY_FILE); err != nil {
 		panic(fmt.Sprintf("Failed to run server: %v", err))
 	}
-	log.Printf("Server started on %s\n", serverAddr)
+	fmt.Printf("Server started on %s\n", serverAddr)
 }
