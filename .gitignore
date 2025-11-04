@@ -32,3 +32,5 @@ backend/test.bat
 vendor/
 
 *.pem
+
+grafana/data/plugins/*

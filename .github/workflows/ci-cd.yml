@@ -27,6 +27,9 @@ env:
 
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
+  GF_SECURITY_ADMIN_USER: ${{ secrets.GF_SECURITY_ADMIN_USER }}
+  GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
+
 jobs:
   test-backend:
     runs-on: ubuntu-latest
@@ -194,6 +197,8 @@ jobs:
           DB_PASSWORD=$DB_PASSWORD
           DB_NAME=$DB_NAME
           DB_SSLMODE=$DB_SSLMODE
+          GF_SECURITY_ADMIN_USER=$GF_SECURITY_ADMIN_USER
+          GF_SECURITY_ADMIN_PASSWORD=$GF_SECURITY_ADMIN_PASSWORD
           EOF
 
       - name: Deploy with Docker Compose
