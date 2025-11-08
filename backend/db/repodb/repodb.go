@@ -72,11 +72,11 @@ func containsChars(filename string, сhars []string) bool {
 }
 
 func validateFile(filename string) error {
-	if filename == "" {
-		return &ErrInvalidFilename{Reason: ERR_INVALID_CHARACTERS}
-	}
 	if strings.TrimSpace(filename) == "" {
 		return &ErrInvalidFilename{Reason: ERR_ONLY_SPACES}
+	}
+	if filename == "" {
+		return &ErrInvalidFilename{Reason: ERR_EMPTY_FILENAME}
 	}
 	if len(filename) > 255 {
 		return &ErrInvalidFilename{Reason: ERR_TOO_LONG}
