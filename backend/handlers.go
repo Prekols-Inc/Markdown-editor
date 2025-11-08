@@ -11,7 +11,22 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
+
+var (
+	requestsTotal = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "Total number of HTTP requests",
+		},
+	)
+)
+
+func init() {
+	prometheus.MustRegister(requestsTotal)
+}
 
 // @Summary Check server health
 // @Tags health
@@ -61,6 +76,13 @@ func authMiddleware() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid token claims"})
 			return
 		}
+	}
+}
+
+func counterMiddleware() gin.HandlerFunc {
+	return func(_ *gin.Context) {
+		requestsTotal.Inc()
+		fmt.Println("COUNT!")
 	}
 }
 

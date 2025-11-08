@@ -31,3 +31,5 @@ backend/db/storage/*
 !backend/db/storage/test*.md
 backend/test.bat
 backend/storage
+
+grafana/data/plugins/*
