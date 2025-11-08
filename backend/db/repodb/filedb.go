@@ -184,6 +184,40 @@ func (l *LocalFileRepo) GetList(userId uuid.UUID) ([]string, error) {
 	return fileNames, nil
 }
 
+func (l *LocalFileRepo) Rename(filename string, newFilename string, userId uuid.UUID) error {
+	oldPath, err := getPath(l.basePath, userId, filename)
+	if err != nil {
+		return err
+	}
+
+	newPath, err := getPath(l.basePath, userId, newFilename)
+	if err != nil {
+		return err
+	}
+
+	exists, err := IsFileExists(oldPath)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return ErrFileNotFound
+	}
+
+	exists, err = IsFileExists(newPath)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return fmt.Errorf("file %s already exists", newFilename)
+	}
+
+	if err := os.Rename(oldPath, newPath); err != nil {
+		return fmt.Errorf("failed to rename file: %w", err)
+	}
+
+	return nil
+}
+
 func (l *LocalFileRepo) GetUserOccupiedSpaceAndFileCount(userId uuid.UUID, excludedFiles []string) (int, int, error) {
 	path := filepath.Join(l.basePath, userId.String())
 	if exists, err := IsFileExists(path); err != nil || !exists {

@@ -1,6 +1,7 @@
 import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import API from '../API';
+import { isValidFilename } from '../utils';
 
 const FileSidebar = forwardRef(function FileSidebar(
   {
@@ -19,6 +20,52 @@ const FileSidebar = forwardRef(function FileSidebar(
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
   const saveGroupRef = useRef(null);
+  const [editingFile, setEditingFile] = useState(null);
+  const [newFileName, setNewFileName] = useState("");
+
+  const startRename = (file) => {
+    setEditingFile(file.name);
+    setNewFileName(file.name);
+  };
+
+  const cancelRename = () => {
+    setEditingFile(null);
+    setNewFileName("");
+  };
+
+  const confirmRename = async (oldName, newName) => {
+    if (!newName.endsWith('.md')) {
+      newName += '.md';
+    }
+    if (!newName.trim() || newName === oldName) {
+      cancelRename();
+      return;
+    }
+    if (!isValidFilename(newName)) {
+      alert("Недопустимое имя файла!");  // todo: change with notification
+      cancelRename();
+      return;
+    }
+
+    try {
+      await API.STORAGE.put(`/rename/${oldName}/${newName}`);
+      setEntries((prev) =>
+        prev.map((f) => (f.name === oldName ? { ...f, name: newName } : f))
+      );
+      if (current?.name === oldName) {
+        onOpenFile(localStorage.getItem(oldName) || "", { name: newName });
+        localStorage.setItem(newName, localStorage.getItem(oldName));
+        localStorage.removeItem(oldName);
+      }
+    } catch (err) {
+      console.error("Ошибка при переименовании файла", err);
+      alert("Не удалось переименовать файл"); // todo: change with notification
+    } finally {
+      cancelRename();
+    }
+  };
+
+
 
   const downloadFile = async (file) => {
     try {
@@ -44,7 +91,7 @@ const FileSidebar = forwardRef(function FileSidebar(
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('File download error', err);
-      alert('Failed to download file');
+      alert('Failed to download file'); // todo: change with notification
     }
   };
 
@@ -100,7 +147,7 @@ const FileSidebar = forwardRef(function FileSidebar(
       }
     } catch (err) {
       console.error('Ошибка удаления файла', err);
-      alert('Не удалось удалить файл');
+      alert('Не удалось удалить файл'); // todo: change with notification
     }
   };
 
@@ -127,7 +174,7 @@ const FileSidebar = forwardRef(function FileSidebar(
       await API.AUTH.post('/v1/logout');
       window.location.href = '/login';
     } catch (err) {
-      alert('Не удалось выполнить выход');
+      alert('Не удалось выполнить выход'); // todo: change with notification
     }
   };
 
@@ -208,10 +255,36 @@ const FileSidebar = forwardRef(function FileSidebar(
           className={'fs-item' + (current?.name === file.name ? ' active' : '')}
           title={file.name}
           onClick={() => openFile(file)}
+          onDoubleClick={() => startRename(file)}
         >
-          <span className="fs-name">
-            {file.name}
-            {unsaved && current?.name === file.name && ' ●'}
+          <span className="fs-name" onDoubleClick={(e) => { e.stopPropagation(); startRename(file); }}>
+            {editingFile === file.name ? (
+              <input
+                type="text"
+                value={newFileName}
+                autoFocus
+                onChange={(e) => setNewFileName(e.target.value)}
+                onBlur={() => confirmRename(file.name, newFileName)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") confirmRename(file.name, newFileName);
+                  if (e.key === "Escape") cancelRename();
+                }}
+                className="rename-input"
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  color: "inherit",
+                  border: "1px solid #555",
+                  borderRadius: 4,
+                  padding: "2px 4px",
+                }}
+              />
+            ) : (
+              <>
+                {file.name}
+                {unsaved && current?.name === file.name && ' ●'}
+              </>
+            )}
           </span>
           <button
             className="fs-close"
@@ -225,6 +298,7 @@ const FileSidebar = forwardRef(function FileSidebar(
           </button>
         </div>
       ))}
+
     </aside >
   );
 });

@@ -103,6 +103,9 @@ func main() {
 	authorized.PUT("/file/:filename", func(c *gin.Context) {
 		editFileHandler(c, repo)
 	})
+	authorized.PUT("/rename/:oldName/:newName", func(c *gin.Context) {
+		renameFileHandler(c, repo)
+	})
 	authorized.DELETE("/file/:filename", func(c *gin.Context) {
 		deleteFileHandler(c, repo)
 	})

@@ -6,6 +6,7 @@ import MarkdownPreview from './MarkdownPreview';
 import { marked } from 'marked';
 import API from '../API';
 import NewFileModal from './NewFileModal';
+import { isValidFilename } from '../utils';
 
 export const DEFAULT_MD = `# Marked - Markdown Parser
 
@@ -94,8 +95,12 @@ export default function App() {
 
     const handleNewFile = useCallback(async (filename) => {
         try {
-            if (!/\.(md|markdown|txt|html)$/i.test(filename)) {
+            if (!filename.endsWith('.md')) {
                 filename += '.md';
+            }
+            if (!isValidFilename(filename)) {
+                alert('Недопустимое имя файла!'); // todo: change with notification
+                return;
             }
 
             const blob = new Blob([DEFAULT_MD], { type: 'text/plain' });
@@ -113,7 +118,7 @@ export default function App() {
             sidebarRef.current?.refresh();
         } catch (err) {
             console.error('Ошибка создания файла', err);
-            alert('Не удалось создать файл');
+            alert('Не удалось создать файл'); // todo: change with notification
         }
     }, []);
 
@@ -155,7 +160,7 @@ export default function App() {
                 }
             } catch (err) {
                 console.error('Ошибка сохранения файла', err);
-                alert('Не удалось сохранить файл');
+                alert('Не удалось сохранить файл'); // todo: change with notification
             }
         },
         [markdown, options, fileHandle]

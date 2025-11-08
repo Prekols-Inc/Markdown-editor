@@ -22,6 +22,13 @@ var ErrUserNotFound = errors.New("user not found")
 var ErrUserSpaceIsFull = errors.New("user space is full")
 var ErrFileNumberLimitReached = errors.New("file number limit has been reached")
 
+const (
+	ERR_INVALID_CHARACTERS = "filename contains invalid characters"
+	ERR_PATH_IN_FILENAME   = "filename must not contain file path"
+	ERR_BAD_EXTENSION      = "file extension must be .md"
+	ERR_EMPTY_FILENAME     = "filename must not be empty"
+)
+
 type ErrInvalidFilename struct {
 	Reason string
 }
@@ -39,6 +46,7 @@ type FileRepository interface {
 	Get(filename string, userId uuid.UUID) ([]byte, error)
 	Delete(filename string, userId uuid.UUID) error
 	GetList(userId uuid.UUID) ([]string, error)
+	Rename(filename string, newFilename string, userId uuid.UUID) error
 }
 
 func containsChars(filename string, сhars []string) bool {
@@ -73,20 +81,20 @@ func isValidFilename(filename string) bool {
 
 func validateFile(filename string) error {
 	if !isValidFilename(filename) {
-		return &ErrInvalidFilename{Reason: "invalid characters"}
+		return &ErrInvalidFilename{Reason: ERR_INVALID_CHARACTERS}
 	}
 
 	if filepath.Base(filename) != filename {
-		return &ErrInvalidFilename{Reason: "filename must not contain file path"}
+		return &ErrInvalidFilename{Reason: ERR_PATH_IN_FILENAME}
 	}
 
 	ext := strings.ToLower(filepath.Ext(filename))
 	if !slices.Contains(validExtensions, ext) {
-		return &ErrInvalidFilename{Reason: "file extension must be .md"}
+		return &ErrInvalidFilename{Reason: ERR_BAD_EXTENSION}
 	}
 
 	if strings.TrimSuffix(filename, ext) == "" {
-		return &ErrInvalidFilename{Reason: "file name must not be empty"}
+		return &ErrInvalidFilename{Reason: ERR_EMPTY_FILENAME}
 	}
 
 	return nil
