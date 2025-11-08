@@ -146,3 +146,7 @@ func validateFile(filename string) error {
 	}
 	return nil
 }
+
+func isValidFilename(filename string) bool {
+	return validateFile(filename) == nil
+}
