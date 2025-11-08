@@ -6,7 +6,8 @@ import MarkdownPreview from './MarkdownPreview';
 import { marked } from 'marked';
 import API from '../API';
 import NewFileModal from './NewFileModal';
-import { isValidFilename } from '../utils';
+import { validateFilename } from "../utils";
+import { useToast } from './ToastProvider';
 
 export const DEFAULT_MD = `# Marked - Markdown Parser
 
@@ -30,6 +31,19 @@ export default function App() {
     const [markdown, setMarkdown] = useState(
         () => localStorage.getItem('md-draft') ?? DEFAULT_MD
     );
+
+
+    const toast = useToast();
+    const parseAPIError =
+        (API && API.parseAPIError)
+        ? API.parseAPIError
+        : (e) => {
+            const data = e?.response?.data;
+            const err = data?.error;
+            if (!err) return { code: 'GENERIC', message: e?.message || 'Ошибка сети' };
+            if (typeof err === 'string') return { code: 'GENERIC', message: err };
+            return { code: err.code || 'GENERIC', message: err.message || 'Ошибка', field: err.field, details: err.details };
+            };
 
     useEffect(() => {
         const id = setTimeout(() => localStorage.setItem('md-draft', markdown), 400);
@@ -93,79 +107,109 @@ export default function App() {
 
     const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false);
 
-    const handleNewFile = useCallback(async (filename) => {
+    const handleNewFile = useCallback(async (inputName) => {
         try {
-            if (!filename.endsWith('.md')) {
-                filename += '.md';
-            }
-            if (!isValidFilename(filename)) {
-                alert('Недопустимое имя файла!'); // todo: change with notification
-                return;
-            }
-
-            const blob = new Blob([DEFAULT_MD], { type: 'text/plain' });
-            const formData = new FormData();
-            formData.append('file', blob, filename);
-
-            await API.STORAGE.post(`/file/${encodeURIComponent(filename)}`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-
-            setMarkdown(DEFAULT_MD);
-            setFileHandle({ name: filename });
-            setUnsaved(false);
-
-            sidebarRef.current?.refresh();
-        } catch (err) {
-            console.error('Ошибка создания файла', err);
-            alert('Не удалось создать файл'); // todo: change with notification
+        let filename = inputName?.trim() || 'untitled.md';
+        if (!filename.endsWith('.md') && !filename.endsWith('.markdown')) {
+            filename += '.md';
         }
-    }, []);
+
+        const v = validateFilename(filename);
+        if (!v.ok) {
+            toast.error(v.message);
+            return;
+        }
+
+        const blob = new Blob([DEFAULT_MD], { type: 'text/plain' });
+        const formData = new FormData();
+        formData.append('file', blob, filename);
+
+        await API.STORAGE.post(`/file/${encodeURIComponent(filename)}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        setMarkdown(DEFAULT_MD);
+        setFileHandle({ name: filename });
+        setUnsaved(false);
+
+        sidebarRef.current?.refresh?.();
+
+        toast.success('Файл создан');
+        } catch (err) {
+        console.error('Ошибка создания файла', err);
+        const e = parseAPIError(err);
+        if (e.code === 'FILE_ALREADY_EXISTS') {
+            toast.error('Файл с таким именем уже существует. Выберите другое имя.');
+        } else if (e.code === 'FILE_COUNT_LIMIT') {
+            toast.error('Превышен лимит количества файлов. Удалите лишние.');
+        } else if (e.code === 'USER_SPACE_FULL') {
+            toast.error('Недостаточно места в хранилище пользователя.');
+        } else if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
+            toast.error(`Недопустимые символы: ${e.details.invalid.join(' ')}`);
+        } else {
+            toast.error(e.message || 'Не удалось создать файл');
+        }
+        }
+    }, [toast, parseAPIError]);
 
     const handleSave = useCallback(
         async (refreshFiles) => {
-            try {
-                let filename = fileHandle?.name;
-                if (!filename) {
-                    filename = prompt('Введите имя файла', 'untitled.md');
-                    if (!filename) return;
-                }
+        try {
+            let filename = fileHandle?.name;
 
-                if (!/\.(md|markdown|txt|html)$/i.test(filename)) {
-                    filename += '.md';
-                }
-
-                let content;
-                if (filename.endsWith('.html')) {
-                    content = marked.parse(markdown, options);
-                } else {
-                    content = markdown;
-                }
-
-                localStorage.setItem(filename, content);
-
-                const blob = new Blob([content], { type: 'text/plain' });
-                const formData = new FormData();
-                formData.append('file', blob, filename);
-
-                await API.STORAGE.put(`/file/${encodeURIComponent(filename)}`, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                });
-
-                setFileHandle({ name: filename });
-                setUnsaved(false);
-
-                if (typeof refreshFiles === 'function') {
-                    refreshFiles();
-                }
-            } catch (err) {
-                console.error('Ошибка сохранения файла', err);
-                alert('Не удалось сохранить файл'); // todo: change with notification
+            if (!filename) {
+            const asked = prompt('Введите имя файла', 'untitled.md');
+            if (!asked) return;
+            filename = asked.trim();
             }
-        },
-        [markdown, options, fileHandle]
-    );
 
+            if (!filename.endsWith('.md') && !filename.endsWith('.markdown')) {
+            toast.info('Сохраняем как .md');
+            filename += '.md';
+            }
+
+            const v = validateFilename(filename);
+            if (!v.ok) {
+            toast.error(v.message);
+            return;
+            }
+
+            const content = markdown;
+
+            localStorage.setItem(filename, content);
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const formData = new FormData();
+            formData.append('file', blob, filename);
+
+            await API.STORAGE.put(`/file/${encodeURIComponent(filename)}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            setFileHandle({ name: filename });
+            setUnsaved(false);
+
+            if (typeof refreshFiles === 'function') {
+            refreshFiles();
+            }
+
+            toast.success('Файл сохранён');
+        } catch (err) {
+            console.error('Ошибка сохранения файла', err);
+            const e = parseAPIError(err);
+            if (e.code === 'FILE_NOT_FOUND') {
+            toast.error('Файл не найден (возможно был удалён). Создайте заново.');
+            } else if (e.code === 'USER_SPACE_FULL') {
+            toast.error('Недостаточно места в хранилище пользователя.');
+            } else if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
+            toast.error(`Недопустимые символы: ${e.details.invalid.join(' ')}`);
+            } else {
+            toast.error(e.message || 'Не удалось сохранить файл');
+            }
+        }
+        },
+        [markdown, fileHandle, toast, parseAPIError]
+    );
     return (
         <>
             <div
