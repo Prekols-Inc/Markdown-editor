@@ -37,19 +37,27 @@ export function validateFilename(name) {
         };
     }
 
-    if (!base) {
-        return { ok: false, code: 'FILE_NAME_EMPTY', message: 'Имя файла не может быть пустым.' };
+    if (/\.+$/.test(base)) {
+        return {
+        ok: false,
+        code: 'FILE_NAME_TRAILING_DOTS',
+        message: 'Имя файла не должно заканчиваться точками перед расширением.'
+        };
     }
+
+    if (!base.trim()) {
+        return { ok: false, code: 'FILE_NAME_EMPTY_BASE', message: 'Имя файла не может быть пустым.' };
+    }
+
     if (RESERVED.test(base)) {
         return { ok: false, code: 'FILE_NAME_RESERVED', message: 'Это имя зарезервировано системой.' };
     }
-    if (base !== "" && base.trim() === "") {
-        return { ok: false, code: "FILE_NAME_ONLY_SPACES", message: "Имя файла не может состоять только из пробелов." };
-    }
+
     if (ext !== '.md' && ext !== '.markdown') {
         return {
-        ok: false, code: 'FILE_EXTENSION_INVALID',
-        message: 'Разрешены только расширения: .md .',
+        ok: false,
+        code: 'FILE_EXTENSION_INVALID',
+        message: 'Разрешены только расширения: .md, .markdown',
         details: { allowedExtensions: ['.md', '.markdown'] }
         };
     }

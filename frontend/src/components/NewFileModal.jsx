@@ -1,21 +1,28 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import "../styles/NewFileModal.css";
 import { validateFilename } from "../utils";
 
 export default function NewFileModal({ open, onClose, onConfirm }) {
   const [filename, setFilename] = useState("untitled.md");
-  const v = useMemo(() => validateFilename(filename.trim()), [filename]);
+  const [error, setError] = useState(null);
 
   if (!open) return null;
 
   const handleConfirm = () => {
-    if (!v.ok) return;
+    const v = validateFilename(filename.trim());
+    if (!v.ok) {
+      setError(v.message);
+      return;
+    }
+
     onConfirm(filename.trim());
     setFilename("untitled.md");
+    setError(null);
   };
 
   const handleCancel = () => {
     setFilename("untitled.md");
+    setError(null);
     onClose();
   };
 
@@ -27,24 +34,28 @@ export default function NewFileModal({ open, onClose, onConfirm }) {
         <input
           type="text"
           value={filename}
-          onChange={(e) => setFilename(e.target.value)}
+          onChange={(e) => {
+            setFilename(e.target.value);
+            if (error) setError(null);
+          }}
           placeholder="Введите имя файла"
-          className={`modal-input ${!v.ok ? 'has-error' : ''}`}
+          className={`modal-input ${error ? "has-error" : ""}`}
           autoFocus
         />
 
         <p className="modal-hint">
           Допустимые расширения: .md, .markdown
         </p>
-        {!v.ok && (
-          <p className="modal-error">
-            {v.message}
-          </p>
-        )}
+
+        {error && <p className="modal-error">{error}</p>}
 
         <div className="modal-buttons">
-          <button className="modal-btn cancel" onClick={handleCancel}>Отмена</button>
-          <button className="modal-btn confirm" onClick={handleConfirm} disabled={!v.ok}>Создать</button>
+          <button className="modal-btn cancel" onClick={handleCancel}>
+            Отмена
+          </button>
+          <button className="modal-btn confirm" onClick={handleConfirm}>
+            Создать
+          </button>
         </div>
       </div>
     </div>
