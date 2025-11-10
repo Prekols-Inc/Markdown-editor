@@ -44,7 +44,7 @@ func TestValidateFile(t *testing.T) {
 		{"Invalid extension", "test.jpg", true, fmt.Sprintf("Invalid filename: %s", ERR_BAD_EXTENSION)},
 		{"Path traversal", "../test.md", true, fmt.Sprintf("Invalid filename: %s", ERR_PATH_IN_FILENAME)},
 		{"Invalid filename", "file/name.md", true, fmt.Sprintf("Invalid filename: %s", ERR_PATH_IN_FILENAME)},
-		{"Empty filename", "", true, fmt.Sprintf("Invalid filename: %s", ERR_INVALID_CHARACTERS)},
+		{"Empty filename", "", true, fmt.Sprintf("Invalid filename: %s", ERR_ONLY_SPACES)},
 		{"Comma in filename", "file,md.md", true, fmt.Sprintf("Invalid filename: %s", ERR_INVALID_CHARACTERS)},
 		{"Dot file with valid ext", ".env.md", false, ""},
 		{"Only extension", ".md", true, fmt.Sprintf("Invalid filename: %s", ERR_EMPTY_FILENAME)},

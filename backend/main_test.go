@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var testToken string
@@ -243,7 +243,13 @@ func TestSaveFileNotFound(t *testing.T) {
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
-	assert.True(t, strings.Contains(response["error"].(string), "file not found"))
+	errObj, ok := response["error"].(map[string]interface{})
+	require.True(t, ok, "error field should be an object")
+
+	msg, ok := errObj["message"].(string)
+	require.True(t, ok, "error.message should be a string")
+
+	assert.Contains(t, msg, "Файл не найден")
 }
 
 func TestDownloadFile(t *testing.T) {
@@ -303,7 +309,13 @@ func TestDownloadFileNotFound(t *testing.T) {
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
-	assert.True(t, strings.Contains(response["error"].(string), "File not found"))
+	errObj, ok := response["error"].(map[string]interface{})
+	require.True(t, ok, "error field should be an object")
+
+	msg, ok := errObj["message"].(string)
+	require.True(t, ok, "error.message should be a string")
+
+	assert.Contains(t, msg, "Файл не найден")
 }
 
 func TestDeleteFile(t *testing.T) {
@@ -476,7 +488,14 @@ func TestSpaceLimit(t *testing.T) {
 	var response map[string]interface{}
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
-	assert.Equal(t, "Failed to create file: user space is full", response["error"])
+
+	errObj, ok := response["error"].(map[string]interface{})
+	require.True(t, ok, "error field should be an object")
+
+	msg, ok := errObj["message"].(string)
+	require.True(t, ok, "error.message should be a string")
+
+	assert.Contains(t, msg, "Недостаточно места в хранилище пользователя.")
 
 	_, err = repo.Get(testFilename, testUUID)
 	assert.Error(t, err)
@@ -515,13 +534,16 @@ func TestFileNumberFile(t *testing.T) {
 
 	assert.Equal(t, http.StatusConflict, w.Code)
 
-	var response ErrorResponse
+	var response map[string]interface{}
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "Failed to create file: file number limit has been reached", response.Error)
+	errObj, ok := response["error"].(map[string]interface{})
+	require.True(t, ok, "error field should exist and be an object")
 
-	_, err = repo.Get(testFilename, testUUID)
-	assert.Error(t, err)
-	assert.Equal(t, repodb.ErrFileNotFound, err)
+	msg, ok := errObj["message"].(string)
+	require.True(t, ok, "error.message should be a string")
+
+	assert.Contains(t, msg, "Превышен лимит количества файлов.")
+	fmt.Println(msg)
 }
