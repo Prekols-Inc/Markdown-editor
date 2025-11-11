@@ -4,6 +4,8 @@ import LogoutConfirmModal from "./LogoutConfirmModal";
 import API from '../API';
 import { isValidFilename } from '../utils';
 
+const DEFAULT_MD = "# Новый Markdown файл\n\nНапишите здесь...";
+
 const FileSidebar = forwardRef(function FileSidebar(
   {
     current,
@@ -23,10 +25,17 @@ const FileSidebar = forwardRef(function FileSidebar(
   const saveGroupRef = useRef(null);
   const [editingFile, setEditingFile] = useState(null);
   const [newFileName, setNewFileName] = useState("");
+  const [contextMenu, setContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    file: null
+  });
 
   const startRename = (file) => {
     setEditingFile(file.name);
     setNewFileName(file.name);
+    setContextMenu(ctx => ({ ...ctx, visible: false }));
   };
 
   const cancelRename = () => {
@@ -49,7 +58,12 @@ const FileSidebar = forwardRef(function FileSidebar(
     }
 
     try {
-      await API.STORAGE.put(`/rename/${oldName}/${newName}`);
+      const formData = new FormData();
+      formData.append('oldName', oldName);
+      formData.append('newName', newName);
+
+      await API.STORAGE.put(`/rename/${encodeURIComponent(oldName)}/${encodeURIComponent(newName)}`, formData);
+
       setEntries((prev) =>
         prev.map((f) => (f.name === oldName ? { ...f, name: newName } : f))
       );
@@ -66,7 +80,33 @@ const FileSidebar = forwardRef(function FileSidebar(
     }
   };
 
+  const duplicateFile = async (file) => {
+    let base = file.name.replace(/\.md$/, '');
+    let newName = base + '_copy.md';
+    let idx = 1;
+    while (entries.find(e => e.name === newName)) {
+      newName = `${base}_copy${idx}.md`;
+      idx++;
+    }
+    try {
+      const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`, { responseType: 'text' });
+      const text = response.data;
 
+      const blob = new Blob([text], { type: 'text/plain' });
+      const formData = new FormData();
+      formData.append('file', blob, newName);
+
+      await API.STORAGE.post(`/file/${encodeURIComponent(newName)}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      fetchFiles();
+    } catch (err) {
+      alert('Не удалось дублировать файл');
+      console.error('duplicate error', err);
+    }
+    setContextMenu(ctx => ({ ...ctx, visible: false }));
+  };
 
   const downloadFile = async (file) => {
     try {
@@ -121,7 +161,7 @@ const FileSidebar = forwardRef(function FileSidebar(
         setUnsaved(true);
       }
       else {
-        const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`);
+        const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`, { responseType: 'text' });
         onOpenFile(response.data, { name: file.name });
         setUnsaved(false);
         localStorage.setItem(file.name, response.data);
@@ -161,10 +201,16 @@ const FileSidebar = forwardRef(function FileSidebar(
       if (saveGroupRef.current && !saveGroupRef.current.contains(e.target)) {
         setSaveMenuOpen(false);
       }
+      if (
+        contextMenu.visible &&
+        !document.querySelector('.dropdown-menu')?.contains(e.target)
+      ) {
+        setContextMenu(ctx => ({ ...ctx, visible: false }));
+      }
     };
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, []);
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, [saveGroupRef, contextMenu.visible]);
 
   useImperativeHandle(ref, () => ({
     refresh: fetchFiles,
@@ -264,6 +310,15 @@ const FileSidebar = forwardRef(function FileSidebar(
           title={file.name}
           onClick={() => openFile(file)}
           onDoubleClick={() => startRename(file)}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setContextMenu({
+              visible: true,
+              x: e.clientX,
+              y: e.clientY,
+              file
+            });
+          }}
         >
           <span className="fs-name" onDoubleClick={(e) => { e.stopPropagation(); startRename(file); }}>
             {editingFile === file.name ? (
@@ -307,7 +362,51 @@ const FileSidebar = forwardRef(function FileSidebar(
         </div>
       ))}
 
-    </aside >
+      {contextMenu.visible && (
+        <div
+          className="dropdown-menu"
+          style={{
+            position: 'fixed',
+            left: contextMenu.x + 2,
+            top: contextMenu.y + 2,
+            zIndex: 9999,
+            background: '#fff',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.13)',
+            borderRadius: 6,
+            padding: "4px 0",
+            border: "1px solid #e3e3e3",
+            minWidth: 140
+          }}
+        >
+          <button
+            className="dropdown-item"
+            style={{
+              background: "none",
+              border: "none",
+              width: "100%",
+              padding: "8px 16px",
+              textAlign: "left",
+              cursor: "pointer",
+              color: "#333"
+            }}
+            onMouseDown={() => startRename(contextMenu.file)}
+          >Переименовать</button>
+          <button
+            className="dropdown-item"
+            style={{
+              background: "none",
+              border: "none",
+              width: "100%",
+              padding: "8px 16px",
+              textAlign: "left",
+              cursor: "pointer",
+              color: "#333"
+            }}
+            onMouseDown={() => duplicateFile(contextMenu.file)}
+          >Дублировать</button>
+        </div>
+      )}
+    </aside>
   );
 });
 

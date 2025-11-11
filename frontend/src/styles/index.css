@@ -401,3 +401,12 @@ body,
   outline: none;
   font: inherit;
 }
+
+.dropdown-menu {
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+.dropdown-item:hover {
+  background: #eee;
+}
