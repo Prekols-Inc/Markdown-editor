@@ -1,4 +1,5 @@
 import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
+import { FilePlus2, Save, Download, LogOut, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import API from '../API';
 import { isValidFilename } from '../utils';
@@ -190,12 +191,19 @@ const FileSidebar = forwardRef(function FileSidebar(
           onClick={onToggle}
           title={collapsed ? 'Expand' : 'Collapse'}
         >
-          {collapsed ? '»' : '«'}
+          {collapsed ? (
+            <ChevronsRight stroke="#111827" size={22} strokeWidth={1.75} />
+          ) : (
+            <ChevronsLeft stroke="#111827" size={22} strokeWidth={1.75} />
+          )}
         </button>
 
         {!collapsed && (
           <>
-            <button className="btn" onClick={onNewFile}>New</button>
+            <button className="btn" onClick={onNewFile}>
+              <FilePlus2 size={22} strokeWidth={1.75} />
+            </button>
+
             <div className="btn-group" ref={saveGroupRef}>
               <button
                 className="btn split-main"
@@ -205,7 +213,7 @@ const FileSidebar = forwardRef(function FileSidebar(
                   setSaveMenuOpen(false);
                 }}
               >
-                Save
+                <Save size={22} strokeWidth={1.75} />
               </button>
               <button
                 className="btn split-toggle"
@@ -227,7 +235,7 @@ const FileSidebar = forwardRef(function FileSidebar(
                   }}
                   disabled={!current}
                 >
-                  Download
+                  <Download size={22} strokeWidth={1.75} />
                 </button>
               </div>
             </div>
@@ -237,7 +245,7 @@ const FileSidebar = forwardRef(function FileSidebar(
               style={{ backgroundColor: "#e74c3c", color: "white" }}
               onClick={() => setShowLogoutConfirm(true)}
             >
-              Logout
+              <LogOut size={22} strokeWidth={1.75} />
             </button>
 
             <LogoutConfirmModal

@@ -211,9 +211,9 @@ export default function App() {
                             title={showPreview ? 'Скрыть превью' : 'Показать превью'}
                         >
                             {showPreview ? (
-                                <PanelRightClose size={18} strokeWidth={1.75} />
+                                <PanelRightClose size={22} strokeWidth={1.75} />
                             ) : (
-                                <PanelRightOpen size={18} strokeWidth={1.75} />
+                                <PanelRightOpen size={22} strokeWidth={1.75} />
                             )}
                         </button>
                     </div>
