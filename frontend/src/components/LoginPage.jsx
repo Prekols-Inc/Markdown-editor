@@ -61,7 +61,7 @@ export default function AuthPage({ onLogin }) {
                     password: formData.password
                 });
 
-                if (resp.status === 201 || (resp.status >= 200 && resp.status < 300)) {
+                if (resp.status === 201) {
                     toast.success('Регистрация прошла успешно! Теперь вы можете войти.');
                     setMode('login');
                     setFormData({ username: '', password: '', confirmPassword: '' });
@@ -74,6 +74,7 @@ export default function AuthPage({ onLogin }) {
                 case 409:
                     toast.error('Пользователь с таким именем уже существует');
                     break;
+                case 500:
                 default:
                     toast.error('Произошла ошибка. Попробуйте еще раз.');
                     break;
