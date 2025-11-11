@@ -31,6 +31,7 @@ const FileSidebar = forwardRef(function FileSidebar(
     y: 0,
     file: null
   });
+  const menuRef = useRef(null);
 
   const startRename = (file) => {
     setEditingFile(file.name);
@@ -44,17 +45,11 @@ const FileSidebar = forwardRef(function FileSidebar(
   };
 
   const confirmRename = async (oldName, newName) => {
-    if (!newName.endsWith('.md')) {
-      newName += '.md';
-    }
-    if (!newName.trim() || newName === oldName) {
-      cancelRename();
-      return;
-    }
+    if (!newName.endsWith('.md')) newName += '.md';
+    if (!newName.trim() || newName === oldName) return cancelRename();
     if (!isValidFilename(newName)) {
-      alert("Недопустимое имя файла!");  // todo: change with notification
-      cancelRename();
-      return;
+      alert("Недопустимое имя файла!");
+      return cancelRename();
     }
 
     try {
@@ -64,9 +59,8 @@ const FileSidebar = forwardRef(function FileSidebar(
 
       await API.STORAGE.put(`/rename/${encodeURIComponent(oldName)}/${encodeURIComponent(newName)}`, formData);
 
-      setEntries((prev) =>
-        prev.map((f) => (f.name === oldName ? { ...f, name: newName } : f))
-      );
+      setEntries(prev => prev.map(f => f.name === oldName ? { ...f, name: newName } : f));
+
       if (current?.name === oldName) {
         onOpenFile(localStorage.getItem(oldName) || "", { name: newName });
         localStorage.setItem(newName, localStorage.getItem(oldName));
@@ -74,7 +68,7 @@ const FileSidebar = forwardRef(function FileSidebar(
       }
     } catch (err) {
       console.error("Ошибка при переименовании файла", err);
-      alert("Не удалось переименовать файл"); // todo: change with notification
+      alert("Не удалось переименовать файл");
     } finally {
       cancelRename();
     }
@@ -91,7 +85,6 @@ const FileSidebar = forwardRef(function FileSidebar(
     try {
       const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`, { responseType: 'text' });
       const text = response.data;
-
       const blob = new Blob([text], { type: 'text/plain' });
       const formData = new FormData();
       formData.append('file', blob, newName);
@@ -110,18 +103,13 @@ const FileSidebar = forwardRef(function FileSidebar(
 
   const downloadFile = async (file) => {
     try {
-      const resp = await API.STORAGE.get(
-        `/file/${encodeURIComponent(file.name)}`,
-        { responseType: 'blob' }
-      );
-
+      const resp = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`, { responseType: 'blob' });
       let filename = file.name;
       const cd = resp.headers?.['content-disposition'];
       if (cd) {
         const m = /filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i.exec(cd);
         if (m) filename = decodeURIComponent(m[1] || m[2]);
       }
-
       const url = window.URL.createObjectURL(resp.data);
       const a = document.createElement('a');
       a.href = url;
@@ -132,7 +120,7 @@ const FileSidebar = forwardRef(function FileSidebar(
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('File download error', err);
-      alert('Failed to download file'); // todo: change with notification
+      alert('Не удалось скачать файл');
     }
   };
 
@@ -159,8 +147,7 @@ const FileSidebar = forwardRef(function FileSidebar(
       if (cachedFile != null) {
         onOpenFile(cachedFile, { name: file.name });
         setUnsaved(true);
-      }
-      else {
+      } else {
         const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`, { responseType: 'text' });
         onOpenFile(response.data, { name: file.name });
         setUnsaved(false);
@@ -179,57 +166,53 @@ const FileSidebar = forwardRef(function FileSidebar(
       localStorage.removeItem(file.name);
 
       if (current?.name === file.name) {
-        if (newList.length > 0) {
-          openFile(newList[0]);
-        } else {
+        if (newList.length > 0) openFile(newList[0]);
+        else {
           onOpenFile("Нет открытых файлов. Нажмите «New» для создания.", null);
           setUnsaved(false);
         }
       }
     } catch (err) {
       console.error('Ошибка удаления файла', err);
-      alert('Не удалось удалить файл'); // todo: change with notification
+      alert('Не удалось удалить файл');
     }
   };
 
-  useEffect(() => {
-    fetchFiles();
-  }, []);
+  useEffect(() => { fetchFiles(); }, []);
 
   useEffect(() => {
     const onDocClick = (e) => {
       if (saveGroupRef.current && !saveGroupRef.current.contains(e.target)) {
         setSaveMenuOpen(false);
       }
-      if (
-        contextMenu.visible &&
-        !document.querySelector('.dropdown-menu')?.contains(e.target)
-      ) {
-        setContextMenu(ctx => ({ ...ctx, visible: false }));
-      }
     };
     document.addEventListener('click', onDocClick);
     return () => document.removeEventListener('click', onDocClick);
-  }, [saveGroupRef, contextMenu.visible]);
+  }, [saveGroupRef]);
 
-  useImperativeHandle(ref, () => ({
-    refresh: fetchFiles,
-  }));
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (contextMenu.visible && menuRef.current && !menuRef.current.contains(e.target)) {
+        setContextMenu(ctx => ({ ...ctx, visible: false }));
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [contextMenu.visible]);
+
+  useImperativeHandle(ref, () => ({ refresh: fetchFiles }));
 
   const handleLogout = async () => {
     try {
       await API.AUTH.post('/v1/logout');
       window.location.href = '/login';
     } catch (err) {
-      alert('Не удалось выполнить выход'); // todo: change with notification
+      alert('Не удалось выполнить выход');
     }
   };
 
   return (
-    <aside
-      className={collapsed ? 'sidebar collapsed' : 'sidebar'}
-      style={{ width: collapsed ? 48 : 260 }}
-    >
+    <aside className={collapsed ? 'sidebar collapsed' : 'sidebar'} style={{ width: collapsed ? 48 : 260 }}>
       <div className="toolbar">
         <button
           className="btn secondary"
@@ -237,27 +220,18 @@ const FileSidebar = forwardRef(function FileSidebar(
           onClick={onToggle}
           title={collapsed ? 'Expand' : 'Collapse'}
         >
-          {collapsed ? (
-            <ChevronsRight stroke="#111827" size={22} strokeWidth={1.75} />
-          ) : (
-            <ChevronsLeft stroke="#111827" size={22} strokeWidth={1.75} />
-          )}
+          {collapsed ? <ChevronsRight stroke="#111827" size={22} strokeWidth={1.75} /> : <ChevronsLeft stroke="#111827" size={22} strokeWidth={1.75} />}
         </button>
 
         {!collapsed && (
           <>
-            <button className="btn" onClick={onNewFile}>
-              <FilePlus2 size={22} strokeWidth={1.75} />
-            </button>
+            <button className="btn" onClick={onNewFile}><FilePlus2 size={22} strokeWidth={1.75} /></button>
 
             <div className="btn-group" ref={saveGroupRef}>
               <button
                 className="btn split-main"
                 disabled={!current && !unsaved}
-                onClick={() => {
-                  onSave(fetchFiles);
-                  setSaveMenuOpen(false);
-                }}
+                onClick={() => { onSave(fetchFiles); setSaveMenuOpen(false); }}
               >
                 <Save size={22} strokeWidth={1.75} />
               </button>
@@ -268,37 +242,18 @@ const FileSidebar = forwardRef(function FileSidebar(
                 aria-haspopup="menu"
                 aria-expanded={saveMenuOpen}
               />
-              <div
-                className={`menu ${saveMenuOpen ? 'open' : ''}`}
-                role="menu"
-              >
-                <button
-                  className="menu-item"
-                  role="menuitem"
-                  onClick={() => {
-                    if (current) downloadFile(current);
-                    setSaveMenuOpen(false);
-                  }}
-                  disabled={!current}
-                >
+              <div className={`menu ${saveMenuOpen ? 'open' : ''}`} role="menu">
+                <button className="menu-item" role="menuitem" onClick={() => { if (current) downloadFile(current); setSaveMenuOpen(false); }} disabled={!current}>
                   <Download size={22} strokeWidth={1.75} />
                 </button>
               </div>
             </div>
 
-            <button
-              className="btn danger"
-              style={{ backgroundColor: "#e74c3c", color: "white" }}
-              onClick={() => setShowLogoutConfirm(true)}
-            >
+            <button className="btn danger" style={{ backgroundColor: "#e74c3c", color: "white" }} onClick={() => setShowLogoutConfirm(true)}>
               <LogOut size={22} strokeWidth={1.75} />
             </button>
 
-            <LogoutConfirmModal
-              open={showLogoutConfirm}
-              onClose={() => setShowLogoutConfirm(false)}
-              onConfirm={handleLogout}
-            />
+            <LogoutConfirmModal open={showLogoutConfirm} onClose={() => setShowLogoutConfirm(false)} onConfirm={handleLogout} />
           </>
         )}
       </div>
@@ -312,12 +267,7 @@ const FileSidebar = forwardRef(function FileSidebar(
           onDoubleClick={() => startRename(file)}
           onContextMenu={(e) => {
             e.preventDefault();
-            setContextMenu({
-              visible: true,
-              x: e.clientX,
-              y: e.clientY,
-              file
-            });
+            setContextMenu({ visible: true, x: e.clientX, y: e.clientY, file });
           }}
         >
           <span className="fs-name" onDoubleClick={(e) => { e.stopPropagation(); startRename(file); }}>
@@ -333,37 +283,22 @@ const FileSidebar = forwardRef(function FileSidebar(
                   if (e.key === "Escape") cancelRename();
                 }}
                 className="rename-input"
-                style={{
-                  width: "100%",
-                  background: "transparent",
-                  color: "inherit",
-                  border: "1px solid #555",
-                  borderRadius: 4,
-                  padding: "2px 4px",
-                }}
+                style={{ width: "100%", background: "transparent", color: "inherit", border: "1px solid #555", borderRadius: 4, padding: "2px 4px" }}
               />
             ) : (
               <>
-                {file.name}
-                {unsaved && current?.name === file.name && ' ●'}
+                {file.name}{unsaved && current?.name === file.name && ' ●'}
               </>
             )}
           </span>
-          <button
-            className="fs-close"
-            title="Удалить файл"
-            onClick={(ev) => {
-              ev.stopPropagation();
-              deleteFile(file);
-            }}
-          >
-            ×
-          </button>
+
+          <button className="fs-close" title="Удалить файл" onClick={(ev) => { ev.stopPropagation(); deleteFile(file); }}>×</button>
         </div>
       ))}
 
       {contextMenu.visible && (
         <div
+          ref={menuRef}
           className="dropdown-menu"
           style={{
             position: 'fixed',
@@ -380,30 +315,18 @@ const FileSidebar = forwardRef(function FileSidebar(
         >
           <button
             className="dropdown-item"
-            style={{
-              background: "none",
-              border: "none",
-              width: "100%",
-              padding: "8px 16px",
-              textAlign: "left",
-              cursor: "pointer",
-              color: "#333"
-            }}
-            onMouseDown={() => startRename(contextMenu.file)}
-          >Переименовать</button>
+            style={{ background: "none", border: "none", width: "100%", padding: "8px 16px", textAlign: "left", cursor: "pointer", color: "#333" }}
+            onClick={() => { startRename(contextMenu.file); setContextMenu(ctx => ({ ...ctx, visible: false })); }}
+          >
+            Переименовать
+          </button>
           <button
             className="dropdown-item"
-            style={{
-              background: "none",
-              border: "none",
-              width: "100%",
-              padding: "8px 16px",
-              textAlign: "left",
-              cursor: "pointer",
-              color: "#333"
-            }}
-            onMouseDown={() => duplicateFile(contextMenu.file)}
-          >Дублировать</button>
+            style={{ background: "none", border: "none", width: "100%", padding: "8px 16px", textAlign: "left", cursor: "pointer", color: "#333" }}
+            onClick={() => { duplicateFile(contextMenu.file); setContextMenu(ctx => ({ ...ctx, visible: false })); }}
+          >
+            Дублировать
+          </button>
         </div>
       )}
     </aside>
