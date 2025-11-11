@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { PanelRightOpen, PanelRightClose } from 'lucide-react';
 import MarkdownEditor from './MarkdownEditor';
 import FileSidebar from './FileSidebar';
 import OptionsEditor from './OptionsEditor';
@@ -205,11 +206,15 @@ export default function App() {
                         </button>
 
                         <button
-                            className="tab right"
+                            className="tab right flex items-center gap-2"
                             onClick={() => setShowPreview(p => !p)}
-                            title={'Показать/Скрыть превью'}
+                            title={showPreview ? 'Скрыть превью' : 'Показать превью'}
                         >
-                            {showPreview ? '🡸 Hide Preview' : '🡺 Show Preview'}
+                            {showPreview ? (
+                                <PanelRightClose size={18} strokeWidth={1.75} />
+                            ) : (
+                                <PanelRightOpen size={18} strokeWidth={1.75} />
+                            )}
                         </button>
                     </div>
 

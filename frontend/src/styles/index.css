@@ -131,8 +131,22 @@ body,
 /* options-bar */
 .tabs {
   display: flex;
-  border-bottom: 1px solid #e5e7eb;
-  background: #fff;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 4px;
+}
+
+.tab.right {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary, #888);
+  transition: color 0.2s ease;
+}
+
+.tab.right:hover {
+  color: var(--text-active, #000);
 }
 
 .tab {
