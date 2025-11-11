@@ -1,6 +1,8 @@
 import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import API from '../API';
+import { validateFilename } from '../utils';
+import { useToast } from './ToastProvider';
 
 const FileSidebar = forwardRef(function FileSidebar(
   {
@@ -19,6 +21,63 @@ const FileSidebar = forwardRef(function FileSidebar(
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
   const saveGroupRef = useRef(null);
+  const [editingFile, setEditingFile] = useState(null);
+  const [newFileName, setNewFileName] = useState("");
+
+  const toast = useToast();
+  const parseAPIError =
+    (API && API.parseAPIError)
+      ? API.parseAPIError
+      : (e) => ({ code: 'GENERIC', message: e?.response?.data?.error || e?.message || 'Произошла ошибка' });
+
+  const startRename = (file) => {
+    setEditingFile(file.name);
+    setNewFileName(file.name);
+  };
+
+  const cancelRename = () => {
+    setEditingFile(null);
+    setNewFileName("");
+  };
+
+  const confirmRename = async (oldName, newName) => {
+    if (!newName.endsWith('.md') && !newName.endsWith('.markdown')) {
+      newName += '.md';
+    }
+    if (!newName.trim() || newName === oldName) {
+      cancelRename();
+      return;
+    }
+    const v = validateFilename(newName);
+    if (!v.ok) {
+      toast.error(v.message);
+      cancelRename();
+      return;
+    }
+
+    try {
+      await API.STORAGE.put(`/rename/${encodeURIComponent(oldName)}/${encodeURIComponent(newName)}`);
+      setEntries((prev) =>
+        prev.map((f) => (f.name === oldName ? { ...f, name: newName } : f))
+      );
+      if (current?.name === oldName) {
+        onOpenFile(localStorage.getItem(oldName) || "", { name: newName });
+        localStorage.setItem(newName, localStorage.getItem(oldName));
+        localStorage.removeItem(oldName);
+      }
+      toast.success('Файл переименован');
+    } catch (err) {
+      console.error("Ошибка при переименовании файла", err);
+      const e = parseAPIError(err);
+      if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
+        toast.error(`Недопустимые символы: ${e.details.invalid.join(' ')}`);
+      } else {
+        toast.error(e.message || 'Не удалось переименовать файл');
+      }
+    } finally {
+      cancelRename();
+    }
+  };
 
   const downloadFile = async (file) => {
     try {
@@ -44,7 +103,8 @@ const FileSidebar = forwardRef(function FileSidebar(
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('File download error', err);
-      alert('Failed to download file');
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось скачать файл');
     }
   };
 
@@ -62,6 +122,8 @@ const FileSidebar = forwardRef(function FileSidebar(
       }
     } catch (err) {
       console.error('Ошибка загрузки файлов', err);
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось загрузить список файлов');
     }
   };
 
@@ -80,6 +142,8 @@ const FileSidebar = forwardRef(function FileSidebar(
       }
     } catch (err) {
       console.error('Ошибка загрузки файла', err);
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось открыть файл');
     }
   };
 
@@ -98,9 +162,11 @@ const FileSidebar = forwardRef(function FileSidebar(
           setUnsaved(false);
         }
       }
+      toast.success('Файл удалён');
     } catch (err) {
       console.error('Ошибка удаления файла', err);
-      alert('Не удалось удалить файл');
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось удалить файл');
     }
   };
 
@@ -127,7 +193,8 @@ const FileSidebar = forwardRef(function FileSidebar(
       await API.AUTH.post('/v1/logout');
       window.location.href = '/login';
     } catch (err) {
-      alert('Не удалось выполнить выход');
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось выполнить выход');
     }
   };
 
@@ -208,10 +275,36 @@ const FileSidebar = forwardRef(function FileSidebar(
           className={'fs-item' + (current?.name === file.name ? ' active' : '')}
           title={file.name}
           onClick={() => openFile(file)}
+          onDoubleClick={() => startRename(file)}
         >
-          <span className="fs-name">
-            {file.name}
-            {unsaved && current?.name === file.name && ' ●'}
+          <span className="fs-name" onDoubleClick={(e) => { e.stopPropagation(); startRename(file); }}>
+            {editingFile === file.name ? (
+              <input
+                type="text"
+                value={newFileName}
+                autoFocus
+                onChange={(e) => setNewFileName(e.target.value)}
+                onBlur={() => confirmRename(file.name, newFileName)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") confirmRename(file.name, newFileName);
+                  if (e.key === "Escape") cancelRename();
+                }}
+                className="rename-input"
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  color: "inherit",
+                  border: "1px solid #555",
+                  borderRadius: 4,
+                  padding: "2px 4px",
+                }}
+              />
+            ) : (
+              <>
+                {file.name}
+                {unsaved && current?.name === file.name && ' ●'}
+              </>
+            )}
           </span>
           <button
             className="fs-close"
@@ -225,6 +318,7 @@ const FileSidebar = forwardRef(function FileSidebar(
           </button>
         </div>
       ))}
+
     </aside >
   );
 });

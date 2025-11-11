@@ -155,11 +155,10 @@ func uploadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	}
 	fmt.Printf("filename: %s", file.name)
 	if err := repo.Create(file.name, *userId, file.bytes); err != nil {
-		if errors.Is(err, repodb.ErrUserSpaceIsFull) || errors.Is(err, repodb.ErrFileNumberLimitReached) {
-			c.AbortWithStatusJSON(http.StatusConflict, ErrorResponse{Error: "Failed to create file: " + err.Error()})
+		if mapRepoErr(c, err, "name") {
 			return
 		}
-		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create file: " + err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: "Unexpected error: " + err.Error()})
 		return
 	}
 
@@ -194,16 +193,10 @@ func editFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	}
 
 	if err := repo.Save(file.name, *userId, file.bytes); err != nil {
-		if errors.Is(err, repodb.ErrFileNotFound) {
-			c.AbortWithStatusJSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
+		if mapRepoErr(c, err, "name") {
 			return
 		}
-		if errors.Is(err, repodb.ErrUserSpaceIsFull) {
-			c.AbortWithStatusJSON(http.StatusConflict, ErrorResponse{Error: "Failed to create file: " + err.Error()})
-			return
-		}
-
-		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to save file: " + err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: "Unexpected error: " + err.Error()})
 		return
 	}
 
@@ -234,11 +227,9 @@ func downloadFileHandler(c *gin.Context, repo repodb.FileRepository) {
 
 	bytes, err := repo.Get(filename, *userId)
 	if err != nil {
-		if errors.Is(err, repodb.ErrFileNotFound) {
-			c.AbortWithStatusJSON(http.StatusNotFound, ErrorResponse{Error: "File not found"})
+		if mapRepoErr(c, err, "filename") {
 			return
 		}
-
 		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -267,7 +258,10 @@ func deleteFileHandler(c *gin.Context, repo repodb.FileRepository) {
 	}
 
 	if err := repo.Delete(filename, *userId); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to delete file: " + err.Error()})
+		if mapRepoErr(c, err, "filename") {
+			return
+		}
+		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: "Unexpected error: " + err.Error()})
 		return
 	}
 
@@ -301,4 +295,127 @@ func getAllFilesHandler(c *gin.Context, repo repodb.FileRepository) {
 	c.JSON(http.StatusOK, GetAllFilesResponse{
 		Files: fileNames,
 	})
+}
+
+// @Summary User files
+// @Tags files
+// @Description Get all user files from server
+// @Produce json
+// @Success 200 {object} ErrorResponse "Error response"
+// @Failure 400 {object} ErrorResponse "Error response"
+// @Failure 401 {object} ErrorResponse "Error response"
+// @Failure 500 {object} ErrorResponse "Error response"
+// @Router /api/files [get]
+func renameFileHandler(c *gin.Context, repo repodb.FileRepository) {
+	oldFilename := c.Param("oldName")
+	if oldFilename == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: "Filename not provided"})
+		return
+	}
+	newFilename := c.Param("newName")
+	if newFilename == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: "Filename not provided"})
+		return
+	}
+
+	userId := getUserId(c)
+	if userId == nil {
+		return
+	}
+
+	err := repo.Rename(oldFilename, newFilename, *userId)
+	if err != nil {
+		if mapRepoErr(c, err, "newName") {
+			return
+		}
+		c.AbortWithStatusJSON(http.StatusInternalServerError, ErrorResponse{Error: "Unexpected error: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, MessageReponse{
+		Message: "File renamed successfully!",
+	})
+}
+
+//
+
+func abortRich(c *gin.Context, status int, code, msg, field string, details any) {
+	c.AbortWithStatusJSON(status, ErrorResponse{
+		Error: APIError{Code: code, Message: msg, Field: field, Details: details},
+	})
+}
+
+func mapRepoErr(c *gin.Context, err error, field string) bool {
+	if err == nil {
+		return false
+	}
+
+	if errors.Is(err, repodb.ErrUserSpaceIsFull) {
+		abortRich(c, http.StatusConflict, "USER_SPACE_FULL",
+			"Недостаточно места в хранилище пользователя.", "", nil)
+		return true
+	}
+	if errors.Is(err, repodb.ErrFileNumberLimitReached) {
+		abortRich(c, http.StatusConflict, "FILE_COUNT_LIMIT",
+			"Превышен лимит количества файлов.", "", map[string]int{"max": repodb.MAX_USER_FILES})
+		return true
+	}
+	if errors.Is(err, repodb.ErrFileExists) {
+		abortRich(c, http.StatusConflict, "FILE_ALREADY_EXISTS",
+			"Файл с таким именем уже существует.", field, nil)
+		return true
+	}
+	if errors.Is(err, repodb.ErrFileNotFound) {
+		abortRich(c, http.StatusNotFound, "FILE_NOT_FOUND",
+			"Файл не найден.", field, nil)
+		return true
+	}
+	var inv *repodb.ErrInvalidFilename
+	if errors.As(err, &inv) {
+		code := "FILE_NAME_INVALID"
+		msg := "Недопустимое имя файла."
+		det := map[string]any{}
+
+		switch inv.Reason {
+		case repodb.ERR_EMPTY_FILENAME:
+			code, msg = "FILE_NAME_EMPTY", "Имя файла не может быть пустым."
+		case repodb.ERR_PATH_IN_FILENAME:
+			code, msg = "FILE_NAME_PATH", "Имя файла не должно содержать путь или разделители каталогов."
+		case repodb.ERR_BAD_EXTENSION:
+			code, msg = "FILE_EXTENSION_INVALID", "Разрешены только расширения: .md ."
+			det["allowedExtensions"] = []string{".md", ".markdown"}
+		case repodb.ERR_TRAILING_DOT_SPACE:
+			code, msg = "FILE_NAME_TRAILING", "Имя файла не должно заканчиваться точкой или пробелом."
+		case repodb.ERR_TOO_LONG:
+			code, msg = "FILE_NAME_TOO_LONG", "Слишком длинное имя файла."
+			det["maxLen"] = 255
+		case repodb.ERR_RESERVED:
+			code, msg = "FILE_NAME_RESERVED", "Это имя зарезервировано системой."
+			if inv.ReservedAs != "" {
+				det["reserved"] = inv.ReservedAs
+			}
+		case repodb.ERR_ONLY_DOTS:
+			code, msg = "FILE_NAME_ONLY_DOTS", "Имя файла не может состоять только из точек."
+		case repodb.ERR_ONLY_SPACES:
+			code, msg = "FILE_NAME_ONLY_SPACES", "Имя файла не может состоять только из пробелов."
+		case repodb.ERR_INVALID_CHARACTERS:
+			code, msg = "FILE_NAME_INVALID_CHARS", "Имя файла содержит недопустимые символы."
+			if len(inv.InvalidRunes) > 0 {
+				var chars []string
+				for _, r := range inv.InvalidRunes {
+					if r <= 0x1F || r == 0x7F {
+						chars = append(chars, fmt.Sprintf("U+%02X", r))
+					} else {
+						chars = append(chars, string(r))
+					}
+				}
+				det["invalid"] = chars
+			}
+		}
+
+		abortRich(c, http.StatusBadRequest, code, msg, field, det)
+		return true
+	}
+
+	return false
 }

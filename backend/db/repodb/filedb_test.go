@@ -1,6 +1,7 @@
 package repodb
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -291,6 +292,77 @@ func TestLocalFileRepo_SpecialCharacters(t *testing.T) {
 
 			err = repo.Delete(filename, testUUID)
 			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestFileNumberLimit(t *testing.T) {
+	tempDir, cleanup := setupTestDir(t)
+	defer cleanup()
+
+	repo, err := NewLocalFileRepo(tempDir)
+	require.NoError(t, err)
+
+	for i := range MAX_USER_FILES {
+		filename := fmt.Sprintf("file%d.md", i)
+		t.Run(filename, func(t *testing.T) {
+			content := []byte("content for " + filename)
+
+			err := repo.Create(filename, testUUID, content)
+			assert.NoError(t, err)
+
+			retrieved, err := repo.Get(filename, testUUID)
+			assert.NoError(t, err)
+			assert.Equal(t, content, retrieved)
+		})
+	}
+
+	content := []byte("content for last file")
+	filename := "file_last.md"
+
+	err = repo.Create(filename, testUUID, content)
+	assert.Error(t, err)
+	assert.Equal(t, ErrFileNumberLimitReached, err)
+
+	_, err = repo.Get(filename, testUUID)
+	assert.Error(t, err)
+	assert.Equal(t, ErrFileNotFound, err)
+}
+
+func TestStorageLimit(t *testing.T) {
+	for cnt := 1; cnt <= MAX_USER_FILES; cnt += 1 {
+		t.Run(fmt.Sprintf("file count: %d", cnt), func(t *testing.T) {
+			tempDir, cleanup := setupTestDir(t)
+			defer cleanup()
+
+			repo, err := NewLocalFileRepo(tempDir)
+			require.NoError(t, err)
+
+			size := USER_SPACE_SIZE/cnt + cnt
+			content := make([]byte, size)
+			for i := range content {
+				content[i] = 1
+			}
+
+			for i := range cnt - 1 {
+				filename := fmt.Sprintf("file%d.md", i)
+				err = repo.Create(filename, testUUID, content[:size-cnt])
+				assert.NoError(t, err)
+
+				retrieved, err := repo.Get(filename, testUUID)
+				assert.NoError(t, err)
+				assert.Equal(t, content[:size-cnt], retrieved)
+			}
+
+			filename := "last_file.md"
+
+			err = repo.Create(filename, testUUID, content)
+			assert.Error(t, err)
+			assert.Equal(t, ErrUserSpaceIsFull, err)
+
+			_, err = repo.Get(filename, testUUID)
+			assert.Error(t, err)
+			assert.Equal(t, ErrFileNotFound, err)
 		})
 	}
 }
