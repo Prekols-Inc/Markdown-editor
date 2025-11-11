@@ -2,6 +2,7 @@ import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 're
 import { FilePlus2, Save, Download, LogOut, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import API from '../API';
+import { useToast } from './ToastProvider';
 import { isValidFilename } from '../utils';
 
 const DEFAULT_MD = "# Новый Markdown файл\n\nНапишите здесь...";
@@ -33,6 +34,12 @@ const FileSidebar = forwardRef(function FileSidebar(
   });
   const menuRef = useRef(null);
 
+  const toast = useToast();
+  const parseAPIError =
+    (API && API.parseAPIError)
+      ? API.parseAPIError
+      : (e) => ({ code: 'GENERIC', message: e?.response?.data?.error || e?.message || 'Произошла ошибка' });
+
   const startRename = (file) => {
     setEditingFile(file.name);
     setNewFileName(file.name);
@@ -45,11 +52,18 @@ const FileSidebar = forwardRef(function FileSidebar(
   };
 
   const confirmRename = async (oldName, newName) => {
-    if (!newName.endsWith('.md')) newName += '.md';
-    if (!newName.trim() || newName === oldName) return cancelRename();
-    if (!isValidFilename(newName)) {
-      alert("Недопустимое имя файла!");
-      return cancelRename();
+    if (!newName.endsWith('.md') && !newName.endsWith('.markdown')) {
+      newName += '.md';
+    }
+    if (!newName.trim() || newName === oldName) {
+      cancelRename();
+      return;
+    }
+    const v = validateFilename(newName);
+    if (!v.ok) {
+      toast.error(v.message);
+      cancelRename();
+      return;
     }
 
     try {
@@ -66,9 +80,15 @@ const FileSidebar = forwardRef(function FileSidebar(
         localStorage.setItem(newName, localStorage.getItem(oldName));
         localStorage.removeItem(oldName);
       }
+      toast.success('Файл переименован');
     } catch (err) {
       console.error("Ошибка при переименовании файла", err);
-      alert("Не удалось переименовать файл");
+      const e = parseAPIError(err);
+      if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
+        toast.error(`Недопустимые символы: ${e.details.invalid.join(' ')}`);
+      } else {
+        toast.error(e.message || 'Не удалось переименовать файл');
+      }
     } finally {
       cancelRename();
     }
@@ -120,7 +140,8 @@ const FileSidebar = forwardRef(function FileSidebar(
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('File download error', err);
-      alert('Не удалось скачать файл');
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось скачать файл');
     }
   };
 
@@ -138,6 +159,8 @@ const FileSidebar = forwardRef(function FileSidebar(
       }
     } catch (err) {
       console.error('Ошибка загрузки файлов', err);
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось загрузить список файлов');
     }
   };
 
@@ -155,6 +178,8 @@ const FileSidebar = forwardRef(function FileSidebar(
       }
     } catch (err) {
       console.error('Ошибка загрузки файла', err);
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось открыть файл');
     }
   };
 
@@ -172,9 +197,11 @@ const FileSidebar = forwardRef(function FileSidebar(
           setUnsaved(false);
         }
       }
+      toast.success('Файл удалён');
     } catch (err) {
       console.error('Ошибка удаления файла', err);
-      alert('Не удалось удалить файл');
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось удалить файл');
     }
   };
 
@@ -207,7 +234,8 @@ const FileSidebar = forwardRef(function FileSidebar(
       await API.AUTH.post('/v1/logout');
       window.location.href = '/login';
     } catch (err) {
-      alert('Не удалось выполнить выход');
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось выполнить выход');
     }
   };
 

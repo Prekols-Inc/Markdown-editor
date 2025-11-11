@@ -189,7 +189,9 @@ func (l *LocalFileRepo) Rename(filename string, newFilename string, userId uuid.
 	if err != nil {
 		return err
 	}
-
+	if err := validateFile(newFilename); err != nil {
+		return err
+	}
 	newPath, err := getPath(l.basePath, userId, newFilename)
 	if err != nil {
 		return err
@@ -208,9 +210,8 @@ func (l *LocalFileRepo) Rename(filename string, newFilename string, userId uuid.
 		return err
 	}
 	if exists {
-		return fmt.Errorf("file %s already exists", newFilename)
+		return ErrFileExists
 	}
-
 	if err := os.Rename(oldPath, newPath); err != nil {
 		return fmt.Errorf("failed to rename file: %w", err)
 	}

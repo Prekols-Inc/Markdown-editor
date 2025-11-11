@@ -38,5 +38,24 @@ AUTH.interceptors.response.use(
   }
 );
 
+export function parseAPIError(e) {
+  const data = e?.response?.data;
+  const raw = data?.error;
+
+  if (!raw) {
+    return { code: 'GENERIC', message: e?.message || 'Ошибка сети' };
+  }
+  if (typeof raw === 'string') {
+    return { code: 'GENERIC', message: raw };
+  }
+  const code = typeof raw.code === 'string' ? raw.code : 'GENERIC';
+  let message = raw.message;
+
+  if (typeof message !== 'string') {
+    try { message = JSON.stringify(raw); }
+    catch { message = 'Произошла ошибка'; }
+  }
+  return { code, message, field: raw.field, details: raw.details };
+}
 export default { AUTH, STORAGE };
 

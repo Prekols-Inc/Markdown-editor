@@ -27,9 +27,16 @@ type GetAllFilesResponse struct {
 }
 
 type ErrorResponse struct {
-	Error string `json:"error"`
+	Error any `json:"error"`
 }
 
 type MessageReponse struct {
 	Message string `json:"message"`
+}
+
+type APIError struct {
+	Code    string      `json:"code"`
+	Message string      `json:"message"`
+	Field   string      `json:"field,omitempty"`
+	Details interface{} `json:"details,omitempty"`
 }
