@@ -92,6 +92,11 @@ jobs:
       - name: Make binary executable
         run: chmod +x app
 
+      - name: Generate TLS certificates
+        run: |
+          mkdir -p tls
+          openssl req -x509 -newkey rsa:4096 -keyout tls/key.pem -out tls/cert.pem -days 365 -nodes -subj "/CN=localhost"
+
       - name: Create .env file
         run: |
           cat << EOF > .env
@@ -108,7 +113,7 @@ jobs:
         run: |
           for i in {1..5}; do
             echo "Attempt $i"
-            status_code=$(curl -s -o /dev/null -w "%{http_code}" $VITE_STORAGE_API_BASE_URL/health || echo "000")
+            status_code=$(curl -k -s -o /dev/null -w "%{http_code}" $VITE_STORAGE_API_BASE_URL/health || echo "000")
             if [ "$status_code" -eq 200 ]; then
               echo "Health check passed"
               exit 0
@@ -179,6 +184,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Generate TLS certificates for backend
+        run: |
+          mkdir -p backend/tls
+          openssl req -x509 -newkey rsa:4096 -keyout backend/tls/key.pem -out backend/tls/cert.pem -days 365 -nodes -subj "/CN=localhost"
+
+      - name: Generate TLS certificates for auth
+        run: |
+          mkdir -p auth/tls
+          openssl req -x509 -newkey rsa:4096 -keyout auth/tls/key.pem -out auth/tls/cert.pem -days 365 -nodes -subj "/CN=localhost"
+
       - name: Create .env file for Docker Compose
         run: |
           cat << EOF > .env
@@ -217,7 +232,7 @@ jobs:
           fi
 
           echo "Checking backend health at https://$BACKEND_HOST:$BACKEND_PORT/health"
-          if ! curl -f -v -s -S -o /dev/null -w "HTTPS Status: %{http_code}\n" "https://$BACKEND_HOST:$BACKEND_PORT/health"; 
+          if ! curl -k -f -v -s -S -o /dev/null -w "HTTPS Status: %{http_code}\n" "https://$BACKEND_HOST:$BACKEND_PORT/health"; 
           then
             echo "ERROR: Backend health check failed!"
             echo "Backend logs:"
@@ -228,7 +243,7 @@ jobs:
           fi
 
           echo "Checking auth health at https://$AUTH_HOST:$AUTH_PORT/health"
-          if ! curl -f -v -s -S -o /dev/null -w "HTTPS Status: %{http_code}\n" "https://$AUTH_HOST:$AUTH_PORT/health"; 
+          if ! curl -k -f -v -s -S -o /dev/null -w "HTTPS Status: %{http_code}\n" "https://$AUTH_HOST:$AUTH_PORT/health"; 
           then
             echo "ERROR: Auth health check failed!"
             echo "Auth logs:"
@@ -239,7 +254,7 @@ jobs:
           fi
 
           echo "Checking frontend availability at https://$FRONTEND_HOST:$FRONTEND_PORT"
-          if ! curl -f -v -s -S -o /dev/null -w "HTTPS Status: %{http_code}\n" "https://$FRONTEND_HOST:$FRONTEND_PORT"; 
+          if ! curl -k -f -v -s -S -o /dev/null -w "HTTPS Status: %{http_code}\n" "https://$FRONTEND_HOST:$FRONTEND_PORT"; 
           then
             echo "ERROR: Frontend availability check failed!"
             echo "Frontend logs:"
