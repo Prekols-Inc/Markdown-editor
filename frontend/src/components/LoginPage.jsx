@@ -71,7 +71,7 @@ export default function AuthPage({ onLogin }) {
                 }
             }
         } catch (err) {
-            toast.error(err?.response?.data?.message || err?.message || 'Ошибка запроса');
+            toast.error(err?.response?.data?.error || err?.message || 'Ошибка запроса');
         } finally {
             setLoading(false);
         }
@@ -153,6 +153,7 @@ export default function AuthPage({ onLogin }) {
                                 className="switch-mode"
                                 onClick={() => setMode('signup')}
                                 role="button"
+                                style={{ color: 'blue' }}
                             >
                                 Зарегистрироваться
                             </span>
@@ -164,6 +165,7 @@ export default function AuthPage({ onLogin }) {
                                 className="switch-mode"
                                 onClick={() => setMode('login')}
                                 role="button"
+                                style={{ color: 'blue' }}
                             >
                                 Войти
                             </span>

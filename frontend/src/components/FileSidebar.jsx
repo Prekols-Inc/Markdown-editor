@@ -1,7 +1,8 @@
 import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import API from '../API';
-import { isValidFilename } from '../utils';
+import { validateFilename } from '../utils';
+import { useToast } from './ToastProvider';
 
 const FileSidebar = forwardRef(function FileSidebar(
   {
@@ -23,6 +24,12 @@ const FileSidebar = forwardRef(function FileSidebar(
   const [editingFile, setEditingFile] = useState(null);
   const [newFileName, setNewFileName] = useState("");
 
+  const toast = useToast();
+  const parseAPIError =
+    (API && API.parseAPIError)
+      ? API.parseAPIError
+      : (e) => ({ code: 'GENERIC', message: e?.response?.data?.error || e?.message || 'Произошла ошибка' });
+
   const startRename = (file) => {
     setEditingFile(file.name);
     setNewFileName(file.name);
@@ -34,21 +41,22 @@ const FileSidebar = forwardRef(function FileSidebar(
   };
 
   const confirmRename = async (oldName, newName) => {
-    if (!newName.endsWith('.md')) {
+    if (!newName.endsWith('.md') && !newName.endsWith('.markdown')) {
       newName += '.md';
     }
     if (!newName.trim() || newName === oldName) {
       cancelRename();
       return;
     }
-    if (!isValidFilename(newName)) {
-      alert("Недопустимое имя файла!");  // todo: change with notification
+    const v = validateFilename(newName);
+    if (!v.ok) {
+      toast.error(v.message);
       cancelRename();
       return;
     }
 
     try {
-      await API.STORAGE.put(`/rename/${oldName}/${newName}`);
+      await API.STORAGE.put(`/rename/${encodeURIComponent(oldName)}/${encodeURIComponent(newName)}`);
       setEntries((prev) =>
         prev.map((f) => (f.name === oldName ? { ...f, name: newName } : f))
       );
@@ -57,15 +65,19 @@ const FileSidebar = forwardRef(function FileSidebar(
         localStorage.setItem(newName, localStorage.getItem(oldName));
         localStorage.removeItem(oldName);
       }
+      toast.success('Файл переименован');
     } catch (err) {
       console.error("Ошибка при переименовании файла", err);
-      alert("Не удалось переименовать файл"); // todo: change with notification
+      const e = parseAPIError(err);
+      if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
+        toast.error(`Недопустимые символы: ${e.details.invalid.join(' ')}`);
+      } else {
+        toast.error(e.message || 'Не удалось переименовать файл');
+      }
     } finally {
       cancelRename();
     }
   };
-
-
 
   const downloadFile = async (file) => {
     try {
@@ -91,7 +103,8 @@ const FileSidebar = forwardRef(function FileSidebar(
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('File download error', err);
-      alert('Failed to download file'); // todo: change with notification
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось скачать файл');
     }
   };
 
@@ -109,6 +122,8 @@ const FileSidebar = forwardRef(function FileSidebar(
       }
     } catch (err) {
       console.error('Ошибка загрузки файлов', err);
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось загрузить список файлов');
     }
   };
 
@@ -127,6 +142,8 @@ const FileSidebar = forwardRef(function FileSidebar(
       }
     } catch (err) {
       console.error('Ошибка загрузки файла', err);
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось открыть файл');
     }
   };
 
@@ -145,9 +162,11 @@ const FileSidebar = forwardRef(function FileSidebar(
           setUnsaved(false);
         }
       }
+      toast.success('Файл удалён');
     } catch (err) {
       console.error('Ошибка удаления файла', err);
-      alert('Не удалось удалить файл'); // todo: change with notification
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось удалить файл');
     }
   };
 
@@ -174,7 +193,8 @@ const FileSidebar = forwardRef(function FileSidebar(
       await API.AUTH.post('/v1/logout');
       window.location.href = '/login';
     } catch (err) {
-      alert('Не удалось выполнить выход'); // todo: change with notification
+      const e = parseAPIError(err);
+      toast.error(e.message || 'Не удалось выполнить выход');
     }
   };
 
