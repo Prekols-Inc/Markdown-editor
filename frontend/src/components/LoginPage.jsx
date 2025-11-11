@@ -70,7 +70,14 @@ export default function AuthPage({ onLogin }) {
                 }
             }
         } catch (err) {
-            toast.error(err?.response?.data?.message || err?.message || 'Ошибка запроса');
+            switch (err?.response?.status) {
+                case 409:
+                    toast.error('Пользователь с таким именем уже существует');
+                    break;
+                default:
+                    toast.error('Произошла ошибка. Попробуйте еще раз.');
+                    break;
+            }
         } finally {
             setLoading(false);
         }
