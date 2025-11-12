@@ -13,8 +13,7 @@ export default function AuthPage({ onLogin }) {
         confirmPassword: ''
     });
     const [loading, setLoading] = useState(false);
-    const [showPw, setShowPw] = useState(false);
-    const [showPw2, setShowPw2] = useState(false);
+    const [showPasswords, setShowPasswords] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -62,7 +61,7 @@ export default function AuthPage({ onLogin }) {
                     password: formData.password
                 });
 
-                if (resp.status === 201 || (resp.status >= 200 && resp.status < 300)) {
+                if (resp.status === 201) {
                     toast.success('Регистрация прошла успешно! Теперь вы можете войти.');
                     setMode('login');
                     setFormData({ username: '', password: '', confirmPassword: '' });
@@ -71,7 +70,15 @@ export default function AuthPage({ onLogin }) {
                 }
             }
         } catch (err) {
-            toast.error(err?.response?.data?.error || err?.message || 'Ошибка запроса');
+            switch (err?.response?.status) {
+                case 409:
+                    toast.error('Пользователь с таким именем уже существует');
+                    break;
+                case 500:
+                default:
+                    toast.error('Произошла ошибка. Попробуйте еще раз.');
+                    break;
+            }
         } finally {
             setLoading(false);
         }
@@ -95,7 +102,7 @@ export default function AuthPage({ onLogin }) {
 
                 <div className="password-field">
                     <input
-                        type={showPw ? 'text' : 'password'}
+                        type={showPasswords ? 'text' : 'password'}
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
@@ -105,18 +112,18 @@ export default function AuthPage({ onLogin }) {
                     />
                     <span
                         className="toggle-password"
-                        onClick={() => setShowPw(p => !p)}
-                        aria-label={showPw ? 'Скрыть пароль' : 'Показать пароль'}
+                        onClick={() => setShowPasswords(p => !p)}
+                        aria-label={showPasswords ? 'Скрыть пароль' : 'Показать пароль'}
                         role="button"
                     >
-                        {showPw ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                        {showPasswords ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
                     </span>
                 </div>
 
                 {mode === 'signup' && (
                     <div className="password-field">
                         <input
-                            type={showPw2 ? 'text' : 'password'}
+                            type={showPasswords ? 'text' : 'password'}
                             name="confirmPassword"
                             value={formData.confirmPassword}
                             onChange={handleChange}
@@ -126,11 +133,11 @@ export default function AuthPage({ onLogin }) {
                         />
                         <span
                             className="toggle-password"
-                            onClick={() => setShowPw2(p => !p)}
-                            aria-label={showPw2 ? 'Скрыть пароль' : 'Показать пароль'}
+                            onClick={() => setShowPasswords(p => !p)}
+                            aria-label={showPasswords ? 'Скрыть пароль' : 'Показать пароль'}
                             role="button"
                         >
-                            {showPw2 ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                            {showPasswords ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
                         </span>
                     </div>
                 )}

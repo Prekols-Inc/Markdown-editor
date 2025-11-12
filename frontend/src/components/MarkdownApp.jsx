@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { PanelRightOpen, PanelRightClose } from 'lucide-react';
 import MarkdownEditor from './MarkdownEditor';
 import FileSidebar from './FileSidebar';
 import OptionsEditor from './OptionsEditor';
@@ -25,6 +26,7 @@ const DEFAULT_OPTIONS = {
 
 export default function App() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [showPreview, setShowPreview] = useState(true);
     const toggleSidebar = () => setSidebarOpen(o => !o);
     const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT);
     const isResizing = useRef(false);
@@ -215,7 +217,9 @@ export default function App() {
             <div
                 className="app-grid"
                 style={{
-                    gridTemplateColumns: `${sidebarOpen ? 260 : 48}px ${leftWidth}px 5px 1fr`
+                    gridTemplateColumns: showPreview
+                        ? `${sidebarOpen ? 260 : 48}px ${leftWidth}px 5px 1fr`
+                        : `${sidebarOpen ? 260 : 48}px 1fr`
                 }}
             >
                 <FileSidebar
@@ -244,6 +248,18 @@ export default function App() {
                         >
                             Options
                         </button>
+
+                        <button
+                            className="tab right flex items-center gap-2"
+                            onClick={() => setShowPreview(p => !p)}
+                            title={showPreview ? 'Скрыть превью' : 'Показать превью'}
+                        >
+                            {showPreview ? (
+                                <PanelRightClose size={22} strokeWidth={1.75} />
+                            ) : (
+                                <PanelRightOpen size={22} strokeWidth={1.75} />
+                            )}
+                        </button>
                     </div>
 
                     {tab === 'markdown' ? (
@@ -256,12 +272,15 @@ export default function App() {
                     )}
                 </div>
 
-                <div
-                    className="resizer"
-                    onMouseDown={handleMouseDown}
-                />
-
-                <MarkdownPreview markdown={markdown} options={options} />
+                {showPreview && (
+                    <>
+                        <div
+                            className="resizer"
+                            onMouseDown={handleMouseDown}
+                        />
+                        <MarkdownPreview markdown={markdown} options={options} />
+                    </>
+                )}
             </div>
 
             <NewFileModal
