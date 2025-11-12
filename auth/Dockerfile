@@ -14,4 +14,5 @@ EXPOSE ${AUTH_PORT}
 WORKDIR /root/
 COPY --from=builder /markdown-auth/auth .
 COPY ./docs ./docs
+COPY ./tls ./tls
 CMD ./auth --port=${AUTH_PORT} --host=${AUTH_HOST}

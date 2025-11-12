@@ -11,8 +11,12 @@ Project requirements: [requirements.md](docs/requirements.md)
 The most easiest way to set up the project is Docker Compose:
 
 1. Create `.env` file like `.env.example`
-
-2. Run project:
+2. Sign TLS certificates (also for auth service)
+```bash
+cd backend
+openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes -subj "/CN=localhost" -keyout tls/key.pem -out tls/cert.pem
+```
+3. Run project:
  - To run all containers in a background (detach process)
 ```bash
 docker-compose up -d
@@ -52,7 +56,8 @@ Admin credentials:
 ####  Backend
 
 1. Create JWT_SECRET in .env file
-2. Run:
+2. Sign TLS certificate (see [«Run using Docker Compose»](#run-using-docker-compose))
+3. Run:
 ```bash
 cd backend
 go mod tidy
@@ -64,14 +69,15 @@ go run . --host=localhost --port=YOUR_PORT
 > Prerequisites: **Go ≥ 1.23**, PostgreSQL.
 
 1. Create JWT_SECRET in .env file
-2. Run PostgreSQL instance:
+2. Sign TLS certificate (see [«Run using Docker Compose»](#run-using-docker-compose))
+3. Run PostgreSQL instance:
 ```bash
 cd auth
 sudo apt install posgtresql
 sudo -u postgres createdb auth_db # creates database
 sudo -u postgres psql -d auth_db -f db/init.sql # creates table 'users'
 ```
-3. Run:
+4. Run:
 ```bash
 export DB_ variables # env variables from .env.example
 go mod tidy

@@ -33,8 +33,26 @@ func healthHandler(c *gin.Context) {
 }
 
 func setCookieTokens(c *gin.Context, accessToken string, refreshToken string) {
-	c.SetCookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, int(REFRESH_TOKEN_TTL.Seconds()), "/", "", false, true)
-	c.SetCookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, int(REFRESH_TOKEN_TTL.Seconds()), "/v1/refresh", "", false, true)
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     ACCESS_TOKEN_COOKIE_NAME,
+		Value:    accessToken,
+		Path:     "/",
+		Domain:   "",
+		Expires:  time.Now().Add(REFRESH_TOKEN_TTL),
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+	})
+
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     REFRESH_TOKEN_COOKIE_NAME,
+		Value:    refreshToken,
+		Path:     "/v1/refresh",
+		Domain:   "",
+		Expires:  time.Now().Add(REFRESH_TOKEN_TTL),
+		Secure:   true,
+		HttpOnly: true,
+	})
 }
 
 // @Summary Sign in

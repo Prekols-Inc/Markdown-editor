@@ -11,13 +11,14 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 const (
-	DB_PATH = "storage"
+	DB_PATH       = "storage"
+	TLS_CERT_FILE = "tls/cert.pem"
+	TLS_KEY_FILE  = "tls/key.pem"
 )
 
 var (
@@ -72,9 +73,9 @@ func main() {
 		panic(fmt.Sprintf("Failed to create file repository: %v", err))
 	}
 
-	router := gin.Default()
+	r := gin.Default()
 
-	router.Use(cors.New(cors.Config{
+	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"},
 		AllowMethods:     []string{"POST", "GET", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
@@ -83,13 +84,11 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	router.Use(counterMiddleware())
-	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
-	router.Static("/docs", "./docs")
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/docs/swagger.json")))
-	router.GET("/health", healthHandler)
+	r.Static("/docs", "./docs")
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/docs/swagger.json")))
+	r.GET("/health", healthHandler)
 
-	authorized := router.Group("/api")
+	authorized := r.Group("/api")
 	authorized.Use(authMiddleware())
 	authorized.GET("/files", func(c *gin.Context) {
 		getAllFilesHandler(c, repo)
@@ -111,7 +110,7 @@ func main() {
 	})
 
 	serverAddr := fmt.Sprintf("%s:%s", host, port)
-	if err := router.Run(serverAddr); err != nil {
+	if err := r.RunTLS(serverAddr, TLS_CERT_FILE, TLS_KEY_FILE); err != nil {
 		panic(fmt.Sprintf("Failed to run server: %v", err))
 	}
 	fmt.Printf("Server started on %s\n", serverAddr)
