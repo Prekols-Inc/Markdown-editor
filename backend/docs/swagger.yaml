@@ -44,47 +44,47 @@ paths:
     delete:
       description: Delete file from server
       parameters:
-      - description: Filename to delete
-        in: path
-        name: filename
-        required: true
-        type: string
+        - description: Filename to delete
+          in: path
+          name: filename
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Delete response
           schema:
-            $ref: '#/definitions/main.DeleteResponse'
+            $ref: "#/definitions/main.DeleteResponse"
         "400":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "401":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "404":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "500":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       summary: Delete file
       tags:
-      - files
+        - files
     get:
       description: Download a file by filename
       parameters:
-      - description: Filename to download
-        in: path
-        name: filename
-        required: true
-        type: string
+        - description: Filename to download
+          in: path
+          name: filename
+          required: true
+          type: string
       produces:
-      - application/octet-stream
+        - application/octet-stream
       responses:
         "200":
           description: File content
@@ -93,132 +93,132 @@ paths:
         "400":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "401":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "404":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "500":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       summary: Download file
       tags:
-      - files
+        - files
     post:
       description: Upload new file to server
       parameters:
-      - description: Filename to save
-        in: path
-        name: filename
-        required: true
-        type: string
-      - description: File to upload
-        in: formData
-        name: file
-        required: true
-        type: file
+        - description: Filename to save
+          in: path
+          name: filename
+          required: true
+          type: string
+        - description: File to upload
+          in: formData
+          name: file
+          required: true
+          type: file
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Upload response
           schema:
-            $ref: '#/definitions/main.UploadResponse'
+            $ref: "#/definitions/main.UploadResponse"
         "400":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "401":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "500":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       summary: Upload file
       tags:
-      - files
+        - files
     put:
       description: Send edited file to server
       parameters:
-      - description: Filename to save
-        in: path
-        name: filename
-        required: true
-        type: string
-      - description: File to save
-        in: formData
-        name: file
-        required: true
-        type: file
+        - description: Filename to save
+          in: path
+          name: filename
+          required: true
+          type: string
+        - description: File to save
+          in: formData
+          name: file
+          required: true
+          type: file
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Edit response
           schema:
-            $ref: '#/definitions/main.EditResponse'
+            $ref: "#/definitions/main.EditResponse"
         "400":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "401":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "404":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "500":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       summary: Edit file
       tags:
-      - files
+        - files
   /api/files:
     get:
       description: Get all user files from server
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "400":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "401":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "500":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       summary: User files
       tags:
-      - files
+        - files
   /health:
     get:
       description: Check if server respond
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Server health status
           schema:
-            $ref: '#/definitions/main.HealthResponse'
+            $ref: "#/definitions/main.HealthResponse"
       summary: Check server health
       tags:
-      - health
+        - health
 swagger: "2.0"

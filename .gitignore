@@ -36,3 +36,4 @@ vendor/
 *.pem
 
 grafana/data/plugins/*
+grafana/data/grafana.db
