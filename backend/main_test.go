@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -459,6 +458,5 @@ func TestFileCreationLimit(t *testing.T) {
 		assert.True(t, res, "action should be allowed for underlimit")
 	}
 	res := r.Allow(testUUID)
-	fmt.Println(res)
 	assert.False(t, res, "action denied for overlimit")
 }
