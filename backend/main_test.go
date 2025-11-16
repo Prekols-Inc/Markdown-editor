@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"backend/db/repodb"
+	"backend/db/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -447,4 +449,16 @@ func TestGetAllFilesEmpty(t *testing.T) {
 	files, exists := response["files"]
 	assert.True(t, exists, "Response should contain 'files' field")
 	assert.Equal(t, 0, len(files.([]interface{})))
+}
+
+func TestFileCreationLimit(t *testing.T) {
+	r := utils.NewRateLimiter()
+	testUUID := uuid.New()
+	for range 5 {
+		res := r.Allow(testUUID)
+		assert.True(t, res, "action should be allowed for underlimit")
+	}
+	res := r.Allow(testUUID)
+	fmt.Println(res)
+	assert.False(t, res, "action denied for overlimit")
 }
