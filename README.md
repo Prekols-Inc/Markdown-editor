@@ -56,6 +56,10 @@ Admin credentials:
 - Password: `password`
 ---
 
+### Project structure
+
+![Overview](docs/overview.png)
+
 ####  Backend
 
 1. Create JWT_SECRET in .env file
