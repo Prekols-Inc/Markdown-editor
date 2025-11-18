@@ -2,7 +2,7 @@ import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 're
 import { FilePlus2, Save, Download, LogOut, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import API from '../API';
-import { useToast } from './ToastProvider';
+import { toast, Toaster } from 'react-hot-toast';
 import { isValidFilename } from '../utils';
 
 const DEFAULT_MD = "# Новый Markdown файл\n\nНапишите здесь...";
@@ -34,7 +34,6 @@ const FileSidebar = forwardRef(function FileSidebar(
   });
   const menuRef = useRef(null);
 
-  const toast = useToast();
   const parseAPIError =
     (API && API.parseAPIError)
       ? API.parseAPIError
@@ -242,6 +241,8 @@ const FileSidebar = forwardRef(function FileSidebar(
   return (
     <aside className={collapsed ? 'sidebar collapsed' : 'sidebar'} style={{ width: collapsed ? 48 : 260 }}>
       <div className="toolbar">
+        <Toaster position="top-right" reverseOrder={false} />
+
         <button
           className="btn secondary"
           style={{ width: 32 }}

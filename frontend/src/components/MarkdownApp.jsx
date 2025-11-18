@@ -8,7 +8,8 @@ import { marked } from 'marked';
 import API from '../API';
 import NewFileModal from './NewFileModal';
 import { validateFilename } from "../utils";
-import { useToast } from './ToastProvider';
+import { toast, Toaster } from 'react-hot-toast';
+
 
 export const DEFAULT_MD = `# Marked - Markdown Parser
 
@@ -35,7 +36,7 @@ export default function App() {
     );
 
 
-    const toast = useToast();
+    // const toast = useToast();
     const parseAPIError =
         (API && API.parseAPIError)
             ? API.parseAPIError
@@ -222,6 +223,8 @@ export default function App() {
                         : `${sidebarOpen ? 260 : 48}px 1fr`
                 }}
             >
+                <Toaster position="top-right" reverseOrder={false} />
+
                 <FileSidebar
                     ref={sidebarRef}
                     current={fileHandle}
