@@ -388,6 +388,18 @@ body,
   background: #d1d5db;
 }
 
+/* resizer */
+.resizer {
+  background: #e5e7eb;
+  cursor: col-resize;
+  user-select: none;
+}
+
+.resizer:hover {
+  background: #d1d5db;
+}
+
+
 /* errors JSON in Options */
 .error {
   padding: 0.25rem 0.75rem;

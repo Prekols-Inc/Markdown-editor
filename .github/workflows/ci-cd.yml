@@ -17,7 +17,7 @@ env:
   FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
   VITE_STORAGE_API_BASE_URL: http://localhost:${{ secrets.BACKEND_PORT }}
   VITE_AUTH_API_BASE_URL: http://localhost:${{ secrets.AUTH_PORT }}
-  
+
   DB_HOST: markdown-db
   DB_PORT: ${{ secrets.DB_PORT }}
   DB_USER: ${{ secrets.DB_USER }}
