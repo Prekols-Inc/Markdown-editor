@@ -25,6 +25,7 @@
   "devDependencies": {
     "@playwright/test": "^1.55.1",
     "@vitejs/plugin-react": "^4.0.2",
+    "baseline-browser-mapping": "^2.8.29",
     "dotenv": "^17.2.2",
     "vite": "^5.2.0"
   }
