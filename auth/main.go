@@ -21,12 +21,12 @@ type App struct {
 	DB *pgxpool.Pool
 }
 
-// @title                       Markdown auth
-// @version                     1.0
-// @description                 Auth Server for Markdown-editor
+// @title           Markdown auth
+// @version         1.0
+// @description     Auth Server for Markdown-editor
 
-// @host                        localhost:8080
-// @BasePath                    /
+// @host            localhost:8080
+// @BasePath        /
 func main() {
 	var host, port string
 	flag.StringVar(&host, "host", "", "Host to bind")
@@ -48,7 +48,7 @@ func main() {
 		AllowOrigins:     []string{"http://localhost:5173"},
 		AllowMethods:     []string{"POST", "GET", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
+		ExposeHeaders:    []string{"Content-Length", "Content-Disposition"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
@@ -59,6 +59,8 @@ func main() {
 	r.GET("/v1/check_auth", app.checkAuthHandler)
 	r.POST("/v1/register", app.registerHandler)
 	r.POST("/v1/login", app.loginHandler)
+	r.POST("/v1/refresh", app.refreshHandler)
+	r.POST("/v1/logout", app.logoutHandler)
 
 	err = app.DB.Ping(context.Background())
 	if err != nil {

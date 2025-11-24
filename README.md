@@ -1,6 +1,6 @@
 # Markdown Editor
 
-<img width="1897" height="899" alt="image" src="https://github.com/user-attachments/assets/7b63401f-b83d-4147-846f-9794156c2e36" />
+![app_demo](https://github.com/user-attachments/assets/6abf6f15-dc2a-40ad-af5b-638758dd0d96)
 
 Project requirements: [requirements.md](docs/requirements.md)
 

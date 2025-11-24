@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { PanelRightOpen, PanelRightClose } from 'lucide-react';
 import MarkdownEditor from './MarkdownEditor';
 import FileSidebar from './FileSidebar';
 import OptionsEditor from './OptionsEditor';
@@ -6,6 +7,8 @@ import MarkdownPreview from './MarkdownPreview';
 import { marked } from 'marked';
 import API from '../API';
 import NewFileModal from './NewFileModal';
+import { validateFilename } from "../utils";
+import { useToast } from './ToastProvider';
 
 export const DEFAULT_MD = `# Marked - Markdown Parser
 
@@ -23,12 +26,26 @@ const DEFAULT_OPTIONS = {
 
 export default function App() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [showPreview, setShowPreview] = useState(true);
     const toggleSidebar = () => setSidebarOpen(o => !o);
     const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT);
     const isResizing = useRef(false);
     const [markdown, setMarkdown] = useState(
         () => localStorage.getItem('md-draft') ?? DEFAULT_MD
     );
+
+
+    const toast = useToast();
+    const parseAPIError =
+        (API && API.parseAPIError)
+            ? API.parseAPIError
+            : (e) => {
+                const data = e?.response?.data;
+                const err = data?.error;
+                if (!err) return { code: 'GENERIC', message: e?.message || 'Ошибка сети' };
+                if (typeof err === 'string') return { code: 'GENERIC', message: err };
+                return { code: err.code || 'GENERIC', message: err.message || 'Ошибка', field: err.field, details: err.details };
+            };
 
     useEffect(() => {
         const id = setTimeout(() => localStorage.setItem('md-draft', markdown), 400);
@@ -92,10 +109,17 @@ export default function App() {
 
     const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false);
 
-    const handleNewFile = useCallback(async (filename) => {
+    const handleNewFile = useCallback(async (inputName) => {
         try {
-            if (!/\.(md|markdown|txt|html)$/i.test(filename)) {
+            let filename = inputName?.trim() || 'untitled.md';
+            if (!filename.endsWith('.md') && !filename.endsWith('.markdown')) {
                 filename += '.md';
+            }
+
+            const v = validateFilename(filename);
+            if (!v.ok) {
+                toast.error(v.message);
+                return;
             }
 
             const blob = new Blob([DEFAULT_MD], { type: 'text/plain' });
@@ -110,32 +134,49 @@ export default function App() {
             setFileHandle({ name: filename });
             setUnsaved(false);
 
-            sidebarRef.current?.refresh();
+            sidebarRef.current?.refresh?.();
+
+            toast.success('Файл создан');
         } catch (err) {
             console.error('Ошибка создания файла', err);
-            alert('Не удалось создать файл');
+            const e = parseAPIError(err);
+            if (e.code === 'FILE_ALREADY_EXISTS') {
+                toast.error('Файл с таким именем уже существует. Выберите другое имя.');
+            } else if (e.code === 'FILE_COUNT_LIMIT') {
+                toast.error('Превышен лимит количества файлов. Удалите лишние.');
+            } else if (e.code === 'USER_SPACE_FULL') {
+                toast.error('Недостаточно места в хранилище пользователя.');
+            } else if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
+                toast.error(`Недопустимые символы: ${e.details.invalid.join(' ')}`);
+            } else {
+                toast.error(e.message || 'Не удалось создать файл');
+            }
         }
-    }, []);
+    }, [toast, parseAPIError]);
 
     const handleSave = useCallback(
         async (refreshFiles) => {
             try {
                 let filename = fileHandle?.name;
+
                 if (!filename) {
-                    filename = prompt('Введите имя файла', 'untitled.md');
-                    if (!filename) return;
+                    const asked = prompt('Введите имя файла', 'untitled.md');
+                    if (!asked) return;
+                    filename = asked.trim();
                 }
 
-                if (!/\.(md|markdown|txt|html)$/i.test(filename)) {
+                if (!filename.endsWith('.md') && !filename.endsWith('.markdown')) {
+                    toast.info('Сохраняем как .md');
                     filename += '.md';
                 }
 
-                let content;
-                if (filename.endsWith('.html')) {
-                    content = marked.parse(markdown, options);
-                } else {
-                    content = markdown;
+                const v = validateFilename(filename);
+                if (!v.ok) {
+                    toast.error(v.message);
+                    return;
                 }
+
+                const content = markdown;
 
                 localStorage.setItem(filename, content);
 
@@ -153,20 +194,32 @@ export default function App() {
                 if (typeof refreshFiles === 'function') {
                     refreshFiles();
                 }
+
+                toast.success('Файл сохранён');
             } catch (err) {
                 console.error('Ошибка сохранения файла', err);
-                alert('Не удалось сохранить файл');
+                const e = parseAPIError(err);
+                if (e.code === 'FILE_NOT_FOUND') {
+                    toast.error('Файл не найден (возможно был удалён). Создайте заново.');
+                } else if (e.code === 'USER_SPACE_FULL') {
+                    toast.error('Недостаточно места в хранилище пользователя.');
+                } else if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
+                    toast.error(`Недопустимые символы: ${e.details.invalid.join(' ')}`);
+                } else {
+                    toast.error(e.message || 'Не удалось сохранить файл');
+                }
             }
         },
-        [markdown, options, fileHandle]
+        [markdown, fileHandle, toast, parseAPIError]
     );
-
     return (
         <>
             <div
                 className="app-grid"
                 style={{
-                    gridTemplateColumns: `${sidebarOpen ? 260 : 48}px ${leftWidth}px 5px 1fr`
+                    gridTemplateColumns: showPreview
+                        ? `${sidebarOpen ? 260 : 48}px ${leftWidth}px 5px 1fr`
+                        : `${sidebarOpen ? 260 : 48}px 1fr`
                 }}
             >
                 <FileSidebar
@@ -195,6 +248,18 @@ export default function App() {
                         >
                             Options
                         </button>
+
+                        <button
+                            className="tab right flex items-center gap-2"
+                            onClick={() => setShowPreview(p => !p)}
+                            title={showPreview ? 'Скрыть превью' : 'Показать превью'}
+                        >
+                            {showPreview ? (
+                                <PanelRightClose size={22} strokeWidth={1.75} />
+                            ) : (
+                                <PanelRightOpen size={22} strokeWidth={1.75} />
+                            )}
+                        </button>
                     </div>
 
                     {tab === 'markdown' ? (
@@ -207,12 +272,15 @@ export default function App() {
                     )}
                 </div>
 
-                <div
-                    className="resizer"
-                    onMouseDown={handleMouseDown}
-                />
-
-                <MarkdownPreview markdown={markdown} options={options} />
+                {showPreview && (
+                    <>
+                        <div
+                            className="resizer"
+                            onMouseDown={handleMouseDown}
+                        />
+                        <MarkdownPreview markdown={markdown} options={options} />
+                    </>
+                )}
             </div>
 
             <NewFileModal
