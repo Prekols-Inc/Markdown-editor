@@ -16,5 +16,46 @@ const STORAGE = axios.create({
   withCredentials: true,
 });
 
+AUTH.interceptors.response.use(
+  response => response,
+  async error => {
+    const originalRequest = error.config;
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      const errorMessage = error.response.data?.error;
+      if (errorMessage && errorMessage === "Token has expired") {
+        originalRequest._retry = true;
+        try {
+          const refreshResponse = await AUTH.post('/v1/refresh');
+
+          return AUTH(originalRequest);
+        } catch (refreshError) {
+
+          return Promise.reject(refreshError);
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+export function parseAPIError(e) {
+  const data = e?.response?.data;
+  const raw = data?.error;
+
+  if (!raw) {
+    return { code: 'GENERIC', message: e?.message || 'Ошибка сети' };
+  }
+  if (typeof raw === 'string') {
+    return { code: 'GENERIC', message: raw };
+  }
+  const code = typeof raw.code === 'string' ? raw.code : 'GENERIC';
+  let message = raw.message;
+
+  if (typeof message !== 'string') {
+    try { message = JSON.stringify(raw); }
+    catch { message = 'Произошла ошибка'; }
+  }
+  return { code, message, field: raw.field, details: raw.details };
+}
 export default { AUTH, STORAGE };
 

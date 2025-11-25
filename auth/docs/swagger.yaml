@@ -28,8 +28,6 @@ definitions:
     properties:
       message:
         type: string
-      token:
-        type: string
     type: object
   main.RegisterRequest:
     properties:
@@ -54,97 +52,118 @@ paths:
     get:
       description: Check if auth respond
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Server health status
           schema:
-            $ref: '#/definitions/main.HealthResponse'
+            $ref: "#/definitions/main.HealthResponse"
       summary: Check auth health
       tags:
-      - health
+        - health
   /v1/check_auth:
     get:
       description: Check if user authenticated
       produces:
-      - application/json
-      responses:
-        "200":
-          description: Login responce
-          schema:
-            $ref: '#/definitions/main.CheckAuthResponse'
-        "401":
-          description: Error responce
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Check auth
-      tags:
-      - auth
-  /v1/login:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Login credentials
-        in: body
-        name: login
-        required: true
-        schema:
-          $ref: '#/definitions/main.LoginRequest'
-      produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Login response
           schema:
-            $ref: '#/definitions/main.LoginResponse'
-        "400":
-          description: Error response
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.CheckAuthResponse"
         "401":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
+      summary: Check auth
+      tags:
+        - auth
+  /v1/login:
+    post:
+      consumes:
+        - application/json
+      parameters:
+        - description: Login credentials
+          in: body
+          name: login
+          required: true
+          schema:
+            $ref: "#/definitions/main.LoginRequest"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Login response
+          schema:
+            $ref: "#/definitions/main.LoginResponse"
+        "400":
+          description: Error response
+          schema:
+            $ref: "#/definitions/main.ErrorResponse"
+        "401":
+          description: Error response
+          schema:
+            $ref: "#/definitions/main.ErrorResponse"
         "500":
           description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       summary: Sign in
       tags:
-      - auth
+        - auth
+  /v1/refresh:
+    post:
+      description: Refresh access and refresh tokens
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Login response
+          schema:
+            $ref: "#/definitions/main.LoginResponse"
+        "401":
+          description: Error response
+          schema:
+            $ref: "#/definitions/main.ErrorResponse"
+        "500":
+          description: Error response
+          schema:
+            $ref: "#/definitions/main.ErrorResponse"
+      summary: Refresh tokens
+      tags:
+        - auth
   /v1/register:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Register new user
       parameters:
-      - description: Register fields
-        in: body
-        name: register
-        required: true
-        schema:
-          $ref: '#/definitions/main.RegisterRequest'
+        - description: Register fields
+          in: body
+          name: register
+          required: true
+          schema:
+            $ref: "#/definitions/main.RegisterRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
-          description: Login responce
+          description: Login response
           schema:
-            $ref: '#/definitions/main.RegisterResponse'
+            $ref: "#/definitions/main.RegisterResponse"
         "400":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "409":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "500":
-          description: Error responce
+          description: Error response
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       summary: Register
       tags:
-      - auth
+        - auth
 swagger: "2.0"

@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -46,6 +47,12 @@ func validatePort(portStr string) error {
 	return nil
 }
 
+// @title           Markdown backend
+// @version         1.0
+// @description     Backend for Markdown-editor
+
+// @host            localhost:1234
+// @BasePath        /
 func main() {
 	var host, port string
 	flag.StringVar(&host, "host", "", "Host to bind")
@@ -76,6 +83,8 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	router.Use(counterMiddleware())
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	router.Static("/docs", "./docs")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/docs/swagger.json")))
 	router.GET("/health", healthHandler)
@@ -93,6 +102,9 @@ func main() {
 	})
 	authorized.PUT("/file/:filename", func(c *gin.Context) {
 		editFileHandler(c, repo)
+	})
+	authorized.PUT("/rename/:oldName/:newName", func(c *gin.Context) {
+		renameFileHandler(c, repo)
 	})
 	authorized.DELETE("/file/:filename", func(c *gin.Context) {
 		deleteFileHandler(c, repo)

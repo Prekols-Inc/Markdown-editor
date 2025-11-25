@@ -1,6 +1,7 @@
 package repodb
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -40,13 +41,13 @@ func TestValidateFile(t *testing.T) {
 	}{
 		{"Valid md file", "test.md", false, ""},
 		{"Valid txt file", "test.markdown", false, ""},
-		{"Invalid extension", "test.jpg", true, "Invalid filename: file extension must be"},
-		{"Path traversal", "../test.md", true, "Invalid filename: filename must not contain file path"},
-		{"Invalid filename", "file/name.md", true, "Invalid filename: filename must not contain file path"},
-		{"Empty filename", "", true, "Invalid filename: invalid characters"},
-		{"Comma in filename", "file,md.md", true, "Invalid filename: invalid characters"},
+		{"Invalid extension", "test.jpg", true, fmt.Sprintf("Invalid filename: %s", ERR_BAD_EXTENSION)},
+		{"Path traversal", "../test.md", true, fmt.Sprintf("Invalid filename: %s", ERR_PATH_IN_FILENAME)},
+		{"Invalid filename", "file/name.md", true, fmt.Sprintf("Invalid filename: %s", ERR_PATH_IN_FILENAME)},
+		{"Empty filename", "", true, fmt.Sprintf("Invalid filename: %s", ERR_ONLY_SPACES)},
+		{"Comma in filename", "file,md.md", true, fmt.Sprintf("Invalid filename: %s", ERR_INVALID_CHARACTERS)},
 		{"Dot file with valid ext", ".env.md", false, ""},
-		{"Only extension", ".md", true, "Invalid filename: file name must not be empty"},
+		{"Only extension", ".md", true, fmt.Sprintf("Invalid filename: %s", ERR_EMPTY_FILENAME)},
 	}
 
 	for _, tt := range tests {
