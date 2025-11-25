@@ -2,6 +2,8 @@
 
 ![app_demo](https://github.com/user-attachments/assets/6abf6f15-dc2a-40ad-af5b-638758dd0d96)
 
+![overview](./docs/overview.png)
+
 Project requirements: [requirements.md](docs/requirements.md)
 
 ## Build
