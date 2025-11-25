@@ -33,8 +33,8 @@ func healthHandler(c *gin.Context) {
 }
 
 func setCookieTokens(c *gin.Context, accessToken string, refreshToken string) {
-	c.SetCookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, int(REFRESH_TOKEN_TTL.Seconds()), "/", "", false, true)
-	c.SetCookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, int(REFRESH_TOKEN_TTL.Seconds()), "/v1/refresh", "", false, true)
+	c.SetCookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, int(ACCESS_TOKEN_TTL.Seconds()), "/", "", true, true)
+	c.SetCookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, int(REFRESH_TOKEN_TTL.Seconds()), "/", "", true, true)
 }
 
 // @Summary Sign in
