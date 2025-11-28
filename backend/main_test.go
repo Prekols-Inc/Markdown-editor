@@ -467,7 +467,84 @@ func TestGetAllFilesEmpty(t *testing.T) {
 	assert.True(t, exists, "Response should contain 'files' field")
 	assert.Equal(t, 0, len(files.([]interface{})))
 }
+func TestSpaceLimit(t *testing.T) {
+	repo, cleanup, err := getNewLocalFileTestRepo()
+	assert.NoError(t, err)
+	defer cleanup()
 
+	r := setupTestRouter(repo)
+
+	testContent := make([]byte, repodb.USER_SPACE_SIZE+1)
+	for i := range testContent {
+		testContent[i] = 1
+	}
+	testFilename := "test.md"
+	w := LoadFile(t, r, repo, testFilename, string(testContent))
+
+	assert.Equal(t, http.StatusConflict, w.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	errObj, ok := response["error"].(map[string]interface{})
+	require.True(t, ok, "error field should be an object")
+
+	msg, ok := errObj["message"].(string)
+	require.True(t, ok, "error.message should be a string")
+
+	assert.Contains(t, msg, "Недостаточно места в хранилище пользователя.")
+
+	_, err = repo.Get(testFilename, testUUID)
+	assert.Error(t, err)
+	assert.Equal(t, repodb.ErrFileNotFound, err)
+}
+
+func TestFileNumberFile(t *testing.T) {
+	repo, cleanup, err := getNewLocalFileTestRepo()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	r := setupTestRouter(repo)
+
+	for i := range repodb.MAX_USER_FILES {
+		testFilename := fmt.Sprintf("file%d.md", i)
+		testContent := "content"
+		w := LoadFile(t, r, repo, testFilename, testContent)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response UploadResponse
+		err = json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "File uploaded successfully", response.Message)
+		assert.Equal(t, testFilename, response.Filename)
+
+		savedContent, err := repo.Get(testFilename, testUUID)
+		assert.NoError(t, err)
+		assert.Equal(t, testContent, string(savedContent))
+	}
+
+	testFilename := "last_file.md"
+	testContent := "content"
+	w := LoadFile(t, r, repo, testFilename, testContent)
+
+	assert.Equal(t, http.StatusConflict, w.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+
+	errObj, ok := response["error"].(map[string]interface{})
+	require.True(t, ok, "error field should exist and be an object")
+
+	msg, ok := errObj["message"].(string)
+	require.True(t, ok, "error.message should be a string")
+
+	assert.Contains(t, msg, "Превышен лимит количества файлов.")
+	fmt.Println(msg)
+}
 func TestFileCreationLimit(t *testing.T) {
 	r := utils.NewRateLimiter()
 	testUUID := uuid.New()
