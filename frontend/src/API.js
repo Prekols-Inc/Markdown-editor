@@ -11,7 +11,9 @@ const AUTH = axios.create({
 const REFRESH = axios.create({
   baseURL: import.meta.env.VITE_AUTH_API_BASE_URL,
   withCredentials: true,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 
+    'Content-Type': 'application/json',
+  },
 });
 
 const STORAGE = axios.create({
