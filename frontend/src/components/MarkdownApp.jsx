@@ -4,7 +4,6 @@ import MarkdownEditor from './MarkdownEditor';
 import FileSidebar from './FileSidebar';
 import OptionsEditor from './OptionsEditor';
 import MarkdownPreview from './MarkdownPreview';
-import { marked } from 'marked';
 import API from '../API';
 import NewFileModal from './NewFileModal';
 import { validateFilename } from "../utils";
@@ -34,6 +33,21 @@ export default function App() {
         () => localStorage.getItem('md-draft') ?? DEFAULT_MD
     );
 
+    const autoSaveTimeout = useRef(null);
+    useEffect(() => {
+        if (!fileHandle) return;
+
+        if (autoSaveTimeout.current) {
+            clearTimeout(autoSaveTimeout.current);
+        }
+
+        // Auto-save after 3 seconds of inactivity
+        autoSaveTimeout.current = setTimeout(() => {
+            handleSave();
+        }, 3000);
+
+        return () => clearTimeout(autoSaveTimeout.current);
+    }, [markdown]);
 
     const parseAPIError =
         (API && API.parseAPIError)
