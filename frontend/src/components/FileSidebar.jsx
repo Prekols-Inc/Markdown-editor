@@ -3,7 +3,7 @@ import { FilePlus2, Save, Download, LogOut, ChevronsLeft, ChevronsRight } from '
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import API from '../API';
 import { toast } from 'react-hot-toast';
-import { isValidFilename } from '../utils';
+import { validateFilename } from '../utils';
 
 const DEFAULT_MD = "# Новый Markdown файл\n\nНапишите здесь...";
 

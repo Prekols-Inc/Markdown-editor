@@ -8,6 +8,14 @@ const AUTH = axios.create({
   withCredentials: true,
 });
 
+const REFRESH = axios.create({
+  baseURL: import.meta.env.VITE_AUTH_API_BASE_URL,
+  withCredentials: true,
+  headers: { 
+    'Content-Type': 'application/json',
+  },
+});
+
 const STORAGE = axios.create({
   baseURL: `${import.meta.env.VITE_STORAGE_API_BASE_URL}/api`,
   headers: {
@@ -23,8 +31,7 @@ AUTH.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        await AUTH.post('/v1/refresh');
-        console.log('Рефрешим токен');
+        await REFRESH.post('/v1/refresh');
         return AUTH(originalRequest);
       } catch (refreshError) {
         return Promise.reject(refreshError);
