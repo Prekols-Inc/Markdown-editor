@@ -8,6 +8,14 @@ const AUTH = axios.create({
   withCredentials: true,
 });
 
+const REFRESH = axios.create({
+  baseURL: import.meta.env.VITE_AUTH_API_BASE_URL,
+  withCredentials: true,
+  headers: { 
+    'Content-Type': 'application/json',
+  },
+});
+
 const STORAGE = axios.create({
   baseURL: `${import.meta.env.VITE_STORAGE_API_BASE_URL}/api`,
   headers: {
@@ -27,7 +35,7 @@ AUTH.interceptors.response.use(
         (errorMessage === "Token has expired" || errorMessage === "Missing access token")) {
         originalRequest._retry = true;
         try {
-          const refreshResponse = await AUTH.post('/v1/refresh');
+          const refreshResponse = await REFRESH.post('/v1/refresh');
 
           return AUTH(originalRequest);
         } catch (refreshError) {
@@ -50,7 +58,7 @@ STORAGE.interceptors.response.use(
         (errorMessage === "JWT not provided")) {
         originalRequest._retry = true;
         try {
-          const refreshResponse = await AUTH.post('/v1/refresh');
+          const refreshResponse = await REFRESH.post('/v1/refresh');
 
           return STORAGE(originalRequest);
         } catch (refreshError) {

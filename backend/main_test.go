@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"backend/db/repodb"
+	"backend/db/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -467,7 +468,6 @@ func TestGetAllFilesEmpty(t *testing.T) {
 	assert.True(t, exists, "Response should contain 'files' field")
 	assert.Equal(t, 0, len(files.([]interface{})))
 }
-
 func TestSpaceLimit(t *testing.T) {
 	repo, cleanup, err := getNewLocalFileTestRepo()
 	assert.NoError(t, err)
@@ -480,7 +480,6 @@ func TestSpaceLimit(t *testing.T) {
 		testContent[i] = 1
 	}
 	testFilename := "test.md"
-
 	w := LoadFile(t, r, repo, testFilename, string(testContent))
 
 	assert.Equal(t, http.StatusConflict, w.Code)
@@ -546,4 +545,14 @@ func TestFileNumberFile(t *testing.T) {
 
 	assert.Contains(t, msg, "Превышен лимит количества файлов.")
 	fmt.Println(msg)
+}
+func TestFileCreationLimit(t *testing.T) {
+	r := utils.NewRateLimiter()
+	testUUID := uuid.New()
+	for range 5 {
+		res := r.Allow(testUUID)
+		assert.True(t, res, "action should be allowed for underlimit")
+	}
+	res := r.Allow(testUUID)
+	assert.False(t, res, "action denied for overlimit")
 }
