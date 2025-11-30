@@ -3,7 +3,8 @@ import { FilePlus2, Save, Download, LogOut, ChevronsLeft, ChevronsRight } from '
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import API from '../API';
 import { toast } from 'react-hot-toast';
-import { isValidFilename } from '../utils';
+import AISummarizeButton from "./AISummarizeButton";
+import { validateFilename } from '../utils';
 
 const DEFAULT_MD = "# Новый Markdown файл\n\nНапишите здесь...";
 
@@ -355,6 +356,11 @@ const FileSidebar = forwardRef(function FileSidebar(
             Дублировать
           </button>
         </div>
+      )}
+      {!collapsed && (
+        <AISummarizeButton
+          current={current ? { name: current.name, text: localStorage.getItem(current.name) } : null}
+        />
       )}
     </aside>
   );
