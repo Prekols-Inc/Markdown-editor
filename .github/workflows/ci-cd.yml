@@ -95,7 +95,7 @@ jobs:
       - name: Generate TLS certificates
         run: |
           mkdir -p tls
-          openssl req -x509 -newkey rsa:4096 -keyout tls/key.pem -out tls/cert.pem -days 365 -nodes -subj "/CN=localhost"
+          openssl req -x509 -newkey rsa:4096 -keyout tls/key.crt -out tls/cert_backend.crt -days 365 -nodes -subj "/CN=localhost"
 
       - name: Create .env file
         run: |
@@ -187,12 +187,12 @@ jobs:
       - name: Generate TLS certificates for backend
         run: |
           mkdir -p backend/tls
-          openssl req -x509 -newkey rsa:4096 -keyout backend/tls/key.pem -out backend/tls/cert.pem -days 365 -nodes -subj "/CN=localhost"
+          openssl req -x509 -newkey rsa:4096 -keyout backend/tls/key.crt -out backend/tls/cert_backend.crt -days 365 -nodes -subj "/CN=localhost"
 
       - name: Generate TLS certificates for auth
         run: |
           mkdir -p auth/tls
-          openssl req -x509 -newkey rsa:4096 -keyout auth/tls/key.pem -out auth/tls/cert.pem -days 365 -nodes -subj "/CN=localhost"
+          openssl req -x509 -newkey rsa:4096 -keyout auth/tls/key.crt -out auth/tls/cert_auth.crt -days 365 -nodes -subj "/CN=localhost"
 
       - name: Create .env file for Docker Compose
         run: |
@@ -253,8 +253,8 @@ jobs:
             echo "Auth health check passed!"
           fi
 
-          echo "Checking frontend availability at https://$FRONTEND_HOST:$FRONTEND_PORT"
-          if ! curl -f -v -s -S -o /dev/null -w "HTTPS Status: %{http_code}\n" "https://$FRONTEND_HOST:$FRONTEND_PORT"; 
+          echo "Checking frontend availability at http://$FRONTEND_HOST:$FRONTEND_PORT"
+          if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$FRONTEND_HOST:$FRONTEND_PORT"; 
           then
             echo "ERROR: Frontend availability check failed!"
             echo "Frontend logs:"

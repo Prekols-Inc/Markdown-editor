@@ -14,12 +14,11 @@ The most easiest way to set up the project is Docker Compose:
 2. Generate TLS certificates for backend and auth services:
 ```bash
 cd backend
-openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes -subj "/CN=localhost" -keyout tls/key.pem -out tls/cert.pem
-
-cd ../auth
-openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes -subj "/CN=localhost" -keyout tls/key.pem -out tls/cert.pem
+mkdir tls
+openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes -subj "/CN=localhost" -keyout tls/key.crt -out tls/cert_auth.crt
 ```
-3. Run project:
+3. Go to https://localhost:<AUTH_PORT>/health. You`ll see "Your connection not private". Click Advanced > proceed to localhost. Repeat for backend
+4. Run project:
  - To run all containers in a background (detach process)
 ```bash
 docker-compose up -d
