@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	TLS_CERT_FILE = "tls/cert.pem"
-	TLS_KEY_FILE  = "tls/key.pem"
+	TLS_CERT_FILE = "tls/cert_auth.crt"
+	TLS_KEY_FILE  = "tls/key.crt"
 )
 
 type App struct {

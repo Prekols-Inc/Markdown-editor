@@ -17,8 +17,8 @@ import (
 
 const (
 	DB_PATH       = "storage"
-	TLS_CERT_FILE = "tls/cert.pem"
-	TLS_KEY_FILE  = "tls/key.pem"
+	TLS_CERT_FILE = "tls/cert_backend.crt"
+	TLS_KEY_FILE  = "tls/key.crt"
 )
 
 var (
