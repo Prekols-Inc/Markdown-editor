@@ -22,12 +22,37 @@ AUTH.interceptors.response.use(
     const originalRequest = error.config;
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       const errorMessage = error.response.data?.error;
-      if (errorMessage && errorMessage === "Token has expired") {
+      
+      if (errorMessage && 
+        (errorMessage === "Token has expired" || errorMessage === "Missing access token")) {
         originalRequest._retry = true;
         try {
           const refreshResponse = await AUTH.post('/v1/refresh');
 
           return AUTH(originalRequest);
+        } catch (refreshError) {
+
+          return Promise.reject(refreshError);
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+STORAGE.interceptors.response.use(
+  response => response,
+  async error => {
+    const originalRequest = error.config;
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      const errorMessage = error.response.data?.error;
+      if (errorMessage && 
+        (errorMessage === "JWT not provided")) {
+        originalRequest._retry = true;
+        try {
+          const refreshResponse = await AUTH.post('/v1/refresh');
+
+          return STORAGE(originalRequest);
         } catch (refreshError) {
 
           return Promise.reject(refreshError);
