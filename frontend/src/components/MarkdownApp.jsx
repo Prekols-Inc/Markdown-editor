@@ -269,8 +269,9 @@ export default function App() {
                             value={options}
                             onChange={handleOptionsChange}
                         />
-                    )}
-                </div>
+                    )
+                    }
+                </div >
 
                 {showPreview && (
                     <>
