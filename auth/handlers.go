@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -38,7 +39,7 @@ func setCookieTokens(c *gin.Context, accessToken string, refreshToken string) {
 		Value:    accessToken,
 		Path:     "/",
 		Domain:   "",
-		Expires:  time.Now().Add(REFRESH_TOKEN_TTL),
+		Expires:  time.Now().Add(ACCESS_TOKEN_TTL),
 		Secure:   true,
 		HttpOnly: true,
 		SameSite: http.SameSiteNoneMode,
@@ -52,6 +53,7 @@ func setCookieTokens(c *gin.Context, accessToken string, refreshToken string) {
 		Expires:  time.Now().Add(REFRESH_TOKEN_TTL),
 		Secure:   true,
 		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
 	})
 }
 
@@ -116,13 +118,17 @@ func (a *App) logoutHandler(c *gin.Context) {
 func (a *App) checkAuthHandler(c *gin.Context) {
 	tokenStr, err := c.Cookie(ACCESS_TOKEN_COOKIE_NAME)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "missing token"})
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Missing access token"})
 		return
 	}
 
 	_, err = parseToken(tokenStr)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "invalid or expired token"})
+		if errors.Is(err, ErrExpiredToken) {
+			c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Token has expired"})
+			return
+		}
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid token"})
 		return
 	}
 
