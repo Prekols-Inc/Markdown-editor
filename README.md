@@ -59,7 +59,7 @@ Admin credentials:
 - Password: `password`
 ---
 
-### Project structure
+### Project overview
 
 ![Overview](docs/overview.png)
 
