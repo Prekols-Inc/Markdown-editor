@@ -15,9 +15,9 @@ env:
   AUTH_PORT: ${{ secrets.AUTH_PORT }}
   FRONTEND_HOST: ${{ secrets.FRONTEND_HOST }}
   FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
-  VITE_STORAGE_API_BASE_URL: http://localhost:${{ secrets.BACKEND_PORT }}
-  VITE_AUTH_API_BASE_URL: http://localhost:${{ secrets.AUTH_PORT }}
-
+  VITE_STORAGE_API_BASE_URL: https://localhost:${{ secrets.BACKEND_PORT }}
+  VITE_AUTH_API_BASE_URL: https://localhost:${{ secrets.AUTH_PORT }}
+  
   DB_HOST: markdown-db
   DB_PORT: ${{ secrets.DB_PORT }}
   DB_USER: ${{ secrets.DB_USER }}
@@ -92,6 +92,11 @@ jobs:
       - name: Make binary executable
         run: chmod +x app
 
+      - name: Generate TLS certificates
+        run: |
+          mkdir -p tls
+          openssl req -x509 -newkey rsa:4096 -keyout tls/key.crt -out tls/cert_backend.crt -days 365 -nodes -subj "/CN=localhost"
+
       - name: Create .env file
         run: |
           cat << EOF > .env
@@ -108,12 +113,12 @@ jobs:
         run: |
           for i in {1..5}; do
             echo "Attempt $i"
-            status_code=$(curl -s -o /dev/null -w "%{http_code}" http://$BACKEND_HOST:$BACKEND_PORT/health || echo "000")
+            status_code=$(curl -k -s -o /dev/null -w "%{http_code}" $VITE_STORAGE_API_BASE_URL/health || echo "000")
             if [ "$status_code" -eq 200 ]; then
               echo "Health check passed"
               exit 0
             else
-              echo "Health check attempt $i failed: HTTP $status_code"
+              echo "Health check attempt $i failed: HTTPS $status_code"
               sleep 3
             fi
           done
@@ -179,6 +184,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Generate TLS certificates for backend
+        run: |
+          mkdir -p backend/tls
+          openssl req -x509 -newkey rsa:4096 -keyout backend/tls/key.crt -out backend/tls/cert_backend.crt -days 365 -nodes -subj "/CN=localhost"
+
+      - name: Generate TLS certificates for auth
+        run: |
+          mkdir -p auth/tls
+          openssl req -x509 -newkey rsa:4096 -keyout auth/tls/key.crt -out auth/tls/cert_auth.crt -days 365 -nodes -subj "/CN=localhost"
+
       - name: Create .env file for Docker Compose
         run: |
           cat << EOF > .env
@@ -216,8 +231,8 @@ jobs:
             exit 1
           fi
 
-          echo "Checking backend health at http://$BACKEND_HOST:$BACKEND_PORT/health"
-          if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$BACKEND_HOST:$BACKEND_PORT/health"; 
+          echo "Checking backend health at https://$BACKEND_HOST:$BACKEND_PORT/health"
+          if ! curl -k -f -v -s -S -o /dev/null -w "HTTPS Status: %{http_code}\n" "https://$BACKEND_HOST:$BACKEND_PORT/health"; 
           then
             echo "ERROR: Backend health check failed!"
             echo "Backend logs:"
@@ -227,8 +242,8 @@ jobs:
             echo "Backend health check passed!"
           fi
 
-          echo "Checking auth health at http://$AUTH_HOST:$AUTH_PORT/health"
-          if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$AUTH_HOST:$AUTH_PORT/health"; 
+          echo "Checking auth health at https://$AUTH_HOST:$AUTH_PORT/health"
+          if ! curl -k -f -v -s -S -o /dev/null -w "HTTPS Status: %{http_code}\n" "https://$AUTH_HOST:$AUTH_PORT/health"; 
           then
             echo "ERROR: Auth health check failed!"
             echo "Auth logs:"
@@ -253,9 +268,7 @@ jobs:
           echo "All services are healthy and responding!"
 
   build-and-push-docker-images:
-    if: >
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.base.ref == 'main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: [test-docker-compose]
 
