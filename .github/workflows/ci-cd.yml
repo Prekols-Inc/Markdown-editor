@@ -13,11 +13,15 @@ env:
   BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
   AUTH_HOST: ${{ secrets.AUTH_HOST }}
   AUTH_PORT: ${{ secrets.AUTH_PORT }}
+  GIGACHAT_PROXY_HOST: ${{ secrets.GIGACHAT_PROXY_HOST }}
+  GIGACHAT_PROXY_PORT: ${{ secrets.GIGACHAT_PROXY_PORT }}
+  GIGACHAT_AUTH_KEY: ${{ secrets.GIGACHAT_AUTH_KEY }}
   FRONTEND_HOST: ${{ secrets.FRONTEND_HOST }}
   FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
   VITE_STORAGE_API_BASE_URL: https://localhost:${{ secrets.BACKEND_PORT }}
   VITE_AUTH_API_BASE_URL: https://localhost:${{ secrets.AUTH_PORT }}
-  
+  VITE_GIGACHAT_PROXY_API_BASE_URL: https://localhost:${{ secrets.GIGACHAT_PROXY_PORT }}
+
   DB_HOST: markdown-db
   DB_PORT: ${{ secrets.DB_PORT }}
   DB_USER: ${{ secrets.DB_USER }}
