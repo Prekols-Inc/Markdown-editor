@@ -61,44 +61,59 @@ export default function AISummarizeButton({ current }) {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        zIndex: 9999
+                        zIndex: 9999,
                     }}
                 >
                     <div
                         className="modal-window"
                         style={{
                             background: "#fff",
-                            padding: 20,
-                            borderRadius: 8,
+                            padding: 24,
+                            borderRadius: 12,
                             width: "600px",
                             maxHeight: "70vh",
                             overflowY: "auto",
-                            position: "relative"
+                            position: "relative",
+                            boxShadow: "0 16px 40px rgba(0,0,0,0.15)",
+                            fontFamily: "system-ui, sans-serif",
                         }}
                     >
                         <button
                             onClick={() => setShowModal(false)}
                             style={{
                                 position: "absolute",
-                                right: 10,
-                                top: 10,
+                                right: 12,
+                                top: 12,
                                 border: "none",
                                 background: "transparent",
                                 fontSize: 20,
-                                cursor: "pointer"
+                                cursor: "pointer",
+                                color: "#555",
                             }}
                         >
                             ×
                         </button>
 
-                        <h2 style={{ fontSize: "18px", marginBottom: "10px" }}>AI Summary</h2>
+                        <h2 style={{ fontSize: "20px", marginBottom: "16px" }}>AI Summary</h2>
 
-                        <pre style={{ whiteSpace: "pre-wrap" }}>
-                            {summary}
-                        </pre>
+                        <div
+                            style={{
+                                lineHeight: 1.6,
+                                fontSize: 14,
+                                color: "#333",
+                            }}
+                        >
+                            {summary.split("\n").map((line, idx) => {
+                                if (line.startsWith("# ")) return <h1 key={idx}>{line.replace("# ", "")}</h1>;
+                                if (line.startsWith("## ")) return <h2 key={idx}>{line.replace("## ", "")}</h2>;
+                                if (line.startsWith("- ")) return <li key={idx}>{line.replace("- ", "")}</li>;
+                                return <p key={idx}>{line}</p>;
+                            })}
+                        </div>
                     </div>
                 </div>
             )}
+
         </div>
     );
 }
