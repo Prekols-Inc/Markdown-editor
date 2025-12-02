@@ -11,11 +11,11 @@ Project requirements: [requirements.md](docs/requirements.md)
 The most easiest way to set up the project is Docker Compose:
 
 1. Create `.env` file like `.env.example`
-2. Generate TLS certificates for backend and auth services:
+2. Generate TLS certificates for backend and auth services and frontend:
 ```bash
-cd backend
-mkdir tls
-openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes -subj "/CN=localhost" -keyout tls/key.crt -out tls/cert_auth.crt
+mkdir -p backend/tls && openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes -subj "/CN=localhost" -keyout backend/tls/key.crt -out backend/tls/cert_backend.crt
+mkdir -p auth/tls && openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes -subj "/CN=localhost" -keyout auth/tls/key.crt -out auth/tls/cert_auth.crt
+mkdir -p frontend/tls && openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes -subj "/CN=localhost" -keyout frontend/tls/key.crt -out frontend/tls/cert_frontend.crt
 ```
 3. Go to https://localhost:<AUTH_PORT>/health. You`ll see "Your connection not private". Click Advanced > proceed to localhost. Repeat for backend
 4. Run project:
@@ -43,8 +43,8 @@ npm install
 
 # 3. Add env variables in frontend/.env file:
 # Example: 
-VITE_AUTH_API_BASE_URL=http://localhost:8080
-VITE_STORAGE_API_BASE_URL=http://localhost:1234
+VITE_AUTH_API_BASE_URL=https://localhost:8080
+VITE_STORAGE_API_BASE_URL=https://localhost:1234
 
 # 4. Start the dev server
 npm run dev
