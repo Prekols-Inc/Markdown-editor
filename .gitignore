@@ -32,5 +32,10 @@ backend/db/storage/*
 backend/test.bat
 backend/storage
 
+vendor/
+*.pem
+
 grafana/data/plugins/*
 grafana/data/grafana.db
+
+tls/
