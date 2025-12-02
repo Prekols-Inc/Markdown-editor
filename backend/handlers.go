@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -39,6 +40,27 @@ func healthHandler(c *gin.Context) {
 		Status: "healthy",
 		Time:   time.Now(),
 	})
+}
+
+func logMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+
+		c.Next()
+
+		latency := time.Since(start)
+		status := c.Writer.Status()
+		method := c.Request.Method
+		path := c.Request.URL.Path
+
+		logger.Info("HTTPS Request",
+			slog.String("method", method),
+			slog.String("path", path),
+			slog.Int("status", status),
+			slog.Duration("latency", latency),
+			slog.String("client_ip", c.ClientIP()),
+		)
+	}
 }
 
 func authMiddleware() gin.HandlerFunc {
@@ -82,7 +104,6 @@ func authMiddleware() gin.HandlerFunc {
 func counterMiddleware() gin.HandlerFunc {
 	return func(_ *gin.Context) {
 		requestsTotal.Inc()
-		fmt.Println("COUNT!")
 	}
 }
 
