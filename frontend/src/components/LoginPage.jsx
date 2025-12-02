@@ -180,6 +180,6 @@ export default function AuthPage({ onLogin }) {
                     )}
                 </p>
             </form>
-        </div>
+        </div >
     );
 }

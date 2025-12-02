@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -14,6 +15,8 @@ var (
 	ACCESS_TOKEN_TTL  = time.Minute * 15
 	REFRESH_TOKEN_TTL = time.Hour * 24
 )
+
+var ErrExpiredToken = errors.New("token has expired")
 
 func generateToken(userID uuid.UUID, TTL time.Duration) (string, error) {
 	claims := jwt.MapClaims{
@@ -44,6 +47,12 @@ func parseToken(tokenStr string) (jwt.MapClaims, error) {
 		return JWT_SECRET, nil
 	})
 	if err != nil || !token.Valid {
+		var ve *jwt.ValidationError
+		if errors.As(err, &ve) {
+			if ve.Errors&jwt.ValidationErrorExpired != 0 {
+				return nil, ErrExpiredToken
+			}
+		}
 		return nil, err
 	}
 

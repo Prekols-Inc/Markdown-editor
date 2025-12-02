@@ -11,8 +11,14 @@ Project requirements: [requirements.md](docs/requirements.md)
 The most easiest way to set up the project is Docker Compose:
 
 1. Create `.env` file like `.env.example`
-
-2. Run project:
+2. Generate TLS certificates for backend and auth services:
+```bash
+cd backend
+mkdir tls
+openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes -subj "/CN=localhost" -keyout tls/key.crt -out tls/cert_auth.crt
+```
+3. Go to https://localhost:<AUTH_PORT>/health. You`ll see "Your connection not private". Click Advanced > proceed to localhost. Repeat for backend
+4. Run project:
  - To run all containers in a background (detach process)
 ```bash
 docker-compose up -d
@@ -49,10 +55,15 @@ Admin credentials:
 - Password: `password`
 ---
 
+### Project structure
+
+![Overview](docs/overview.png)
+
 ####  Backend
 
 1. Create JWT_SECRET in .env file
-2. Run:
+2. Generate TLS certificate (see [«Run using Docker Compose»](#run-using-docker-compose))
+3. Run:
 ```bash
 cd backend
 go mod tidy
@@ -64,14 +75,15 @@ go run . --host=localhost --port=YOUR_PORT
 > Prerequisites: **Go ≥ 1.23**, PostgreSQL.
 
 1. Create JWT_SECRET in .env file
-2. Run PostgreSQL instance:
+2. Generate TLS certificate (see [«Run using Docker Compose»](#run-using-docker-compose))
+3. Run PostgreSQL instance:
 ```bash
 cd auth
 sudo apt install posgtresql
 sudo -u postgres createdb auth_db # creates database
 sudo -u postgres psql -d auth_db -f db/init.sql # creates table 'users'
 ```
-3. Run:
+4. Run:
 ```bash
 export DB_ variables # env variables from .env.example
 go mod tidy
