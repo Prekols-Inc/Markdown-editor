@@ -13,26 +13,23 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 )
 
 var gigaToken string
 var gigaTokenExpires time.Time
 
 func main() {
-	_ = godotenv.Load()
-
 	r := gin.Default()
 	r.Use(corsMiddleware())
 
 	r.POST("/api/gigachat/summarize", summarizeHandler)
 
-	port := os.Getenv("PORT")
+	port := os.Getenv("GIGACHAT_PROXY_PORT")
 	if port == "" {
-		port = "8081"
+		port = "8088"
 	}
 
-	fmt.Println("Gigachat Proxy running on :" + port)
+	fmt.Println("Gigachat Proxy is running on :" + port)
 	log.Fatal(r.Run(":" + port))
 }
 
