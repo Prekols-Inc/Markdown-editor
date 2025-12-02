@@ -1,8 +1,7 @@
-import axios from "axios";
-
+import API from './API.js';
 
 export async function summarizeWithGigachat(markdownText) {
-  const res = await axios.post("http://localhost:8081/api/gigachat/summarize", {
+  const res = await API.GIGACHAT_PROXY.post("/api/gigachat/summarize", {
     text: markdownText
   });
   return res.data.summary;

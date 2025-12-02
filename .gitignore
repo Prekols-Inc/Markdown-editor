@@ -34,3 +34,5 @@ backend/storage
 
 grafana/data/plugins/*
 grafana/data/grafana.db
+
+tls/
