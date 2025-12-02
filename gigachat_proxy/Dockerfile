@@ -13,4 +13,5 @@ EXPOSE ${GIGACHAT_PROXY_PORT}
 
 WORKDIR /root/
 COPY --from=builder /markdown-gigachat-proxy/gigachat_proxy .
+COPY ./tls ./tls
 CMD ./gigachat_proxy --port=${GIGACHAT_PROXY_PORT} --host=${GIGACHAT_PROXY_HOST}

@@ -15,6 +15,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	TLS_CERT_FILE = "tls/cert_gigachat_proxy.crt"
+	TLS_KEY_FILE  = "tls/key.crt"
+)
+
 var gigaToken string
 var gigaTokenExpires time.Time
 
@@ -29,8 +34,11 @@ func main() {
 		port = "8088"
 	}
 
+	serverAddr := fmt.Sprintf(":%s", port)
+	if err := r.RunTLS(serverAddr, TLS_CERT_FILE, TLS_KEY_FILE); err != nil {
+		panic(fmt.Sprintf("Failed to run proxy: %v", err))
+	}
 	fmt.Println("Gigachat Proxy is running on :" + port)
-	log.Fatal(r.Run(":" + port))
 }
 
 func summarizeHandler(c *gin.Context) {
@@ -118,10 +126,10 @@ func callGigachatAPI(text, token string) (string, error) {
 		"messages": []map[string]string{
 			{
 				"role": "system",
-				"content": `You are a professional summarization assistant. 
-Your task is to create a concise, factual summary of the user's Markdown document. 
-Preserve all key points and structure, but remove redundancy and irrelevant details.
-Output only the summary text.
+				"content": `Вы — профессиональный помощник по составлению резюме.
+Ваша задача — создать краткое, содержательное резюме Markdown-документа пользователя.
+Сохраните все ключевые моменты и структуру, но удалите избыточность и нерелевантные детали.
+Выведите только текст резюме.
 `,
 			},
 			{
