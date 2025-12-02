@@ -341,15 +341,6 @@ body,
 }
 
 /* style Markdown */
-.preview h1 {
-  font-size: 1.8rem;
-  margin-bottom: 0.6rem;
-}
-
-.preview h2 {
-  font-size: 1.5rem;
-  margin: 1rem 0 0.5rem;
-}
 
 .preview pre {
   background: #f3f3f3;
@@ -358,9 +349,6 @@ body,
   border-radius: 6px;
 }
 
-.preview code {
-  font-family: ui-monospace, monospace;
-}
 
 .preview blockquote {
   margin: 1.25rem 0;
@@ -373,9 +361,7 @@ body,
   line-height: 1.6;
 }
 
-.preview a {
-  color: #0366d6;
-}
+
 
 /* resizer */
 .resizer {
@@ -472,3 +458,125 @@ body,
 .dropdown-item:hover {
   background: #eee;
 }
+
+/* Markdown preview polish */
+
+.preview {
+  line-height: 1.65;
+  color: inherit;
+}
+
+/* Заголовки */
+.preview h1 {
+  font-size: 1.8rem;
+  margin-bottom: 0.6rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: .25rem;
+}
+.preview h2 {
+  font-size: 1.5rem;
+  margin: 1rem 0 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: .25rem;
+}
+.preview h3 {
+  font-size: 1.25rem;
+  margin: .9rem 0 .45rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: .25rem;
+}
+.preview h4 { font-size: 1.05rem; margin: .8rem 0 .4rem; }
+.preview h5,
+.preview h6 { font-size: .95rem;  margin: .7rem 0 .35rem; }
+
+/* Ссылки */
+.preview a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Горизонтальные линии */
+.preview hr {
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.25rem 0;
+}
+
+.preview code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+.preview :not(pre) > code {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: .08em .4em;
+}
+
+.preview pre code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+/* Таблицы */
+.preview table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  width: 100%;
+  margin: 1rem 0;
+  display: table;
+}
+.preview th,
+.preview td {
+  border: 1px solid #e5e7eb;
+  padding: .5rem .75rem;
+  vertical-align: top;
+}
+.preview thead th {
+  background: #f8fafc;
+  font-weight: 700;
+}
+.preview tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+/* поддержка align */
+.preview [align="center"], .preview .text-center { text-align: center; }
+.preview [align="right"],  .preview .text-right  { text-align: right;  }
+
+@media (max-width: 640px) {
+  .preview table { display: block; overflow-x: auto; max-width: 100%; }
+}
+
+/* Списки задач - красивые чекбоксы */
+.preview input[type="checkbox"] {
+  accent-color: #2563eb;
+  transform: translateY(1px);
+}
+
+/* Картинки и подписи */
+.preview img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  margin: .5rem auto;
+}
+.preview figcaption {
+  text-align: center;
+  color: #6b7280;
+  font-size: .9rem;
+  margin-top: .25rem;
+}
+
+/* Коллапс-блоки */
+.preview details {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: .5rem;
+  padding: .6rem .8rem;
+  margin: .75rem 0;
+}
+.preview summary { cursor: pointer; font-weight: 600; }
