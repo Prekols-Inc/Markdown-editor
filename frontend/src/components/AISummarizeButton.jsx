@@ -13,11 +13,9 @@ export default function AISummarizeButton({ current }) {
         try {
             const result = await summarizeWithGigachat(current.text);
             setSummary(result);
-            setShowModal(true);
         } catch (e) {
             console.error("AI error:", e);
             setSummary("Ошибка при запросе AI.");
-            setShowModal(true);
         } finally {
             setLoading(false);
         }
@@ -40,10 +38,19 @@ export default function AISummarizeButton({ current }) {
                 onClick={handleSummarize}
             >
                 <BrainCircuit size={20} strokeWidth={1.75} />
-                {loading ? "AI думает..." : "Суммаризовать AI"}
+                {loading ? "AI думает..." : "AI суммаризация"}
             </button>
 
-            {/* Модальное окно */}
+            {summary && !loading && (
+                <button
+                    className="btn"
+                    style={{ marginTop: 10 }}
+                    onClick={() => setShowModal(true)}
+                >
+                    Показать результат
+                </button>
+            )}
+
             {showModal && (
                 <div
                     className="modal-overlay"
