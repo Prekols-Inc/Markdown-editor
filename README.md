@@ -13,9 +13,13 @@ The most easiest way to set up the project is Docker Compose:
 1. Create `.env` file like `.env.example`
 2. Generate TLS certificates for backend and auth services:
 ```bash
-cd backend
-mkdir tls
-openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes -subj "/CN=localhost" -keyout tls/key.crt -out tls/cert_auth.crt
+for svc in backend auth frontend gigachat_proxy; do
+  mkdir -p "$svc/tls"
+  openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes \
+    -subj "/CN=localhost" \
+    -keyout "$svc/tls/key.crt" \
+    -out "$svc/tls/cert_${svc}.crt"
+done
 ```
 3. Go to https://localhost:<AUTH_PORT>/health. You`ll see "Your connection not private". Click Advanced > proceed to localhost. Repeat for backend
 4. Run project:
@@ -55,7 +59,7 @@ Admin credentials:
 - Password: `password`
 ---
 
-### Project structure
+### Project overview
 
 ![Overview](docs/overview.png)
 
