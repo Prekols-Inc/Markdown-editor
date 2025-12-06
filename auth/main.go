@@ -5,7 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
+	"runtime/debug"
 	"time"
 
 	_ "auth/docs"
@@ -33,6 +35,13 @@ type App struct {
 // @host            localhost:8080
 // @BasePath        /
 func main() {
+	defer func() {
+		if r := recover(); r != nil {
+			Logger.Error("Panic occurred", slog.String("panic", fmt.Sprintf("%v", r)))
+			Logger.Error("Stack trace", slog.String("stack", string(debug.Stack())))
+		}
+	}()
+
 	var host, port string
 	flag.StringVar(&host, "host", "", "Host to bind")
 	flag.StringVar(&port, "port", "", "Port to bind")
@@ -48,7 +57,7 @@ func main() {
 
 	app := &App{DB: db}
 
-	r := gin.Default()
+	r := gin.New()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"},
 		AllowMethods:     []string{"POST", "GET", "OPTIONS"},
@@ -58,6 +67,7 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	r.Use(logMiddleware())
 	r.Static("/docs", "./docs")
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/docs/swagger.json")))
 	r.GET("/health", healthHandler)
@@ -73,6 +83,7 @@ func main() {
 	}
 
 	serverAddr := fmt.Sprintf("%s:%s", host, port)
+	Logger.Info("Server started on", slog.String("address", serverAddr))
 	if err := r.RunTLS(serverAddr, TLS_CERT_FILE, TLS_KEY_FILE); err != nil {
 		panic(fmt.Sprintf("Failed to run server: %v", err))
 	}
