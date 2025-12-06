@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { Upload } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 
-export default function MarkdownEditor({ value, onChange }) {
+export default function MarkdownEditor({ value, onChange, onFileUpload }) {
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
   const fileInputRef = useRef(null);
@@ -22,13 +22,19 @@ export default function MarkdownEditor({ value, onChange }) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target.result;
-      onChange(content);
+      // Instead of replacing current content, create a new file
+      if (onFileUpload) {
+        onFileUpload(content, file.name);
+      } else {
+        // Fallback to old behavior if onFileUpload is not provided
+        onChange(content);
+      }
     };
     reader.onerror = () => {
       toast.error('Ошибка чтения файла');
     };
     reader.readAsText(file);
-  }, [onChange]);
+  }, [onChange, onFileUpload]);
 
   const handleDragEnter = useCallback((e) => {
     e.preventDefault();

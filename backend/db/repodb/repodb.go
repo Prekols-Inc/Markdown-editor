@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	USER_SPACE_SIZE = 1 << 10 // 1 Кб
-	MAX_USER_FILES  = 3
+	USER_SPACE_SIZE = 100 << 10 // 100 Kb
+	MAX_USER_FILES  = 5
 )
 
 var ErrFileNotFound = errors.New("file not found")
