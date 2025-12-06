@@ -41,10 +41,10 @@ export default function App() {
             clearTimeout(autoSaveTimeout.current);
         }
 
-        // Auto-save after 3 seconds of inactivity
+        // Auto-save after 10 seconds of inactivity
         autoSaveTimeout.current = setTimeout(() => {
             handleSave();
-        }, 3000);
+        }, 10000);
 
         return () => clearTimeout(autoSaveTimeout.current);
     }, [markdown]);
