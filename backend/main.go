@@ -123,8 +123,8 @@ func main() {
 	})
 
 	serverAddr := fmt.Sprintf("%s:%s", host, port)
+	logger.Info("Server started on", slog.String("address", serverAddr))
 	if err := r.RunTLS(serverAddr, TLS_CERT_FILE, TLS_KEY_FILE); err != nil {
 		panic(fmt.Sprintf("Failed to run server: %v", err))
 	}
-	logger.Info("Server started on", slog.String("address", serverAddr))
 }
