@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { Upload } from 'lucide-react';
+import { toast, Toaster } from 'react-hot-toast';
 
 export default function MarkdownEditor({ value, onChange }) {
   const [isDragging, setIsDragging] = useState(false);
@@ -8,13 +9,13 @@ export default function MarkdownEditor({ value, onChange }) {
 
   const handleFile = useCallback((file) => {
     if (!file) return;
-    
+
     const validExtensions = ['.md', '.markdown', '.txt'];
     const fileName = file.name.toLowerCase();
     const isValid = validExtensions.some(ext => fileName.endsWith(ext));
-    
+
     if (!isValid) {
-      alert('Пожалуйста, загрузите файл .md, .markdown или .txt');
+      toast.error('Пожалуйста, загрузите файл .md, .markdown или .txt');
       return;
     }
 
@@ -24,7 +25,7 @@ export default function MarkdownEditor({ value, onChange }) {
       onChange(content);
     };
     reader.onerror = () => {
-      alert('Ошибка чтения файла');
+      toast.error('Ошибка чтения файла');
     };
     reader.readAsText(file);
   }, [onChange]);
@@ -77,20 +78,21 @@ export default function MarkdownEditor({ value, onChange }) {
   }, []);
 
   return (
-    <div 
+    <div
       className="editor-container"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
+      <Toaster position="top-right" reverseOrder={false} />
       <textarea
         className="editor"
         value={value}
         onChange={e => onChange(e.target.value)}
         spellCheck={false}
       />
-      
+
       {/* Скрытый input для выбора файла */}
       <input
         ref={fileInputRef}
@@ -112,7 +114,7 @@ export default function MarkdownEditor({ value, onChange }) {
       )}
 
       {/* Кнопка загрузки файла */}
-      <button 
+      <button
         className="upload-btn"
         onClick={openFileDialog}
         title="Загрузить файл"
