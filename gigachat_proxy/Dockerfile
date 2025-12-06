@@ -1,0 +1,17 @@
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /markdown-gigachat-proxy
+COPY go.mod go.sum ./
+RUN go mod tidy
+RUN go mod download
+COPY . .
+RUN go build -o gigachat_proxy .
+
+FROM alpine:latest
+
+EXPOSE ${GIGACHAT_PROXY_PORT}
+
+WORKDIR /root/
+COPY --from=builder /markdown-gigachat-proxy/gigachat_proxy .
+COPY ./tls ./tls
+CMD ./gigachat_proxy --port=${GIGACHAT_PROXY_PORT} --host=${GIGACHAT_PROXY_HOST}

@@ -473,21 +473,31 @@ body,
   border-bottom: 1px solid #e5e7eb;
   padding-bottom: .25rem;
 }
+
 .preview h2 {
   font-size: 1.5rem;
   margin: 1rem 0 0.5rem;
   border-bottom: 1px solid #e5e7eb;
   padding-bottom: .25rem;
 }
+
 .preview h3 {
   font-size: 1.25rem;
   margin: .9rem 0 .45rem;
   border-bottom: 1px solid #e5e7eb;
   padding-bottom: .25rem;
 }
-.preview h4 { font-size: 1.05rem; margin: .8rem 0 .4rem; }
+
+.preview h4 {
+  font-size: 1.05rem;
+  margin: .8rem 0 .4rem;
+}
+
 .preview h5,
-.preview h6 { font-size: .95rem;  margin: .7rem 0 .35rem; }
+.preview h6 {
+  font-size: .95rem;
+  margin: .7rem 0 .35rem;
+}
 
 /* Ссылки */
 .preview a {
@@ -507,7 +517,7 @@ body,
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 
-.preview :not(pre) > code {
+.preview :not(pre)>code {
   background: #f3f4f6;
   border: 1px solid #e5e7eb;
   border-radius: 4px;
@@ -529,25 +539,40 @@ body,
   margin: 1rem 0;
   display: table;
 }
+
 .preview th,
 .preview td {
   border: 1px solid #e5e7eb;
   padding: .5rem .75rem;
   vertical-align: top;
 }
+
 .preview thead th {
   background: #f8fafc;
   font-weight: 700;
 }
+
 .preview tbody tr:nth-child(even) {
   background: #fafafa;
 }
+
 /* поддержка align */
-.preview [align="center"], .preview .text-center { text-align: center; }
-.preview [align="right"],  .preview .text-right  { text-align: right;  }
+.preview [align="center"],
+.preview .text-center {
+  text-align: center;
+}
+
+.preview [align="right"],
+.preview .text-right {
+  text-align: right;
+}
 
 @media (max-width: 640px) {
-  .preview table { display: block; overflow-x: auto; max-width: 100%; }
+  .preview table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+  }
 }
 
 /* Списки задач - красивые чекбоксы */
@@ -564,6 +589,7 @@ body,
   border-radius: 8px;
   margin: .5rem auto;
 }
+
 .preview figcaption {
   text-align: center;
   color: #6b7280;
@@ -579,7 +605,11 @@ body,
   padding: .6rem .8rem;
   margin: .75rem 0;
 }
-.preview summary { cursor: pointer; font-weight: 600; }
+
+.preview summary {
+  cursor: pointer;
+  font-weight: 600;
+}
 
 /* ============================================
    Drag & Drop Editor Container
@@ -769,4 +799,34 @@ body,
 
 .hljs-tag .hljs-attr {
   color: #9cdcfe;
+}
+
+.btn {
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  border: none;
+  background-color: #2563eb;
+  color: white;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
