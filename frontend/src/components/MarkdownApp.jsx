@@ -167,6 +167,53 @@ export default function App() {
         }
     }, [toast, parseAPIError]);
 
+    const handleFileUpload = useCallback(async (content, originalFilename) => {
+        try {
+            let filename = originalFilename || 'uploaded.md';
+
+            // Ensure the file has the correct extension
+            if (!filename.endsWith('.md') && !filename.endsWith('.markdown')) {
+                filename = filename.replace(/\.[^/.]+$/, "") + '.md';
+            }
+
+            const v = validateFilename(filename);
+            if (!v.ok) {
+                toast.error(v.message);
+                return;
+            }
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const formData = new FormData();
+            formData.append('file', blob, filename);
+
+            await API.STORAGE.post(`/file/${encodeURIComponent(filename)}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            setMarkdown(content);
+            setFileHandle({ name: filename });
+            setUnsaved(false);
+
+            sidebarRef.current?.refresh?.();
+
+            toast.success(`Файл "${filename}" создан из загруженного файла`);
+        } catch (err) {
+            console.error('Ошибка создания файла из загруженного', err);
+            const e = parseAPIError(err);
+            if (e.code === 'FILE_ALREADY_EXISTS') {
+                toast.error('Файл с таким именем уже существует. Переименуйте загружаемый файл.');
+            } else if (e.code === 'FILE_COUNT_LIMIT') {
+                toast.error('Превышен лимит количества файлов. Удалите лишние.');
+            } else if (e.code === 'USER_SPACE_FULL') {
+                toast.error('Недостаточно места в хранилище пользователя.');
+            } else if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
+                toast.error(`Недопустимые символы в имени файла: ${e.details.invalid.join(' ')}`);
+            } else {
+                toast.error(e.message || 'Не удалось создать файл из загруженного');
+            }
+        }
+    }, [toast, parseAPIError]);
+
     const handleSave = useCallback(
         async (refreshFiles) => {
             try {
@@ -277,7 +324,11 @@ export default function App() {
                     </div>
 
                     {tab === 'markdown' ? (
-                        <MarkdownEditor value={markdown} onChange={setMarkdown} />
+                        <MarkdownEditor
+                            value={markdown}
+                            onChange={setMarkdown}
+                            onFileUpload={handleFileUpload}
+                        />
                     ) : (
                         <OptionsEditor
                             value={options}
