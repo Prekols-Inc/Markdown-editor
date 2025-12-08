@@ -119,7 +119,12 @@ func getFile(c *gin.Context) *File {
 		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: "File not provided"})
 		return nil
 	}
-	defer file.Close()
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			Logger.Error("Error occured", slog.String("error", err.Error()))
+		}
+	}()
 
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {

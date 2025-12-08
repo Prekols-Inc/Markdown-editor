@@ -29,12 +29,14 @@ services:
       - BACKEND_HOST=${BACKEND_HOST}
       - BACKEND_PORT=${BACKEND_PORT}
       - JWT_SECRET=${JWT_SECRET}
+      - LOG_DIR=${LOG_DIR}
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     networks:
       - markdown-network
     volumes:
       - storage:/root/storage
+      - ${LOG_DIR}:${LOG_DIR}
     restart: unless-stopped
     healthcheck:
       test:
@@ -57,6 +59,7 @@ services:
       - AUTH_HOST=${AUTH_HOST}
       - AUTH_PORT=${AUTH_PORT}
       - JWT_SECRET=${JWT_SECRET}
+      - LOG_DIR=${LOG_DIR}
       - AUTH_DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}
     ports:
       - "${AUTH_PORT}:${AUTH_PORT}"
@@ -64,6 +67,8 @@ services:
       - db
     networks:
       - markdown-network
+    volumes:
+     - ${LOG_DIR}:${LOG_DIR}
     restart: unless-stopped
     healthcheck:
       test:

@@ -61,16 +61,6 @@ type FileRepository interface {
 	Rename(filename string, newFilename string, userId uuid.UUID) error
 }
 
-func containsChars(filename string, сhars []string) bool {
-	for _, ch := range сhars {
-		if strings.Contains(filename, ch) {
-			return true
-		}
-	}
-
-	return false
-}
-
 func validateFile(filename string) error {
 	if strings.TrimSpace(filename) == "" {
 		return &ErrInvalidFilename{Reason: ERR_ONLY_SPACES}

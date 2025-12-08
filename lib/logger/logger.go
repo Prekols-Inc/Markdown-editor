@@ -5,15 +5,23 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 )
 
 type MultiHandler struct {
 	handlers []slog.Handler
 }
 
-func NewMultiHandler(name string) (*MultiHandler, error) {
+func NewMultiHandler(path string, filename string) (*MultiHandler, error) {
+	err := os.MkdirAll(path, 0755)
+	if err != nil {
+		return nil, err
+	}
+
+	fullPath := filepath.Join(path, filename)
+
 	file, err := os.OpenFile(
-		fmt.Sprintf("/var/log/markdown-editor-%s.log", name),
+		fullPath,
 		os.O_CREATE|os.O_WRONLY|os.O_APPEND,
 		0644,
 	)
@@ -46,6 +54,7 @@ func (m *MultiHandler) Handle(ctx context.Context, r slog.Record) error {
 	for _, h := range m.handlers {
 		if h.Enabled(ctx, r.Level) {
 			if err := h.Handle(ctx, r); err != nil {
+				fmt.Printf("LOG ERROR: %v", err)
 				return err
 			}
 		}

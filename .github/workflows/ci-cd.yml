@@ -31,6 +31,8 @@ env:
 
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
+  LOG_DIR: /var/logs/markdown-editor
+
   GF_SECURITY_ADMIN_USER: ${{ secrets.GF_SECURITY_ADMIN_USER }}
   GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
 
@@ -48,21 +50,28 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v6
         with:
-          go-version: v1.24.0
+          go-version: v1.25
           cache: true
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: v1.64.7
-          args: --disable-all --enable=govet --enable=errcheck --enable=staticcheck --enable=gofmt --enable=typecheck --timeout=5m
+          version: v2.7.2
+          args: --timeout=5m
           working-directory: ./backend
 
       - name: Create .env file
         run: |
           cat << EOF > .env
+          LOG_DIR=$LOG_DIR
           JWT_SECRET=test-secret
           EOF
+
+      - name: Create logs directory and set permissions
+        run: |
+          sudo mkdir -p $LOG_DIR
+          sudo chown -R $USER $LOG_DIR
+          sudo chmod -R 775 $LOG_DIR
 
       - name: Run tests
         run: go test ./... -v
@@ -105,7 +114,14 @@ jobs:
         run: |
           cat << EOF > .env
           JWT_SECRET=$JWT_SECRET
+          LOG_DIR=$LOG_DIR
           EOF
+
+      - name: Create logs directory and set permissions
+        run: |
+          sudo mkdir -p $LOG_DIR
+          sudo chown -R $USER $LOG_DIR
+          sudo chmod -R 775 $LOG_DIR
 
       - name: Start application
         run: |
@@ -149,8 +165,14 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v6
         with:
-          go-version: v1.24.0
+          go-version: v1.25
           cache: true
+
+      - name: Create logs directory and set permissions
+        run: |
+          sudo mkdir -p $LOG_DIR
+          sudo chown -R $USER $LOG_DIR
+          sudo chmod -R 775 $LOG_DIR
 
       - name: Run tests
         run: go test -v
@@ -215,6 +237,7 @@ jobs:
           VITE_STORAGE_API_BASE_URL=$VITE_STORAGE_API_BASE_URL
           VITE_AUTH_API_BASE_URL=$VITE_AUTH_API_BASE_URL
           JWT_SECRET=$JWT_SECRET
+          LOG_FILE=$LOG_FILE
           DB_HOST=$DB_HOST
           DB_PORT=$DB_PORT
           DB_USER=$DB_USER
