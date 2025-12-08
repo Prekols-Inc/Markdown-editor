@@ -11,5 +11,8 @@ scrape_configs:
       - targets: ['markdown-node-exporter:9100']
 
   - job_name: 'go_metrics'
+    scheme: https
     static_configs:
       - targets: ['markdown-backend:1234']
+    tls_config:
+      insecure_skip_verify: true
