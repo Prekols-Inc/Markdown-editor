@@ -53,7 +53,7 @@ func logMiddleware() gin.HandlerFunc {
 		method := c.Request.Method
 		path := c.Request.URL.Path
 
-		logger.Info("HTTPS Request",
+		Logger.Info("HTTPS Request",
 			slog.String("method", method),
 			slog.String("path", path),
 			slog.Int("status", status),

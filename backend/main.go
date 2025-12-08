@@ -60,8 +60,8 @@ func validatePort(portStr string) error {
 func main() {
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Error("Panic occurred", slog.String("panic", fmt.Sprintf("%v", r)))
-			logger.Error("Stack trace", slog.String("stack", string(debug.Stack())))
+			Logger.Error("Panic occurred", slog.String("panic", fmt.Sprintf("%v", r)))
+			Logger.Error("Stack trace", slog.String("stack", string(debug.Stack())))
 		}
 	}()
 
@@ -123,7 +123,7 @@ func main() {
 	})
 
 	serverAddr := fmt.Sprintf("%s:%s", host, port)
-	logger.Info("Server started on", slog.String("address", serverAddr))
+	Logger.Info("Server started on", slog.String("address", serverAddr))
 	if err := r.RunTLS(serverAddr, TLS_CERT_FILE, TLS_KEY_FILE); err != nil {
 		panic(fmt.Sprintf("Failed to run server: %v", err))
 	}

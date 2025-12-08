@@ -22,8 +22,8 @@ services:
   backend:
     image: sid00r/markdown-backend:latest
     build: 
-      context: ./backend
-      dockerfile: ../docker/backend/Dockerfile
+      context: .
+      dockerfile: ./docker/backend/Dockerfile
     container_name: markdown-backend
     environment:
       - BACKEND_HOST=${BACKEND_HOST}
@@ -50,8 +50,8 @@ services:
   auth:
     image: sid00r/markdown-auth:latest
     build: 
-      context: ./auth
-      dockerfile: ../docker/auth/Dockerfile
+      context: .
+      dockerfile: ./docker/auth/Dockerfile
     container_name: markdown-auth
     environment:
       - AUTH_HOST=${AUTH_HOST}

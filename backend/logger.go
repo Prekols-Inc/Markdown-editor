@@ -2,13 +2,17 @@ package main
 
 import (
 	"log/slog"
-	"os"
+
+	"github.com/Prekols-Inc/Markdown-editor/lib/logger"
 )
 
-var logger *slog.Logger
+var Logger *slog.Logger
 
 func init() {
-	logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-	}))
+	multi, err := logger.NewMultiHandler("auth")
+	if err != nil {
+		panic(err)
+	}
+
+	Logger = slog.New(multi)
 }
