@@ -1,6 +1,6 @@
 module backend
 
-go 1.24.0
+go 1.25
 
 require (
 	github.com/gin-contrib/cors v1.7.6
@@ -17,6 +17,7 @@ require (
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
+	github.com/Prekols-Inc/Markdown-editor/lib/logger v0.0.0-00010101000000-000000000000 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
@@ -72,3 +73,5 @@ require (
 	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/Prekols-Inc/Markdown-editor/lib/logger => ../lib/logger

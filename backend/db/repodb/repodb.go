@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	USER_SPACE_SIZE = 1 << 10 // 1 Кб
-	MAX_USER_FILES  = 3
+	USER_SPACE_SIZE = 100 << 10 // 100 Kb
+	MAX_USER_FILES  = 5
 )
 
 var ErrFileNotFound = errors.New("file not found")
@@ -61,16 +61,6 @@ type FileRepository interface {
 	Rename(filename string, newFilename string, userId uuid.UUID) error
 }
 
-func containsChars(filename string, сhars []string) bool {
-	for _, ch := range сhars {
-		if strings.Contains(filename, ch) {
-			return true
-		}
-	}
-
-	return false
-}
-
 func validateFile(filename string) error {
 	if strings.TrimSpace(filename) == "" {
 		return &ErrInvalidFilename{Reason: ERR_ONLY_SPACES}
@@ -109,10 +99,6 @@ func validateFile(filename string) error {
 	if strings.HasSuffix(filename, ".") || strings.HasSuffix(filename, " ") {
 		return &ErrInvalidFilename{Reason: ERR_TRAILING_DOT_SPACE}
 	}
-	if strings.HasSuffix(filename, ".") || strings.HasSuffix(filename, " ") {
-		return &ErrInvalidFilename{Reason: ERR_TRAILING_DOT_SPACE}
-	}
-
 	if strings.TrimSpace(base) == "" {
 		return &ErrInvalidFilename{Reason: ERR_ONLY_SPACES}
 	}

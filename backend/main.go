@@ -4,6 +4,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log/slog"
+	"runtime/debug"
 	"strconv"
 	"time"
 
@@ -56,6 +58,13 @@ func validatePort(portStr string) error {
 // @host            localhost:1234
 // @BasePath        /
 func main() {
+	defer func() {
+		if r := recover(); r != nil {
+			Logger.Error("Panic occurred", slog.String("panic", fmt.Sprintf("%v", r)))
+			Logger.Error("Stack trace", slog.String("stack", string(debug.Stack())))
+		}
+	}()
+
 	var host, port string
 	flag.StringVar(&host, "host", "", "Host to bind")
 	flag.StringVar(&port, "port", "", "Port to bind")
@@ -74,7 +83,7 @@ func main() {
 		panic(fmt.Sprintf("Failed to create file repository: %v", err))
 	}
 
-	r := gin.Default()
+	r := gin.New()
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"https://localhost:5173", "http://localhost:5173"},
@@ -85,6 +94,7 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	r.Use(logMiddleware())
 	r.Use(counterMiddleware())
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	r.Static("/docs", "./docs")
@@ -113,8 +123,8 @@ func main() {
 	})
 
 	serverAddr := fmt.Sprintf("%s:%s", host, port)
+	Logger.Info("Server started on", slog.String("address", serverAddr))
 	if err := r.RunTLS(serverAddr, TLS_CERT_FILE, TLS_KEY_FILE); err != nil {
 		panic(fmt.Sprintf("Failed to run server: %v", err))
 	}
-	fmt.Printf("Server started on %s\n", serverAddr)
 }

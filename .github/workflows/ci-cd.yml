@@ -13,11 +13,15 @@ env:
   BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
   AUTH_HOST: ${{ secrets.AUTH_HOST }}
   AUTH_PORT: ${{ secrets.AUTH_PORT }}
+  GIGACHAT_PROXY_HOST: ${{ secrets.GIGACHAT_PROXY_HOST }}
+  GIGACHAT_PROXY_PORT: ${{ secrets.GIGACHAT_PROXY_PORT }}
+  GIGACHAT_AUTH_KEY: ${{ secrets.GIGACHAT_AUTH_KEY }}
   FRONTEND_HOST: ${{ secrets.FRONTEND_HOST }}
   FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
   VITE_STORAGE_API_BASE_URL: https://localhost:${{ secrets.BACKEND_PORT }}
   VITE_AUTH_API_BASE_URL: https://localhost:${{ secrets.AUTH_PORT }}
-  
+  VITE_GIGACHAT_PROXY_API_BASE_URL: https://localhost:${{ secrets.GIGACHAT_PROXY_PORT }}
+
   DB_HOST: markdown-db
   DB_PORT: ${{ secrets.DB_PORT }}
   DB_USER: ${{ secrets.DB_USER }}
@@ -26,6 +30,8 @@ env:
   DB_SSLMODE: disable
 
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+  LOG_DIR: /var/logs/markdown-editor
 
   GF_SECURITY_ADMIN_USER: ${{ secrets.GF_SECURITY_ADMIN_USER }}
   GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
@@ -44,21 +50,28 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v6
         with:
-          go-version: v1.24.0
+          go-version: v1.25
           cache: true
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: v1.64.7
-          args: --disable-all --enable=govet --enable=errcheck --enable=staticcheck --enable=gofmt --enable=typecheck --timeout=5m
+          version: v2.7.2
+          args: --timeout=5m
           working-directory: ./backend
 
       - name: Create .env file
         run: |
           cat << EOF > .env
+          LOG_DIR=$LOG_DIR
           JWT_SECRET=test-secret
           EOF
+
+      - name: Create logs directory and set permissions
+        run: |
+          sudo mkdir -p $LOG_DIR
+          sudo chown -R $USER $LOG_DIR
+          sudo chmod -R 775 $LOG_DIR
 
       - name: Run tests
         run: go test ./... -v
@@ -101,7 +114,14 @@ jobs:
         run: |
           cat << EOF > .env
           JWT_SECRET=$JWT_SECRET
+          LOG_DIR=$LOG_DIR
           EOF
+
+      - name: Create logs directory and set permissions
+        run: |
+          sudo mkdir -p $LOG_DIR
+          sudo chown -R $USER $LOG_DIR
+          sudo chmod -R 775 $LOG_DIR
 
       - name: Start application
         run: |
@@ -145,8 +165,14 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v6
         with:
-          go-version: v1.24.0
+          go-version: v1.25
           cache: true
+
+      - name: Create logs directory and set permissions
+        run: |
+          sudo mkdir -p $LOG_DIR
+          sudo chown -R $USER $LOG_DIR
+          sudo chmod -R 775 $LOG_DIR
 
       - name: Run tests
         run: go test -v
@@ -194,6 +220,11 @@ jobs:
           mkdir -p auth/tls
           openssl req -x509 -newkey rsa:4096 -keyout auth/tls/key.crt -out auth/tls/cert_auth.crt -days 365 -nodes -subj "/CN=localhost"
 
+      - name: Generate TLS certificates for gigachat proxy
+        run: |
+          mkdir -p gigachat_proxy/tls
+          openssl req -x509 -newkey rsa:4096 -keyout gigachat_proxy/tls/key.crt -out gigachat_proxy/tls/cert_backend.crt -days 365 -nodes -subj "/CN=localhost"
+
       - name: Create .env file for Docker Compose
         run: |
           cat << EOF > .env
@@ -206,6 +237,7 @@ jobs:
           VITE_STORAGE_API_BASE_URL=$VITE_STORAGE_API_BASE_URL
           VITE_AUTH_API_BASE_URL=$VITE_AUTH_API_BASE_URL
           JWT_SECRET=$JWT_SECRET
+          LOG_FILE=$LOG_FILE
           DB_HOST=$DB_HOST
           DB_PORT=$DB_PORT
           DB_USER=$DB_USER
