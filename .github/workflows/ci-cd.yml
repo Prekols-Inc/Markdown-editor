@@ -296,7 +296,7 @@ jobs:
           fi
 
           echo "Checking frontend availability at http://$FRONTEND_HOST:$FRONTEND_PORT"
-          if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$FRONTEND_HOST:$FRONTEND_PORT"; 
+          if ! curl -k -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "https://$FRONTEND_HOST:$FRONTEND_PORT"; 
           then
             echo "ERROR: Frontend availability check failed!"
             echo "Frontend logs:"
