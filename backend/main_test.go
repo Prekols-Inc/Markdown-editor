@@ -27,6 +27,7 @@ var testToken string
 var testUUID uuid.UUID
 
 func setupTestRouter(repo repodb.FileRepository) *gin.Engine {
+	fmt.Printf("LOGGER: %v\n", Logger)
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
 
@@ -78,7 +79,7 @@ func getNewLocalFileTestRepo() (repodb.FileRepository, CleanupFunc, error) {
 		return nil, nil, err
 	}
 
-	return repo, func() { os.RemoveAll(tempDir) }, nil
+	return repo, func() { _ = os.RemoveAll(tempDir) }, nil
 }
 
 func LoadFile(t *testing.T, r *gin.Engine, repo repodb.FileRepository, testFilename string, testContent string) *httptest.ResponseRecorder {

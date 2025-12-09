@@ -1,10 +1,11 @@
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
-WORKDIR /markdown-backend
-COPY go.mod go.sum ./
+WORKDIR /markdown-backend/backend
+COPY backend/go.mod backend/go.sum .
 RUN go mod tidy
 RUN go mod download
-COPY . .
+COPY backend .
+COPY lib ../lib
 RUN go build -o backend .
 
 FROM alpine:latest
@@ -13,6 +14,6 @@ EXPOSE ${BACKEND_PORT}
 
 WORKDIR /root/
 COPY --from=builder /markdown-backend/backend .
-COPY ./docs ./docs
-COPY ./tls ./tls
+COPY backend/docs docs
+COPY backend/tls tls
 CMD ./backend --port=${BACKEND_PORT} --host=${BACKEND_HOST}

@@ -24,6 +24,14 @@ const STORAGE = axios.create({
   withCredentials: true,
 });
 
+const GIGACHAT_PROXY = axios.create({
+  baseURL: import.meta.env.VITE_GIGACHAT_PROXY_API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
+});
+
 AUTH.interceptors.response.use(
   response => response,
   async error => {
@@ -90,5 +98,5 @@ export function parseAPIError(e) {
   }
   return { code, message, field: raw.field, details: raw.details };
 }
-export default { AUTH, STORAGE };
+export default { AUTH, STORAGE, GIGACHAT_PROXY };
 

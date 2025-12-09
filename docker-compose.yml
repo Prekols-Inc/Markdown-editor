@@ -18,21 +18,25 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./auth/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-      
+
   backend:
     image: sid00r/markdown-backend:latest
-    build: ./backend
+    build: 
+      context: .
+      dockerfile: ./docker/backend/Dockerfile
     container_name: markdown-backend
     environment:
       - BACKEND_HOST=${BACKEND_HOST}
       - BACKEND_PORT=${BACKEND_PORT}
       - JWT_SECRET=${JWT_SECRET}
+      - LOG_DIR=${LOG_DIR}
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     networks:
       - markdown-network
     volumes:
       - storage:/root/storage
+      - ${LOG_DIR}:${LOG_DIR}
     restart: unless-stopped
     healthcheck:
       test:
@@ -47,19 +51,24 @@ services:
 
   auth:
     image: sid00r/markdown-auth:latest
-    build: ./auth
+    build: 
+      context: .
+      dockerfile: ./docker/auth/Dockerfile
     container_name: markdown-auth
     environment:
       - AUTH_HOST=${AUTH_HOST}
       - AUTH_PORT=${AUTH_PORT}
       - JWT_SECRET=${JWT_SECRET}
+      - LOG_DIR=${LOG_DIR}
       - AUTH_DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}
     ports:
       - "${AUTH_PORT}:${AUTH_PORT}"
-    depends_on: 
+    depends_on:
       - db
     networks:
       - markdown-network
+    volumes:
+     - ${LOG_DIR}:${LOG_DIR}
     restart: unless-stopped
     healthcheck:
       test:
@@ -72,15 +81,44 @@ services:
       retries: 5
       start_period: 40s
 
+  gigachat_proxy:
+    image: sid00r/markdown-gigachat-proxy:latest
+    build: 
+      context: ./gigachat_proxy
+      dockerfile: ../docker/gigachat_proxy/Dockerfile
+    container_name: markdown-gigachat-proxy
+    environment:
+      - GIGACHAT_PROXY_PORT=${GIGACHAT_PROXY_PORT}
+      - GIGACHAT_PROXY_HOST=${GIGACHAT_PROXY_HOST}
+      - GIGACHAT_AUTH_KEY=${GIGACHAT_AUTH_KEY}
+    ports:
+      - "${GIGACHAT_PROXY_PORT}:${GIGACHAT_PROXY_PORT}"
+    networks:
+      - markdown-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "timeout 5 bash -c 'echo > /dev/tcp/localhost/${GIGACHAT_PROXY_PORT}' || exit 1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
   frontend:
     image: sid00r/markdown-frontend:latest
-    build: ./frontend
+    build: 
+      context: ./frontend
+      dockerfile: ../docker/frontend/Dockerfile
     container_name: markdown-frontend
     environment:
       - FRONTEND_HOST=${FRONTEND_HOST}
       - FRONTEND_PORT=${FRONTEND_PORT}
       - VITE_STORAGE_API_BASE_URL=${VITE_STORAGE_API_BASE_URL}
       - VITE_AUTH_API_BASE_URL=${VITE_AUTH_API_BASE_URL}
+      - VITE_GIGACHAT_PROXY_API_BASE_URL=${VITE_GIGACHAT_PROXY_API_BASE_URL}
     ports:
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     depends_on:
@@ -93,12 +131,12 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: markdown-prometheus
-    volumes: 
-      - ./prometheus/:/etc/prometheus/ 
-    ports: 
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+    ports:
       - "9090:9090"
     command:
-      - --config.file=/etc/prometheus/prometheus.yml 
+      - --config.file=/etc/prometheus/prometheus.yml
     networks:
       - markdown-network
     restart: unless-stopped
@@ -106,15 +144,15 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: markdown-grafana
-    ports: 
-      - "3000:3000" 
+    ports:
+      - "3000:3000"
     depends_on:
       - prometheus
     environment:
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
     user: "1000"
-    volumes: 
+    volumes:
       - ./grafana/data:/var/lib/grafana
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini:ro
       - ./grafana/provisioning:/etc/grafana/provisioning
@@ -134,7 +172,7 @@ services:
 networks:
   markdown-network:
     driver: bridge
-    
+
 volumes:
   storage:
   db-data:

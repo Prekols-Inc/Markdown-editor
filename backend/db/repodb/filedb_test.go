@@ -17,9 +17,7 @@ func setupTestDir(t *testing.T) (string, func()) {
 	tempDir, err := os.MkdirTemp("", "filerepo_test")
 	require.NoError(t, err)
 
-	cleanup := func() {
-		os.RemoveAll(tempDir)
-	}
+	cleanup := func() { _ = os.RemoveAll(tempDir) }
 
 	return tempDir, cleanup
 }
