@@ -193,6 +193,11 @@ jobs:
         with:
           node-version: "18"
 
+      - name: Generate TLS certificate
+        run: |
+          mkdir -p tls
+          openssl req -x509 -newkey rsa:4096 -keyout tls/key.crt -out tls/cert_frontend.crt -days 365 -nodes -subj "/CN=localhost"
+
       - name: Install frontend dependencies
         run: npm install
 
@@ -225,6 +230,11 @@ jobs:
         run: |
           mkdir -p gigachat_proxy/tls
           openssl req -x509 -newkey rsa:4096 -keyout gigachat_proxy/tls/key.crt -out gigachat_proxy/tls/cert_backend.crt -days 365 -nodes -subj "/CN=localhost"
+
+      - name: Generate TLS certificates for frontend
+        run: |
+          mkdir -p frontend/tls
+          openssl req -x509 -newkey rsa:4096 -keyout frontend/tls/key.crt -out frontend/tls/cert_frontend.crt -days 365 -nodes -subj "/CN=localhost"
 
       - name: Create .env file for Docker Compose
         run: |
@@ -287,7 +297,7 @@ jobs:
           fi
 
           echo "Checking frontend availability at http://$FRONTEND_HOST:$FRONTEND_PORT"
-          if ! curl -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "http://$FRONTEND_HOST:$FRONTEND_PORT"; 
+          if ! curl -k -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "https://$FRONTEND_HOST:$FRONTEND_PORT"; 
           then
             echo "ERROR: Frontend availability check failed!"
             echo "Frontend logs:"

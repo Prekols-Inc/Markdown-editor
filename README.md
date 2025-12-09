@@ -11,7 +11,7 @@ Project requirements: [requirements.md](docs/requirements.md)
 The most easiest way to set up the project is Docker Compose:
 
 1. Create `.env` file like `.env.example`
-2. Generate TLS certificates for backend and auth services:
+2. Generate TLS certificates for backend and auth services and frontend:
 ```bash
 for svc in backend auth frontend gigachat_proxy; do
   mkdir -p "$svc/tls"
@@ -47,8 +47,8 @@ npm install
 
 # 3. Add env variables in frontend/.env file:
 # Example: 
-VITE_AUTH_API_BASE_URL=http://localhost:8080
-VITE_STORAGE_API_BASE_URL=http://localhost:1234
+VITE_AUTH_API_BASE_URL=https://localhost:8080
+VITE_STORAGE_API_BASE_URL=https://localhost:1234
 
 # 4. Start the dev server
 npm run dev
