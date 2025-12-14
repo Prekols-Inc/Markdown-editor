@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { PanelRightOpen, PanelRightClose } from 'lucide-react';
 import MarkdownEditor from './MarkdownEditor';
 import FileSidebar from './FileSidebar';
-import OptionsEditor from './OptionsEditor';
 import MarkdownPreview from './MarkdownPreview';
+import AppTopBar from './AppTopBar';
 import API from '../API';
 import NewFileModal from './NewFileModal';
 import { validateFilename } from "../utils";
@@ -70,7 +69,7 @@ export default function App() {
     useEffect(() => {
         const handleMouseMove = e => {
             if (!isResizing.current) return;
-            const sidebar = sidebarOpen ? 260 : 48;
+            const sidebar = sidebarOpen ? 260 : 0;
             const min = 220;
             const max = window.innerWidth - sidebar - 220;
             const next = Math.min(Math.max(e.clientX - sidebar, min), max);
@@ -103,20 +102,25 @@ export default function App() {
         localStorage.setItem('md-options', JSON.stringify(obj));
     }, []);
 
-    const [tab, setTab] = useState('markdown');
-
     const [fileHandle, setFileHandle] = useState(null);
     const [unsaved, setUnsaved] = useState(false);
+    // Used to show/hide the unsaved dot
+    const [savedSnapshot, setSavedSnapshot] = useState("");
 
     const sidebarRef = useRef(null);
 
     useEffect(() => {
-        if (fileHandle) setUnsaved(true);
-    }, [markdown, fileHandle]);
+        if (!fileHandle) {
+            setUnsaved(false);
+            return;
+        }
+        setUnsaved(markdown !== savedSnapshot);
+    }, [markdown, fileHandle, savedSnapshot]);
 
     const handleOpenFile = useCallback((text, handle) => {
         setMarkdown(text);
         setFileHandle(handle);
+        setSavedSnapshot(text);
         setUnsaved(false);
     }, []);
 
@@ -145,6 +149,7 @@ export default function App() {
 
             setMarkdown(DEFAULT_MD);
             setFileHandle({ name: filename });
+            setSavedSnapshot(DEFAULT_MD);
             setUnsaved(false);
 
             sidebarRef.current?.refresh?.();
@@ -192,6 +197,7 @@ export default function App() {
 
             setMarkdown(content);
             setFileHandle({ name: filename });
+            setSavedSnapshot(content);
             setUnsaved(false);
 
             sidebarRef.current?.refresh?.();
@@ -249,6 +255,7 @@ export default function App() {
                 });
 
                 setFileHandle({ name: filename });
+                setSavedSnapshot(content);
                 setUnsaved(false);
 
                 if (typeof refreshFiles === 'function') {
@@ -272,16 +279,68 @@ export default function App() {
         },
         [markdown, fileHandle, toast, parseAPIError]
     );
+
+    const handleDownloadCurrent = useCallback(async () => {
+        if (!fileHandle?.name) return;
+        try {
+            const resp = await API.STORAGE.get(`/file/${encodeURIComponent(fileHandle.name)}`, { responseType: 'blob' });
+            let filename = fileHandle.name;
+            const cd = resp.headers?.['content-disposition'];
+            if (cd) {
+                const m = /filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i.exec(cd);
+                if (m) filename = decodeURIComponent(m[1] || m[2]);
+            }
+            const url = window.URL.createObjectURL(resp.data);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('File download error', err);
+            const e = parseAPIError(err);
+            toast.error(e.message || 'Не удалось скачать файл');
+        }
+    }, [fileHandle, toast, parseAPIError]);
+
+    const handleLogout = useCallback(async () => {
+        try {
+            await API.AUTH.post('/v1/logout');
+            window.location.href = '/login';
+        } catch (err) {
+            const e = parseAPIError(err);
+            toast.error(e.message || 'Не удалось выполнить выход');
+        }
+    }, [toast, parseAPIError]);
+
     return (
         <>
-            <div
-                className="app-grid"
-                style={{
-                    gridTemplateColumns: showPreview
-                        ? `${sidebarOpen ? 260 : 48}px ${leftWidth}px 5px 1fr`
-                        : `${sidebarOpen ? 260 : 48}px 1fr`
-                }}
-            >
+            <div className="app-shell">
+                <AppTopBar
+                    sidebarOpen={sidebarOpen}
+                    onToggleSidebar={toggleSidebar}
+                    showPreview={showPreview}
+                    onTogglePreview={() => setShowPreview(p => !p)}
+                    current={fileHandle}
+                    unsaved={unsaved}
+                    onNewFile={() => setIsNewFileModalOpen(true)}
+                    onSave={() => handleSave(() => sidebarRef.current?.refresh?.())}
+                    onDownload={handleDownloadCurrent}
+                    onLogout={handleLogout}
+                    options={options}
+                    onOptionsChange={handleOptionsChange}
+                />
+
+                <div
+                    className="app-grid"
+                    style={{
+                        gridTemplateColumns: showPreview
+                            ? `${sidebarOpen ? 260 : 0}px ${leftWidth}px 5px 1fr`
+                            : `${sidebarOpen ? 260 : 0}px 1fr`
+                    }}
+                >
                 <Toaster position="top-right" reverseOrder={false} />
                 <FileSidebar
                     ref={sidebarRef}
@@ -293,49 +352,15 @@ export default function App() {
                     setUnsaved={setUnsaved}
                     collapsed={!sidebarOpen}
                     onToggle={toggleSidebar}
+                    aiCurrent={fileHandle ? { name: fileHandle.name, text: markdown } : null}
                 />
 
                 <div className="left-panel">
-                    <div className="tabs">
-                        <button
-                            className={tab === 'markdown' ? 'tab active' : 'tab'}
-                            onClick={() => setTab('markdown')}
-                        >
-                            Markdown
-                        </button>
-                        <button
-                            className={tab === 'options' ? 'tab active' : 'tab'}
-                            onClick={() => setTab('options')}
-                        >
-                            Options
-                        </button>
-
-                        <button
-                            className="tab right flex items-center gap-2"
-                            onClick={() => setShowPreview(p => !p)}
-                            title={showPreview ? 'Скрыть превью' : 'Показать превью'}
-                        >
-                            {showPreview ? (
-                                <PanelRightClose size={22} strokeWidth={1.75} />
-                            ) : (
-                                <PanelRightOpen size={22} strokeWidth={1.75} />
-                            )}
-                        </button>
-                    </div>
-
-                    {tab === 'markdown' ? (
-                        <MarkdownEditor
-                            value={markdown}
-                            onChange={setMarkdown}
-                            onFileUpload={handleFileUpload}
-                        />
-                    ) : (
-                        <OptionsEditor
-                            value={options}
-                            onChange={handleOptionsChange}
-                        />
-                    )
-                    }
+                    <MarkdownEditor
+                        value={markdown}
+                        onChange={setMarkdown}
+                        onFileUpload={handleFileUpload}
+                    />
                 </div >
 
                 {showPreview && (
@@ -347,6 +372,7 @@ export default function App() {
                         <MarkdownPreview markdown={markdown} options={options} />
                     </>
                 )}
+                </div>
             </div>
 
             <NewFileModal

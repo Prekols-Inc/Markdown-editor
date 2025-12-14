@@ -11,6 +11,7 @@ const DEFAULT_MD = "# Новый Markdown файл\n\nНапишите здес�
 const FileSidebar = forwardRef(function FileSidebar(
   {
     current,
+    aiCurrent,
     onOpenFile,
     onSave,
     onNewFile,
@@ -169,7 +170,7 @@ const FileSidebar = forwardRef(function FileSidebar(
       const cachedFile = localStorage.getItem(file.name);
       if (cachedFile != null) {
         onOpenFile(cachedFile, { name: file.name });
-        setUnsaved(true);
+        setUnsaved(false);
       } else {
         const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`, { responseType: 'text' });
         onOpenFile(response.data, { name: file.name });
@@ -240,52 +241,15 @@ const FileSidebar = forwardRef(function FileSidebar(
   };
 
   return (
-    <aside className={collapsed ? 'sidebar collapsed' : 'sidebar'} style={{ width: collapsed ? 48 : 260 }}>
-      <div className="toolbar">
-        <button
-          className="btn secondary"
-          style={{ width: 32 }}
-          onClick={onToggle}
-          title={collapsed ? 'Expand' : 'Collapse'}
-        >
-          {collapsed ? <ChevronsRight stroke="#111827" size={22} strokeWidth={1.75} /> : <ChevronsLeft stroke="#111827" size={22} strokeWidth={1.75} />}
-        </button>
-
-        {!collapsed && (
-          <>
-            <button className="btn" onClick={onNewFile}><FilePlus2 size={22} strokeWidth={1.75} /></button>
-
-            <div className="btn-group" ref={saveGroupRef}>
-              <button
-                className="btn split-main"
-                disabled={!current && !unsaved}
-                onClick={() => { onSave(fetchFiles); setSaveMenuOpen(false); }}
-              >
-                <Save size={22} strokeWidth={1.75} />
-              </button>
-              <button
-                className="btn split-toggle"
-                disabled={!current && !unsaved}
-                onClick={() => setSaveMenuOpen(v => !v)}
-                aria-haspopup="menu"
-                aria-expanded={saveMenuOpen}
-              />
-              <div className={`menu ${saveMenuOpen ? 'open' : ''}`} role="menu">
-                <button className="menu-item" role="menuitem" onClick={() => { if (current) downloadFile(current); setSaveMenuOpen(false); }} disabled={!current}>
-                  <Download size={22} strokeWidth={1.75} />
-                </button>
-              </div>
-            </div>
-
-            <button className="btn danger" style={{ backgroundColor: "#e74c3c", color: "white" }} onClick={() => setShowLogoutConfirm(true)}>
-              <LogOut size={22} strokeWidth={1.75} />
-            </button>
-
-            <LogoutConfirmModal open={showLogoutConfirm} onClose={() => setShowLogoutConfirm(false)} onConfirm={handleLogout} />
-          </>
-        )}
-      </div>
-
+    <aside
+      className={collapsed ? 'sidebar collapsed' : 'sidebar'}
+      style={{
+        width: collapsed ? 0 : 260,
+        minWidth: collapsed ? 0 : 260,
+        borderRight: collapsed ? 'none' : undefined,
+        overflow: collapsed ? 'hidden' : undefined
+      }}
+    >
       {!collapsed && entries.map(file => (
         <div
           key={file.name}
@@ -324,7 +288,7 @@ const FileSidebar = forwardRef(function FileSidebar(
         </div>
       ))}
 
-      {contextMenu.visible && (
+      {!collapsed && contextMenu.visible && (
         <div
           ref={menuRef}
           className="dropdown-menu"
@@ -357,11 +321,8 @@ const FileSidebar = forwardRef(function FileSidebar(
           </button>
         </div>
       )}
-      {!collapsed && (
-        <AISummarizeButton
-          current={current ? { name: current.name, text: localStorage.getItem(current.name) } : null}
-        />
-      )}
+
+      {!collapsed && <AISummarizeButton current={aiCurrent} />}
     </aside>
   );
 });
