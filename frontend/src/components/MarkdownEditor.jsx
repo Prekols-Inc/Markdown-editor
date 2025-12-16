@@ -6,6 +6,26 @@ export default function MarkdownEditor({ value, onChange, onFileUpload }) {
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key !== 'Tab') return;
+    e.preventDefault();
+
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const indent = '    '; // 4 spaces
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? 0;
+
+    const nextValue = value.slice(0, start) + indent + value.slice(end);
+    onChange(nextValue);
+
+    requestAnimationFrame(() => {
+      el.selectionStart = el.selectionEnd = start + indent.length;
+    });
+  }, [value, onChange]);
 
   const handleFile = useCallback((file) => {
     if (!file) return;
@@ -93,9 +113,11 @@ export default function MarkdownEditor({ value, onChange, onFileUpload }) {
     >
       <Toaster position="top-right" reverseOrder={false} />
       <textarea
+        ref={textareaRef}
         className="editor"
         value={value}
         onChange={e => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
         spellCheck={false}
       />
 

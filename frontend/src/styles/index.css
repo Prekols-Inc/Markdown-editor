@@ -15,16 +15,76 @@ body,
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
+.app-shell {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.topbar-file {
+  max-width: 360px;
+  min-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.92rem;
+  color: #111827;
+  padding: 6px 10px;
+  border: 1px solid #e5e7eb;
+  background: #fafafa;
+  border-radius: 999px;
+}
+
 .app-grid {
   display: grid;
-  grid-template-columns: 220px 1fr 1fr;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .sidebar {
   border-right: 1px solid #ddd;
   overflow-y: auto;
   background: #fafafa;
+}
+
+.sidebar-header {
+  padding: 10px 14px;
+  font-weight: 650;
+  font-size: 0.92rem;
+  color: #111827;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
 }
 
 .sidebar.collapsed .btn:not(.secondary) {
@@ -816,6 +876,93 @@ body,
   gap: 0.5rem;
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-sm {
+  padding: 0.32rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.btn-icon {
+  padding: 0;
+  width: 34px;
+  height: 34px;
+}
+
+.btn.secondary {
+  background: #f3f4f6;
+  color: #111827;
+  border: 1px solid #d1d5db;
+  box-shadow: none;
+}
+
+.btn.secondary:hover {
+  background: #e5e7eb;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn.ghost {
+  background: transparent;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
+}
+
+.btn.ghost:hover {
+  background: #f3f4f6;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn.danger {
+  background: #e74c3c;
+}
+
+.btn.danger:hover {
+  background: #d64536;
+}
+
+.menu-item-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-header {
+  padding: 0.6rem 1rem;
+  font-weight: 650;
+  font-size: 0.85rem;
+  color: #6b7280;
+  border-bottom: 1px solid #ddd;
+  background: #fff;
+}
+
+.modal-window.options-modal {
+  max-width: 560px;
+}
+
+.options-modal-body {
+  max-height: 65vh;
+  overflow: auto;
+  margin-top: 12px;
+}
+
+.topbar-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.topbar-modal-body {
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.ai-summary-content li {
+  margin-left: 1.25rem;
 }
 
 .btn:hover {
