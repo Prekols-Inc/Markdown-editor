@@ -77,15 +77,6 @@ jobs:
       - name: Run tests
         run: go test ./... -v
 
-      - name: Build application
-        run: go build -o app .
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: go-backend
-          path: ./backend/app
-
   test-auth-service:
     runs-on: ubuntu-latest
     defaults:
@@ -147,10 +138,6 @@ jobs:
   test-docker-compose:
     runs-on: ubuntu-latest
     needs: [test-backend, build-frontend, test-auth-service]
-    outputs:
-      backend-image: ${{ steps.build-backend.outputs.image }}
-      auth-image: ${{ steps.build-auth.outputs.image }}
-      frontend-image: ${{ steps.build-frontend.outputs.image }}
 
     steps:
       - name: Checkout code
@@ -204,8 +191,30 @@ jobs:
 
           echo "All services are healthy and responding!"
 
+      - name: Save images to artifact (backend, auth, frontend)
+        run: |
+          USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
+          declare -A repos=(
+            ["backend"]="${USERNAME}/markdown-backend:latest"
+            ["auth"]="${USERNAME}/markdown-auth:latest"
+            ["frontend"]="${USERNAME}/markdown-frontend:latest"
+          )
+
+          mkdir -p images
+          for svc in "${!repos[@]}"; do
+            img="${repos[$svc]}"
+            echo "Saving $img -> images/${svc}.tar"
+            docker save "$img" -o "images/${svc}.tar"
+          done
+
+      - name: Upload images artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: images
+          path: images
+
   build-and-push-docker-images:
-    #if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: [test-docker-compose]
 
@@ -222,17 +231,30 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Push backend image
-        run: |
-          docker tag ${{ needs.test-docker-compose.outputs.backend-image }} ${{ secrets.DOCKERHUB_USERNAME }}/markdown-backend:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/markdown-backend:latest
+      - name: Download images artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: images
+          path: ./artifact/images
 
-      - name: Push auth-service image
+      - name: Load and push images (backend, auth, frontend)
         run: |
-          docker tag ${{ needs.test-docker-compose.outputs.auth-image }} ${{ secrets.DOCKERHUB_USERNAME }}/markdown-auth:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/markdown-auth:latest
+          set -euo pipefail
+          USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
+          declare -A repos=(
+            ["backend"]="${USERNAME}/markdown-backend:latest"
+            ["auth"]="${USERNAME}/markdown-auth:latest"
+            ["frontend"]="${USERNAME}/markdown-frontend:latest"
+          )
 
-      - name: Push frontend image
-        run: |
-          docker tag ${{ needs.test-docker-compose.outputs.frontend-image }} ${{ secrets.DOCKERHUB_USERNAME }}/markdown-frontend:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/markdown-frontend:latest
+          for svc in backend auth frontend; do
+            tar="./artifact/images/${svc}.tar"
+            echo "Loading image from $tar"
+            docker load -i "$tar"
+          done
+
+          for svc in "${!repos[@]}"; do
+            img="${repos[$svc]}"
+            echo "Pushing $img"
+            docker push "$img"
+          done
