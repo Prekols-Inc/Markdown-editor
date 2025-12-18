@@ -179,6 +179,17 @@ export default function AuthPage({ onLogin }) {
                         </>
                     )}
                 </p>
+                <button
+                    type="button"
+                    className="unauth-btn"
+                    onClick={() => {
+                        localStorage.setItem('editorMode', 'unauth');
+                        console.log('Continuing without authentication');
+                        navigate('/editor');
+                    }}
+                >
+                    Продолжить без авторизации
+                </button>
             </form>
         </div >
     );

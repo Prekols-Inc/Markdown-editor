@@ -6,6 +6,9 @@ import API from './API';
 
 export default function App() {
   const [isAuth, setIsAuth] = useState(null);
+  const [editorMode, setEditorMode] = useState(
+    localStorage.getItem('editorMode')
+  );
 
   useEffect(() => {
     async function checkAuth() {
@@ -13,6 +16,8 @@ export default function App() {
         const res = await API.AUTH.get("/v1/check_auth");
         if (res.status === 200) {
           setIsAuth(true);
+          localStorage.setItem('editorMode', 'auth');
+          setEditorMode('auth');
         } else {
           setIsAuth(false);
         }
@@ -21,10 +26,16 @@ export default function App() {
       }
     }
 
-    checkAuth();
-  }, []);
+    if (editorMode === 'unauth') {
+      setIsAuth(false);
+      return;
+    }
 
-  if (isAuth === null) {
+    checkAuth();
+  }, [editorMode]);
+
+
+  if (isAuth === null && editorMode !== 'unauth') {
     return <div>Проверка авторизации...</div>;
   }
 
@@ -36,13 +47,25 @@ export default function App() {
           isAuth ? (
             <Navigate to="/editor" replace />
           ) : (
-            <LoginPage onLogin={() => setIsAuth(true)} />
+            <LoginPage
+              onLogin={() => {
+                localStorage.setItem('editorMode', 'auth');
+                setEditorMode('auth');
+                setIsAuth(true);
+              }}
+            />
           )
         }
       />
       <Route
         path="/editor"
-        element={isAuth ? <MarkdownApp /> : <Navigate to="/login" replace />}
+        element={
+          isAuth || editorMode === 'unauth' ? (
+            <MarkdownApp />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
       />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
