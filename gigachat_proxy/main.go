@@ -27,18 +27,29 @@ func main() {
 	r := gin.Default()
 	r.Use(corsMiddleware())
 
+	r.GET("/health", healthHandler)
 	r.POST("/api/gigachat/summarize", summarizeHandler)
 
+	host := os.Getenv("GIGACHAT_PROXY_HOST")
 	port := os.Getenv("GIGACHAT_PROXY_PORT")
-	if port == "" {
-		port = "8088"
-	}
 
-	serverAddr := fmt.Sprintf(":%s", port)
+	serverAddr := fmt.Sprintf("%s:%s", host, port)
 	if err := r.RunTLS(serverAddr, TLS_CERT_FILE, TLS_KEY_FILE); err != nil {
 		panic(fmt.Sprintf("Failed to run proxy: %v", err))
 	}
-	fmt.Println("Gigachat Proxy is running on :" + port)
+	fmt.Printf("Gigachat Proxy is running on %s\n", serverAddr)
+}
+
+func healthHandler(c *gin.Context) {
+	type HealthResponse struct {
+		Status string    `json:"status"`
+		Time   time.Time `json:"time"`
+	}
+
+	c.JSON(http.StatusOK, HealthResponse{
+		Status: "healthy",
+		Time:   time.Now(),
+	})
 }
 
 func summarizeHandler(c *gin.Context) {

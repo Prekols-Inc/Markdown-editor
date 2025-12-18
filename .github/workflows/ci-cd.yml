@@ -163,7 +163,7 @@ jobs:
         run: |
           sleep 15
           docker compose ps
-          if [ $(docker compose ps --services | grep -c 'backend\|frontend\|auth') -ne 3 ]; then
+          if [ $(docker compose ps --services | grep -c 'backend\|frontend\|auth\|gigachat_proxy') -ne 3 ]; then
             echo "Not all services are running"
             docker compose logs --tail=50
             exit 1
@@ -173,6 +173,7 @@ jobs:
             ["backend"]="https://$BACKEND_HOST:$BACKEND_PORT/health"
             ["auth"]="https://$AUTH_HOST:$AUTH_PORT/health"
             ["frontend"]="https://$FRONTEND_HOST:$FRONTEND_PORT"
+            ["gigachat_proxy"]="https://$GIGACHAT_PROXY_HOST:GIGACHAT_PROXY_PORT"
           )
 
           for service in "${!services[@]}"; do
@@ -191,13 +192,14 @@ jobs:
 
           echo "All services are healthy and responding!"
 
-      - name: Save images to artifact (backend, auth, frontend)
+      - name: Save images to artifact
         run: |
           USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
           declare -A repos=(
             ["backend"]="${USERNAME}/markdown-backend:latest"
             ["auth"]="${USERNAME}/markdown-auth:latest"
             ["frontend"]="${USERNAME}/markdown-frontend:latest"
+            ["gigachat_proxy"]=${USERNAME}/markdown-gigachat-proxy:latest
           )
 
           mkdir -p images
@@ -237,7 +239,7 @@ jobs:
           name: images
           path: ./artifact/images
 
-      - name: Load and push images (backend, auth, frontend)
+      - name: Load and push images
         run: |
           set -euo pipefail
           USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
@@ -245,9 +247,10 @@ jobs:
             ["backend"]="${USERNAME}/markdown-backend:latest"
             ["auth"]="${USERNAME}/markdown-auth:latest"
             ["frontend"]="${USERNAME}/markdown-frontend:latest"
+            ["gigachat_proxy"]=${USERNAME}/markdown-gigachat-proxy:latest
           )
 
-          for svc in backend auth frontend; do
+          for svc in backend auth frontend gigachat_proxy; do
             tar="./artifact/images/${svc}.tar"
             echo "Loading image from $tar"
             docker load -i "$tar"

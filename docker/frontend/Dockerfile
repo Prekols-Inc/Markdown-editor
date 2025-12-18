@@ -1,9 +1,9 @@
 FROM node:19-alpine
 RUN apk update && apk add xdg-utils
 WORKDIR /markdown-frontend
-COPY package*.json ./
+COPY frontend/package*.json .
 RUN npm install
-COPY . .
+COPY ./frontend .
 RUN npm run build
 
 EXPOSE ${FRONTEND_PORT}

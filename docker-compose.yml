@@ -84,8 +84,8 @@ services:
   gigachat_proxy:
     image: sid00r/markdown-gigachat-proxy:latest
     build: 
-      context: ./gigachat_proxy
-      dockerfile: ../docker/gigachat_proxy/Dockerfile
+      context: .
+      dockerfile: ./docker/gigachat_proxy/Dockerfile
     container_name: markdown-gigachat-proxy
     environment:
       - GIGACHAT_PROXY_PORT=${GIGACHAT_PROXY_PORT}
@@ -110,8 +110,8 @@ services:
   frontend:
     image: sid00r/markdown-frontend:latest
     build: 
-      context: ./frontend
-      dockerfile: ../docker/frontend/Dockerfile
+      context: .
+      dockerfile: ./docker/frontend/Dockerfile
     container_name: markdown-frontend
     environment:
       - FRONTEND_HOST=${FRONTEND_HOST}
