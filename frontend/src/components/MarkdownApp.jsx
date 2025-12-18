@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { PanelRightOpen, PanelRightClose } from 'lucide-react';
 import MarkdownEditor from './MarkdownEditor';
 import FileSidebar from './FileSidebar';
+import OptionsEditor from './OptionsEditor';
 import MarkdownPreview from './MarkdownPreview';
-import AppTopBar from './AppTopBar';
+import { marked } from 'marked';
 import API from '../API';
+import { UnauthStorage } from '../storage/unauthStorage';
 import NewFileModal from './NewFileModal';
 import { validateFilename } from "../utils";
 import { toast, Toaster } from 'react-hot-toast';
@@ -32,21 +35,8 @@ export default function App() {
         () => localStorage.getItem('md-draft') ?? DEFAULT_MD
     );
 
-    const autoSaveTimeout = useRef(null);
-    useEffect(() => {
-        if (!fileHandle) return;
-
-        if (autoSaveTimeout.current) {
-            clearTimeout(autoSaveTimeout.current);
-        }
-
-        // Auto-save after 10 seconds of inactivity
-        autoSaveTimeout.current = setTimeout(() => {
-            handleSave();
-        }, 10000);
-
-        return () => clearTimeout(autoSaveTimeout.current);
-    }, [markdown]);
+    // Check if we're in unauth mode
+    const isUnauth = localStorage.getItem('editorMode') === 'unauth';
 
     const parseAPIError =
         (API && API.parseAPIError)
@@ -69,7 +59,7 @@ export default function App() {
     useEffect(() => {
         const handleMouseMove = e => {
             if (!isResizing.current) return;
-            const sidebar = sidebarOpen ? 260 : 0;
+            const sidebar = sidebarOpen ? 260 : 48;
             const min = 220;
             const max = window.innerWidth - sidebar - 220;
             const next = Math.min(Math.max(e.clientX - sidebar, min), max);
@@ -102,137 +92,31 @@ export default function App() {
         localStorage.setItem('md-options', JSON.stringify(obj));
     }, []);
 
+    const [tab, setTab] = useState('markdown');
+
     const [fileHandle, setFileHandle] = useState(null);
     const [unsaved, setUnsaved] = useState(false);
-    // Used to show/hide the unsaved dot
-    const [savedSnapshot, setSavedSnapshot] = useState("");
 
     const sidebarRef = useRef(null);
 
     useEffect(() => {
-        if (!fileHandle) {
-            setUnsaved(false);
-            return;
-        }
-        setUnsaved(markdown !== savedSnapshot);
-    }, [markdown, fileHandle, savedSnapshot]);
+        if (fileHandle) setUnsaved(true);
+    }, [markdown, fileHandle]);
 
     const handleOpenFile = useCallback((text, handle) => {
         setMarkdown(text);
         setFileHandle(handle);
-        setSavedSnapshot(text);
         setUnsaved(false);
     }, []);
 
     const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false);
 
     const handleNewFile = useCallback(async (inputName) => {
-        try {
-            let filename = inputName?.trim() || 'untitled.md';
-            if (!filename.endsWith('.md') && !filename.endsWith('.markdown')) {
-                filename += '.md';
-            }
-
-            const v = validateFilename(filename);
-            if (!v.ok) {
-                toast.error(v.message);
-                return;
-            }
-
-            const blob = new Blob([DEFAULT_MD], { type: 'text/plain' });
-            const formData = new FormData();
-            formData.append('file', blob, filename);
-
-            await API.STORAGE.post(`/file/${encodeURIComponent(filename)}`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-
-            setMarkdown(DEFAULT_MD);
-            setFileHandle({ name: filename });
-            setSavedSnapshot(DEFAULT_MD);
-            setUnsaved(false);
-
-            sidebarRef.current?.refresh?.();
-
-            toast.success('Файл создан');
-        } catch (err) {
-            console.error('Ошибка создания файла', err);
-            const e = parseAPIError(err);
-            if (e.code === 'FILE_ALREADY_EXISTS') {
-                toast.error('Файл с таким именем уже существует. Выберите другое имя.');
-            } else if (e.code === 'FILE_COUNT_LIMIT') {
-                toast.error('Превышен лимит количества файлов. Удалите лишние.');
-            } else if (e.code === 'USER_SPACE_FULL') {
-                toast.error('Недостаточно места в хранилище пользователя.');
-            } else if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
-                toast.error(`Недопустимые символы: ${e.details.invalid.join(' ')}`);
-            } else {
-                toast.error(e.message || 'Не удалось создать файл');
-            }
-        }
-    }, [toast, parseAPIError]);
-
-    const handleFileUpload = useCallback(async (content, originalFilename) => {
-        try {
-            let filename = originalFilename || 'uploaded.md';
-
-            // Ensure the file has the correct extension
-            if (!filename.endsWith('.md') && !filename.endsWith('.markdown')) {
-                filename = filename.replace(/\.[^/.]+$/, "") + '.md';
-            }
-
-            const v = validateFilename(filename);
-            if (!v.ok) {
-                toast.error(v.message);
-                return;
-            }
-
-            const blob = new Blob([content], { type: 'text/plain' });
-            const formData = new FormData();
-            formData.append('file', blob, filename);
-
-            await API.STORAGE.post(`/file/${encodeURIComponent(filename)}`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-
-            setMarkdown(content);
-            setFileHandle({ name: filename });
-            setSavedSnapshot(content);
-            setUnsaved(false);
-
-            sidebarRef.current?.refresh?.();
-
-            toast.success(`Файл "${filename}" создан из загруженного файла`);
-        } catch (err) {
-            console.error('Ошибка создания файла из загруженного', err);
-            const e = parseAPIError(err);
-            if (e.code === 'FILE_ALREADY_EXISTS') {
-                toast.error('Файл с таким именем уже существует. Переименуйте загружаемый файл.');
-            } else if (e.code === 'FILE_COUNT_LIMIT') {
-                toast.error('Превышен лимит количества файлов. Удалите лишние.');
-            } else if (e.code === 'USER_SPACE_FULL') {
-                toast.error('Недостаточно места в хранилище пользователя.');
-            } else if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
-                toast.error(`Недопустимые символы в имени файла: ${e.details.invalid.join(' ')}`);
-            } else {
-                toast.error(e.message || 'Не удалось создать файл из загруженного');
-            }
-        }
-    }, [toast, parseAPIError]);
-
-    const handleSave = useCallback(
-        async (refreshFiles) => {
+        if (isUnauth) {
+            // Handle new file creation in unauth mode
             try {
-                let filename = fileHandle?.name;
-
-                if (!filename) {
-                    const asked = prompt('Введите имя файла', 'untitled.md');
-                    if (!asked) return;
-                    filename = asked.trim();
-                }
-
+                let filename = inputName?.trim() || 'untitled.md';
                 if (!filename.endsWith('.md') && !filename.endsWith('.markdown')) {
-                    toast.info('Сохраняем как .md');
                     filename += '.md';
                 }
 
@@ -242,108 +126,275 @@ export default function App() {
                     return;
                 }
 
-                const content = markdown;
+                // Check if file already exists in localStorage
+                const files = UnauthStorage.load();
+                if (files[filename]) {
+                    toast.error('Файл с таким именем уже существует. Выберите другое имя.');
+                    return;
+                }
 
-                localStorage.setItem(filename, content);
+                // Save new file to localStorage
+                files[filename] = DEFAULT_MD;
+                UnauthStorage.save(files);
 
-                const blob = new Blob([content], { type: 'text/plain' });
+                setMarkdown(DEFAULT_MD);
+                setFileHandle({ name: filename });
+                setUnsaved(false);
+
+                sidebarRef.current?.refresh?.();
+
+                toast.success('Файл создан');
+            } catch (err) {
+                console.error('Ошибка создания файла', err);
+                toast.error('Не удалось создать файл');
+            }
+        } else {
+            try {
+                let filename = inputName?.trim() || 'untitled.md';
+                if (!filename.endsWith('.md') && !filename.endsWith('.markdown')) {
+                    filename += '.md';
+                }
+
+                const v = validateFilename(filename);
+                if (!v.ok) {
+                    toast.error(v.message);
+                    return;
+                }
+
+                const blob = new Blob([DEFAULT_MD], { type: 'text/plain' });
                 const formData = new FormData();
                 formData.append('file', blob, filename);
 
-                await API.STORAGE.put(`/file/${encodeURIComponent(filename)}`, formData, {
+                await API.STORAGE.post(`/file/${encodeURIComponent(filename)}`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                 });
 
+                setMarkdown(DEFAULT_MD);
                 setFileHandle({ name: filename });
-                setSavedSnapshot(content);
                 setUnsaved(false);
 
-                if (typeof refreshFiles === 'function') {
-                    refreshFiles();
-                }
+                sidebarRef.current?.refresh?.();
 
-                toast.success('Файл сохранён');
+                toast.success('Файл создан');
             } catch (err) {
-                console.error('Ошибка сохранения файла', err);
+                console.error('Ошибка создания файла', err);
                 const e = parseAPIError(err);
-                if (e.code === 'FILE_NOT_FOUND') {
-                    toast.error('Файл не найден (возможно был удалён). Создайте заново.');
+                if (e.code === 'FILE_ALREADY_EXISTS') {
+                    toast.error('Файл с таким именем уже существует. Выберите другое имя.');
+                } else if (e.code === 'FILE_COUNT_LIMIT') {
+                    toast.error('Превышен лимит количества файлов. Удалите лишние.');
                 } else if (e.code === 'USER_SPACE_FULL') {
                     toast.error('Недостаточно места в хранилище пользователя.');
                 } else if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
                     toast.error(`Недопустимые символы: ${e.details.invalid.join(' ')}`);
                 } else {
-                    toast.error(e.message || 'Не удалось сохранить файл');
+                    toast.error(e.message || 'Не удалось создать файл');
+                }
+            }
+        }
+    }, [isUnauth, toast, parseAPIError]);
+
+    const handleFileUpload = useCallback(async (content, originalFilename) => {
+        if (isUnauth) {
+            // Handle file upload in unauth mode
+            try {
+                let filename = originalFilename || 'uploaded.md';
+
+                // Ensure the file has the correct extension
+                if (!filename.endsWith('.md') && !filename.endsWith('.markdown')) {
+                    filename = filename.replace(/\.[^/.]+$/, "") + '.md';
+                }
+
+                const v = validateFilename(filename);
+                if (!v.ok) {
+                    toast.error(v.message);
+                    return;
+                }
+
+                // Check if file already exists
+                const files = UnauthStorage.load();
+                if (files[filename]) {
+                    toast.error('Файл с таким именем уже существует. Переименуйте загружаемый файл.');
+                    return;
+                }
+
+                // Save uploaded file to localStorage
+                files[filename] = content;
+                UnauthStorage.save(files);
+
+                setMarkdown(content);
+                setFileHandle({ name: filename });
+                setUnsaved(false);
+
+                sidebarRef.current?.refresh?.();
+
+                toast.success(`Файл "${filename}" создан из загруженного файла`);
+            } catch (err) {
+                console.error('Ошибка создания файла из загруженного', err);
+                toast.error('Не удалось создать файл из загруженного');
+            }
+        } else {
+            try {
+                let filename = originalFilename || 'uploaded.md';
+
+                // Ensure the file has the correct extension
+                if (!filename.endsWith('.md') && !filename.endsWith('.markdown')) {
+                    filename = filename.replace(/\.[^/.]+$/, "") + '.md';
+                }
+
+                const v = validateFilename(filename);
+                if (!v.ok) {
+                    toast.error(v.message);
+                    return;
+                }
+
+                const blob = new Blob([content], { type: 'text/plain' });
+                const formData = new FormData();
+                formData.append('file', blob, filename);
+
+                await API.STORAGE.post(`/file/${encodeURIComponent(filename)}`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+
+                setMarkdown(content);
+                setFileHandle({ name: filename });
+                setUnsaved(false);
+
+                sidebarRef.current?.refresh?.();
+
+                toast.success(`Файл "${filename}" создан из загруженного файла`);
+            } catch (err) {
+                console.error('Ошибка создания файла из загруженного', err);
+                const e = parseAPIError(err);
+                if (e.code === 'FILE_ALREADY_EXISTS') {
+                    toast.error('Файл с таким именем уже существует. Переименуйте загружаемый файл.');
+                } else if (e.code === 'FILE_COUNT_LIMIT') {
+                    toast.error('Превышен лимит количества файлов. Удалите лишние.');
+                } else if (e.code === 'USER_SPACE_FULL') {
+                    toast.error('Недостаточно места в хранилище пользователя.');
+                } else if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
+                    toast.error(`Недопустимые символы в имени файла: ${e.details.invalid.join(' ')}`);
+                } else {
+                    toast.error(e.message || 'Не удалось создать файл из загруженного');
+                }
+            }
+        }
+    }, [isUnauth, toast, parseAPIError]);
+
+    const handleSave = useCallback(
+        async (refreshFiles) => {
+            if (isUnauth) {
+                // Handle file saving in unauth mode
+                try {
+                    let filename = fileHandle?.name;
+
+                    if (!filename) {
+                        const asked = prompt('Введите имя файла', 'untitled.md');
+                        if (!asked) return;
+                        filename = asked.trim();
+                    }
+
+                    if (!filename.endsWith('.md') && !filename.endsWith('.markdown')) {
+                        toast.info('Сохраняем как .md');
+                        filename += '.md';
+                    }
+
+                    const v = validateFilename(filename);
+                    if (!v.ok) {
+                        toast.error(v.message);
+                        return;
+                    }
+
+                    // Save to localStorage
+                    const files = UnauthStorage.load();
+                    files[filename] = markdown;
+                    UnauthStorage.save(files);
+
+                    setFileHandle({ name: filename });
+                    setUnsaved(false);
+
+                    if (typeof refreshFiles === 'function') {
+                        refreshFiles();
+                    }
+
+                    toast.success('Файл сохранён');
+                } catch (err) {
+                    console.error('Ошибка сохранения файла', err);
+                    toast.error('Не удалось сохранить файл');
+                }
+            } else {
+                try {
+                    let filename = fileHandle?.name;
+
+                    if (!filename) {
+                        const asked = prompt('Введите имя файла', 'untitled.md');
+                        if (!asked) return;
+                        filename = asked.trim();
+                    }
+
+                    if (!filename.endsWith('.md') && !filename.endsWith('.markdown')) {
+                        toast.info('Сохраняем как .md');
+                        filename += '.md';
+                    }
+
+                    const v = validateFilename(filename);
+                    if (!v.ok) {
+                        toast.error(v.message);
+                        return;
+                    }
+
+                    const content = markdown;
+
+                    localStorage.setItem(filename, content);
+
+                    const blob = new Blob([content], { type: 'text/plain' });
+                    const formData = new FormData();
+                    formData.append('file', blob, filename);
+
+                    await API.STORAGE.put(`/file/${encodeURIComponent(filename)}`, formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' },
+                    });
+
+                    setFileHandle({ name: filename });
+                    setUnsaved(false);
+
+                    if (typeof refreshFiles === 'function') {
+                        refreshFiles();
+                    }
+
+                    toast.success('Файл сохранён');
+                } catch (err) {
+                    console.error('Ошибка сохранения файла', err);
+                    const e = parseAPIError(err);
+                    if (e.code === 'FILE_NOT_FOUND') {
+                        toast.error('Файл не найден (возможно был удалён). Создайте заново.');
+                    } else if (e.code === 'USER_SPACE_FULL') {
+                        toast.error('Недостаточно места в хранилище пользователя.');
+                    } else if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
+                        toast.error(`Недопустимые символы: ${e.details.invalid.join(' ')}`);
+                    } else {
+                        toast.error(e.message || 'Не удалось сохранить файл');
+                    }
                 }
             }
         },
-        [markdown, fileHandle, toast, parseAPIError]
+        [isUnauth, markdown, fileHandle, toast, parseAPIError]
     );
 
-    const handleDownloadCurrent = useCallback(async () => {
-        if (!fileHandle?.name) return;
-        try {
-            const resp = await API.STORAGE.get(`/file/${encodeURIComponent(fileHandle.name)}`, { responseType: 'blob' });
-            let filename = fileHandle.name;
-            const cd = resp.headers?.['content-disposition'];
-            if (cd) {
-                const m = /filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i.exec(cd);
-                if (m) filename = decodeURIComponent(m[1] || m[2]);
-            }
-            const url = window.URL.createObjectURL(resp.data);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
-        } catch (err) {
-            console.error('File download error', err);
-            const e = parseAPIError(err);
-            toast.error(e.message || 'Не удалось скачать файл');
-        }
-    }, [fileHandle, toast, parseAPIError]);
-
-    const handleLogout = useCallback(async () => {
-        try {
-            await API.AUTH.post('/v1/logout');
-            window.location.href = '/login';
-        } catch (err) {
-            const e = parseAPIError(err);
-            toast.error(e.message || 'Не удалось выполнить выход');
-        }
-    }, [toast, parseAPIError]);
-
     return (
-        <>
-            <div className="app-shell">
-                <AppTopBar
-                    sidebarOpen={sidebarOpen}
-                    onToggleSidebar={toggleSidebar}
-                    showPreview={showPreview}
-                    onTogglePreview={() => setShowPreview(p => !p)}
-                    current={fileHandle}
-                    unsaved={unsaved}
-                    onNewFile={() => setIsNewFileModalOpen(true)}
-                    onSave={() => handleSave(() => sidebarRef.current?.refresh?.())}
-                    onDownload={handleDownloadCurrent}
-                    onLogout={handleLogout}
-                    options={options}
-                    onOptionsChange={handleOptionsChange}
-                />
-
-                <div
-                    className="app-grid"
-                    style={{
-                        gridTemplateColumns: showPreview
-                            ? `${sidebarOpen ? 260 : 0}px ${leftWidth}px 5px 1fr`
-                            : `${sidebarOpen ? 260 : 0}px 1fr`
-                    }}
-                >
+        <div className="app-shell">
+            <div
+                className="app-grid"
+                style={{
+                    gridTemplateColumns: showPreview
+                        ? `${sidebarOpen ? 260 : 48}px ${leftWidth}px 5px 1fr`
+                        : `${sidebarOpen ? 260 : 48}px 1fr`
+                }}
+            >
                 <Toaster position="top-right" reverseOrder={false} />
                 <FileSidebar
                     ref={sidebarRef}
+                    isUnauth={isUnauth}
                     current={fileHandle}
                     onOpenFile={handleOpenFile}
                     onSave={handleSave}
@@ -352,16 +403,49 @@ export default function App() {
                     setUnsaved={setUnsaved}
                     collapsed={!sidebarOpen}
                     onToggle={toggleSidebar}
-                    aiCurrent={fileHandle ? { name: fileHandle.name, text: markdown } : null}
                 />
 
                 <div className="left-panel">
-                    <MarkdownEditor
-                        value={markdown}
-                        onChange={setMarkdown}
-                        onFileUpload={handleFileUpload}
-                    />
-                </div >
+                    <div className="tabs">
+                        <button
+                            className={tab === 'markdown' ? 'tab active' : 'tab'}
+                            onClick={() => setTab('markdown')}
+                        >
+                            Markdown
+                        </button>
+                        <button
+                            className={tab === 'options' ? 'tab active' : 'tab'}
+                            onClick={() => setTab('options')}
+                        >
+                            Options
+                        </button>
+
+                        <button
+                            className="tab right flex items-center gap-2"
+                            onClick={() => setShowPreview(p => !p)}
+                            title={showPreview ? 'Скрыть превью' : 'Показать превью'}
+                        >
+                            {showPreview ? (
+                                <PanelRightClose size={22} strokeWidth={1.75} />
+                            ) : (
+                                <PanelRightOpen size={22} strokeWidth={1.75} />
+                            )}
+                        </button>
+                    </div>
+
+                    {tab === 'markdown' ? (
+                        <MarkdownEditor
+                            value={markdown}
+                            onChange={setMarkdown}
+                            onFileUpload={handleFileUpload}
+                        />
+                    ) : (
+                        <OptionsEditor
+                            value={options}
+                            onChange={handleOptionsChange}
+                        />
+                    )}
+                </div>
 
                 {showPreview && (
                     <>
@@ -372,7 +456,6 @@ export default function App() {
                         <MarkdownPreview markdown={markdown} options={options} />
                     </>
                 )}
-                </div>
             </div>
 
             <NewFileModal
@@ -383,6 +466,6 @@ export default function App() {
                     handleNewFile(filename);
                 }}
             />
-        </>
+        </div>
     );
 }

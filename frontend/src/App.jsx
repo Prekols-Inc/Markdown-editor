@@ -31,11 +31,15 @@ export default function App() {
       return;
     }
 
-    checkAuth();
+    // Only check auth if editorMode is explicitly set to 'auth'
+    // Don't auto-check when editorMode is null (after logout)
+    if (editorMode === 'auth') {
+      checkAuth();
+    }
   }, [editorMode]);
 
 
-  if (isAuth === null && editorMode !== 'unauth') {
+  if (isAuth === null && editorMode === 'auth') {
     return <div>Проверка авторизации...</div>;
   }
 

@@ -2,6 +2,7 @@ import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 're
 import { FilePlus2, Save, Download, LogOut, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import API from '../API';
+import { UnauthStorage } from '../storage/unauthStorage';
 import { toast } from 'react-hot-toast';
 import AISummarizeButton from "./AISummarizeButton";
 import { validateFilename } from '../utils';
@@ -10,6 +11,7 @@ const DEFAULT_MD = "# Новый Markdown файл\n\nНапишите здес�
 
 const FileSidebar = forwardRef(function FileSidebar(
   {
+    isUnauth,
     current,
     aiCurrent,
     onOpenFile,
@@ -67,32 +69,48 @@ const FileSidebar = forwardRef(function FileSidebar(
       return;
     }
 
-    try {
-      const formData = new FormData();
-      formData.append('oldName', oldName);
-      formData.append('newName', newName);
+    if (isUnauth) {
+      // Rename file in localStorage for unauth mode
+      const files = UnauthStorage.load();
+      if (files[oldName]) {
+        files[newName] = files[oldName];
+        delete files[oldName];
+        UnauthStorage.save(files);
 
-      await API.STORAGE.put(`/rename/${encodeURIComponent(oldName)}/${encodeURIComponent(newName)}`, formData);
+        setEntries(prev => prev.map(f => f.name === oldName ? { ...f, name: newName } : f));
 
-      setEntries(prev => prev.map(f => f.name === oldName ? { ...f, name: newName } : f));
-
-      if (current?.name === oldName) {
-        onOpenFile(localStorage.getItem(oldName) || "", { name: newName });
-        localStorage.setItem(newName, localStorage.getItem(oldName));
-        localStorage.removeItem(oldName);
+        if (current?.name === oldName) {
+          onOpenFile(files[newName], { name: newName });
+        }
+        toast.success('Файл переименован');
       }
-      toast.success('Файл переименован');
-    } catch (err) {
-      console.error("Ошибка при переименовании файла", err);
-      const e = parseAPIError(err);
-      if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
-        toast.error(`Недопустимые символы: ${e.details.invalid.join(' ')}`);
-      } else {
-        toast.error(e.message || 'Не удалось переименовать файл');
+    } else {
+      try {
+        const formData = new FormData();
+        formData.append('oldName', oldName);
+        formData.append('newName', newName);
+
+        await API.STORAGE.put(`/rename/${encodeURIComponent(oldName)}/${encodeURIComponent(newName)}`, formData);
+
+        setEntries(prev => prev.map(f => f.name === oldName ? { ...f, name: newName } : f));
+
+        if (current?.name === oldName) {
+          onOpenFile(localStorage.getItem(oldName) || "", { name: newName });
+          localStorage.setItem(newName, localStorage.getItem(oldName));
+          localStorage.removeItem(oldName);
+        }
+        toast.success('Файл переименован');
+      } catch (err) {
+        console.error("Ошибка при переименовании файла", err);
+        const e = parseAPIError(err);
+        if (e.code === 'FILE_NAME_INVALID_CHARS' && e.details?.invalid?.length) {
+          toast.error(`Недопустимые символы: ${e.details.invalid.join(' ')}`);
+        } else {
+          toast.error(e.message || 'Не удалось переименовать файл');
+        }
       }
-    } finally {
-      cancelRename();
     }
+    cancelRename();
   };
 
   const duplicateFile = async (file) => {
@@ -103,93 +121,144 @@ const FileSidebar = forwardRef(function FileSidebar(
       newName = `${base}_copy${idx}.md`;
       idx++;
     }
-    try {
-      const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`, { responseType: 'text' });
-      const text = response.data;
-      const blob = new Blob([text], { type: 'text/plain' });
-      const formData = new FormData();
-      formData.append('file', blob, newName);
 
-      await API.STORAGE.post(`/file/${encodeURIComponent(newName)}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+    if (isUnauth) {
+      // Duplicate file in localStorage for unauth mode
+      const files = UnauthStorage.load();
+      if (files[file.name]) {
+        files[newName] = files[file.name];
+        UnauthStorage.save(files);
+        fetchFiles();
+        toast.success('Файл дублирован');
+      }
+    } else {
+      try {
+        const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`, { responseType: 'text' });
+        const text = response.data;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const formData = new FormData();
+        formData.append('file', blob, newName);
 
-      fetchFiles();
-    } catch (err) {
-      alert('Не удалось дублировать файл');
-      console.error('duplicate error', err);
+        await API.STORAGE.post(`/file/${encodeURIComponent(newName)}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        fetchFiles();
+      } catch (err) {
+        alert('Не удалось дублировать файл');
+        console.error('duplicate error', err);
+      }
     }
     setContextMenu(ctx => ({ ...ctx, visible: false }));
   };
 
   const downloadFile = async (file) => {
-    try {
-      const resp = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`, { responseType: 'blob' });
-      let filename = file.name;
-      const cd = resp.headers?.['content-disposition'];
-      if (cd) {
-        const m = /filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i.exec(cd);
-        if (m) filename = decodeURIComponent(m[1] || m[2]);
+    if (isUnauth) {
+      // Download file from localStorage for unauth mode
+      const files = UnauthStorage.load();
+      const content = files[file.name];
+      if (content) {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
       }
-      const url = window.URL.createObjectURL(resp.data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('File download error', err);
-      const e = parseAPIError(err);
-      toast.error(e.message || 'Не удалось скачать файл');
+    } else {
+      try {
+        const resp = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`, { responseType: 'blob' });
+        let filename = file.name;
+        const cd = resp.headers?.['content-disposition'];
+        if (cd) {
+          const m = /filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i.exec(cd);
+          if (m) filename = decodeURIComponent(m[1] || m[2]);
+        }
+        const url = window.URL.createObjectURL(resp.data);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('File download error', err);
+        const e = parseAPIError(err);
+        toast.error(e.message || 'Не удалось скачать файл');
+      }
     }
   };
 
   const fetchFiles = async () => {
-    try {
-      const response = await API.STORAGE.get('/files');
-      const files = response.data.files.map(name => ({ name }));
-      setEntries(files);
+    if (isUnauth) {
+      // Load files from localStorage for unauth mode
+      const files = UnauthStorage.load();
+      const fileList = Object.keys(files).map(name => ({ name }));
+      setEntries(fileList);
 
-      if (files.length === 0) {
+      if (fileList.length === 0) {
         onOpenFile("Нет открытых файлов. Нажмите «New» для создания.", null);
         setUnsaved(false);
       } else if (!current) {
-        openFile(files[0]);
+        openFile(fileList[0]);
       }
-    } catch (err) {
-      console.error('Ошибка загрузки файлов', err);
-      const e = parseAPIError(err);
-      toast.error(e.message || 'Не удалось загрузить список файлов');
+    } else {
+      try {
+        const response = await API.STORAGE.get('/files');
+        const files = response.data.files.map(name => ({ name }));
+        setEntries(files);
+
+        if (files.length === 0) {
+          onOpenFile("Нет открытых файлов. Нажмите «New» для создания.", null);
+          setUnsaved(false);
+        } else if (!current) {
+          openFile(files[0]);
+        }
+      } catch (err) {
+        console.error('Ошибка загрузки файлов', err);
+        const e = parseAPIError(err);
+        toast.error(e.message || 'Не удалось загрузить список файлов');
+      }
     }
   };
 
   const openFile = async (file) => {
-    try {
-      const cachedFile = localStorage.getItem(file.name);
-      if (cachedFile != null) {
-        onOpenFile(cachedFile, { name: file.name });
-        setUnsaved(false);
-      } else {
-        const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`, { responseType: 'text' });
-        onOpenFile(response.data, { name: file.name });
-        setUnsaved(false);
-        localStorage.setItem(file.name, response.data);
+    if (isUnauth) {
+      // Load file from localStorage for unauth mode
+      const files = UnauthStorage.load();
+      const content = files[file.name] || DEFAULT_MD;
+      onOpenFile(content, { name: file.name });
+      setUnsaved(false);
+    } else {
+      try {
+        const cachedFile = localStorage.getItem(file.name);
+        if (cachedFile != null) {
+          onOpenFile(cachedFile, { name: file.name });
+          setUnsaved(false);
+        } else {
+          const response = await API.STORAGE.get(`/file/${encodeURIComponent(file.name)}`, { responseType: 'text' });
+          onOpenFile(response.data, { name: file.name });
+          setUnsaved(false);
+          localStorage.setItem(file.name, response.data);
+        }
+      } catch (err) {
+        console.error('Ошибка загрузки файла', err);
+        const e = parseAPIError(err);
+        toast.error(e.message || 'Не удалось открыть файл');
       }
-    } catch (err) {
-      console.error('Ошибка загрузки файла', err);
-      const e = parseAPIError(err);
-      toast.error(e.message || 'Не удалось открыть файл');
     }
   };
 
   const deleteFile = async (file) => {
-    try {
-      await API.STORAGE.delete(`/file/${encodeURIComponent(file.name)}`);
+    if (isUnauth) {
+      // Delete file from localStorage for unauth mode
+      UnauthStorage.remove(file.name);
       const newList = entries.filter(x => x.name !== file.name);
       setEntries(newList);
-      localStorage.removeItem(file.name);
 
       if (current?.name === file.name) {
         if (newList.length > 0) openFile(newList[0]);
@@ -199,10 +268,26 @@ const FileSidebar = forwardRef(function FileSidebar(
         }
       }
       toast.success('Файл удалён');
-    } catch (err) {
-      console.error('Ошибка удаления файла', err);
-      const e = parseAPIError(err);
-      toast.error(e.message || 'Не удалось удалить файл');
+    } else {
+      try {
+        await API.STORAGE.delete(`/file/${encodeURIComponent(file.name)}`);
+        const newList = entries.filter(x => x.name !== file.name);
+        setEntries(newList);
+        localStorage.removeItem(file.name);
+
+        if (current?.name === file.name) {
+          if (newList.length > 0) openFile(newList[0]);
+          else {
+            onOpenFile("Нет открытых файлов. Нажмите «New» для создания.", null);
+            setUnsaved(false);
+          }
+        }
+        toast.success('Файл удалён');
+      } catch (err) {
+        console.error('Ошибка удаления файла', err);
+        const e = parseAPIError(err);
+        toast.error(e.message || 'Не удалось удалить файл');
+      }
     }
   };
 
@@ -231,12 +316,19 @@ const FileSidebar = forwardRef(function FileSidebar(
   useImperativeHandle(ref, () => ({ refresh: fetchFiles }));
 
   const handleLogout = async () => {
-    try {
-      await API.AUTH.post('/v1/logout');
+    if (isUnauth) {
+      // For unauth mode, just remove the editorMode to allow choosing again
+      localStorage.removeItem('editorMode');
       window.location.href = '/login';
-    } catch (err) {
-      const e = parseAPIError(err);
-      toast.error(e.message || 'Не удалось выполнить выход');
+    } else {
+      try {
+        await API.AUTH.post('/v1/logout');
+        localStorage.removeItem('editorMode');
+        window.location.href = '/login';
+      } catch (err) {
+        const e = parseAPIError(err);
+        toast.error(e.message || 'Не удалось выполнить выход');
+      }
     }
   };
 
@@ -244,50 +336,108 @@ const FileSidebar = forwardRef(function FileSidebar(
     <aside
       className={collapsed ? 'sidebar collapsed' : 'sidebar'}
       style={{
-        width: collapsed ? 0 : 260,
-        minWidth: collapsed ? 0 : 260,
-        borderRight: collapsed ? 'none' : undefined,
-        overflow: collapsed ? 'hidden' : undefined
+        width: collapsed ? 48 : 260,
+        minWidth: collapsed ? 48 : 260,
+        borderRight: collapsed ? '1px solid #ddd' : undefined,
+        overflow: 'visible'
       }}
     >
-      {!collapsed && entries.map(file => (
-        <div
-          key={file.name}
-          className={'fs-item' + (current?.name === file.name ? ' active' : '')}
-          title={file.name}
-          onClick={() => openFile(file)}
-          onDoubleClick={() => startRename(file)}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            setContextMenu({ visible: true, x: e.clientX, y: e.clientY, file });
-          }}
+      {/* Sidebar Header */}
+      <div className="sidebar-header">
+        <button
+          className="sidebar-toggle"
+          onClick={onToggle}
+          title={collapsed ? 'Развернуть боковую панель' : 'Свернуть боковую панель'}
         >
-          <span className="fs-name" onDoubleClick={(e) => { e.stopPropagation(); startRename(file); }}>
-            {editingFile === file.name ? (
-              <input
-                type="text"
-                value={newFileName}
-                autoFocus
-                onChange={(e) => setNewFileName(e.target.value)}
-                onBlur={() => confirmRename(file.name, newFileName)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") confirmRename(file.name, newFileName);
-                  if (e.key === "Escape") cancelRename();
-                }}
-                className="rename-input"
-                style={{ width: "100%", background: "transparent", color: "inherit", border: "1px solid #555", borderRadius: 4, padding: "2px 4px" }}
-              />
-            ) : (
-              <>
-                {file.name}{unsaved && current?.name === file.name && ' ●'}
-              </>
-            )}
-          </span>
+          {collapsed ? <ChevronsRight size={20} /> : <ChevronsLeft size={20} />}
+        </button>
 
-          <button className="fs-close" title="Удалить файл" onClick={(ev) => { ev.stopPropagation(); deleteFile(file); }}>×</button>
+        {!collapsed && (
+          <div className="sidebar-actions">
+            <button
+              className="sidebar-btn"
+              onClick={onNewFile}
+              title="Новый файл"
+            >
+              <FilePlus2 size={18} />
+            </button>
+
+            <div className="save-group" ref={saveGroupRef}>
+              <button
+                className="sidebar-btn"
+                onClick={() => setSaveMenuOpen(!saveMenuOpen)}
+                title="Сохранить"
+              >
+                <Save size={18} />
+              </button>
+
+              {saveMenuOpen && (
+                <div className="save-dropdown">
+                  <button onClick={() => { onSave(); setSaveMenuOpen(false); }}>
+                    Сохранить
+                  </button>
+                  <button onClick={() => { onSave(() => { }); setSaveMenuOpen(false); }}>
+                    Сохранить как...
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button
+              className="sidebar-btn"
+              onClick={handleLogout}
+              title={isUnauth ? 'Переключиться на авторизованный режим' : 'Выйти'}
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* File List */}
+      {!collapsed && (
+        <div className="file-list">
+          {entries.map(file => (
+            <div
+              key={file.name}
+              className={'fs-item' + (current?.name === file.name ? ' active' : '')}
+              title={file.name}
+              onClick={() => openFile(file)}
+              onDoubleClick={() => startRename(file)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setContextMenu({ visible: true, x: e.clientX, y: e.clientY, file });
+              }}
+            >
+              <span className="fs-name" onDoubleClick={(e) => { e.stopPropagation(); startRename(file); }}>
+                {editingFile === file.name ? (
+                  <input
+                    type="text"
+                    value={newFileName}
+                    autoFocus
+                    onChange={(e) => setNewFileName(e.target.value)}
+                    onBlur={() => confirmRename(file.name, newFileName)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") confirmRename(file.name, newFileName);
+                      if (e.key === "Escape") cancelRename();
+                    }}
+                    className="rename-input"
+                    style={{ width: "100%", background: "transparent", color: "inherit", border: "1px solid #555", borderRadius: 4, padding: "2px 4px" }}
+                  />
+                ) : (
+                  <>
+                    {file.name}{unsaved && current?.name === file.name && ' ●'}
+                  </>
+                )}
+              </span>
+
+              <button className="fs-close" title="Удалить файл" onClick={(ev) => { ev.stopPropagation(); deleteFile(file); }}>×</button>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
 
+      {/* Context Menu */}
       {!collapsed && contextMenu.visible && (
         <div
           ref={menuRef}
@@ -319,10 +469,29 @@ const FileSidebar = forwardRef(function FileSidebar(
           >
             Дублировать
           </button>
+          {isUnauth && (
+            <button
+              className="dropdown-item"
+              style={{ background: "none", border: "none", width: "100%", padding: "8px 16px", textAlign: "left", cursor: "pointer", color: "#333" }}
+              onClick={() => { downloadFile(contextMenu.file); setContextMenu(ctx => ({ ...ctx, visible: false })); }}
+            >
+              Скачать
+            </button>
+          )}
         </div>
       )}
 
-      {!collapsed && <AISummarizeButton current={aiCurrent} />}
+      {/* AI Summarize Button (only in auth mode) */}
+      {!collapsed && !isUnauth && (
+        <AISummarizeButton current={aiCurrent} />
+      )}
+
+      {/* Logout Confirmation Modal */}
+      <LogoutConfirmModal
+        open={showLogoutConfirm}
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </aside>
   );
 });

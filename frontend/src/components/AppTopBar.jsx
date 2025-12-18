@@ -15,6 +15,7 @@ import LogoutConfirmModal from "./LogoutConfirmModal";
 import OptionsModal from "./OptionsModal";
 
 export default function AppTopBar({
+  isUnauth,
   sidebarOpen,
   onToggleSidebar,
   showPreview,
