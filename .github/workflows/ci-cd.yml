@@ -58,7 +58,7 @@ jobs:
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.7.2
-          args: --timeout=5m
+          args: --timeout=3m
           working-directory: ./backend
 
       - name: Create .env file
@@ -77,82 +77,6 @@ jobs:
       - name: Run tests
         run: go test ./... -v
 
-      - name: Build application
-        run: go build -o app .
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: go-backend
-          path: ./backend/app
-
-  backend-health-check:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
-    needs: test-backend
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: go-backend
-          path: ./backend
-
-      - name: Make binary executable
-        run: chmod +x app
-
-      - name: Generate TLS certificates
-        run: |
-          mkdir -p tls
-          openssl req -x509 -newkey rsa:4096 -keyout tls/key.crt -out tls/cert_backend.crt -days 365 -nodes -subj "/CN=localhost"
-
-      - name: Create .env file
-        run: |
-          cat << EOF > .env
-          JWT_SECRET=$JWT_SECRET
-          LOG_DIR=$LOG_DIR
-          EOF
-
-      - name: Create logs directory and set permissions
-        run: |
-          sudo mkdir -p $LOG_DIR
-          sudo chown -R $USER $LOG_DIR
-          sudo chmod -R 775 $LOG_DIR
-
-      - name: Start application
-        run: |
-          ./app --host=$BACKEND_HOST --port=$BACKEND_PORT &
-          echo $! > app.pid
-          sleep 7
-
-      - name: Check backend health with retry
-        run: |
-          for i in {1..5}; do
-            echo "Attempt $i"
-            status_code=$(curl -k -s -o /dev/null -w "%{http_code}" $VITE_STORAGE_API_BASE_URL/health || echo "000")
-            if [ "$status_code" -eq 200 ]; then
-              echo "Health check passed"
-              exit 0
-            else
-              echo "Health check attempt $i failed: HTTPS $status_code"
-              sleep 3
-            fi
-          done
-          echo "Health check failed after 5 attempts"
-          exit 1
-
-      - name: Stop application
-        run: |
-          if [ -f app.pid ]; then
-            kill $(cat app.pid) 2>/dev/null || true
-            rm -f app.pid
-          fi
-
   test-auth-service:
     runs-on: ubuntu-latest
     defaults:
@@ -168,6 +92,13 @@ jobs:
         with:
           go-version: v1.25
           cache: true
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.7.2
+          args: --timeout=3m
+          working-directory: ./backend
 
       - name: Create logs directory and set permissions
         run: |
@@ -207,64 +138,28 @@ jobs:
   test-docker-compose:
     runs-on: ubuntu-latest
     needs: [test-backend, build-frontend, test-auth-service]
-    outputs:
-      backend-image: ${{ steps.build-backend.outputs.image }}
-      auth-image: ${{ steps.build-auth.outputs.image }}
-      frontend-image: ${{ steps.build-frontend.outputs.image }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Generate TLS certificates for backend
+      - name: Generate TLS certificates
         run: |
-          mkdir -p backend/tls
-          openssl req -x509 -newkey rsa:4096 -keyout backend/tls/key.crt -out backend/tls/cert_backend.crt -days 365 -nodes -subj "/CN=localhost"
-
-      - name: Generate TLS certificates for auth
-        run: |
-          mkdir -p auth/tls
-          openssl req -x509 -newkey rsa:4096 -keyout auth/tls/key.crt -out auth/tls/cert_auth.crt -days 365 -nodes -subj "/CN=localhost"
-
-      - name: Generate TLS certificates for gigachat proxy
-        run: |
-          mkdir -p gigachat_proxy/tls
-          openssl req -x509 -newkey rsa:4096 -keyout gigachat_proxy/tls/key.crt -out gigachat_proxy/tls/cert_backend.crt -days 365 -nodes -subj "/CN=localhost"
-
-      - name: Generate TLS certificates for frontend
-        run: |
-          mkdir -p frontend/tls
-          openssl req -x509 -newkey rsa:4096 -keyout frontend/tls/key.crt -out frontend/tls/cert_frontend.crt -days 365 -nodes -subj "/CN=localhost"
+          for service in backend auth gigachat_proxy frontend; do
+            mkdir -p $service/tls
+            openssl req -x509 -newkey rsa:4096 -keyout $service/tls/key.crt -out $service/tls/cert_${service}.crt -days 365 -nodes -subj "/CN=localhost"
+          done
 
       - name: Create .env file for Docker Compose
         run: |
-          cat << EOF > .env
-          BACKEND_HOST=$BACKEND_HOST
-          BACKEND_PORT=$BACKEND_PORT
-          AUTH_HOST=$AUTH_HOST
-          AUTH_PORT=$AUTH_PORT
-          FRONTEND_HOST=$FRONTEND_HOST
-          FRONTEND_PORT=$FRONTEND_PORT
-          VITE_STORAGE_API_BASE_URL=$VITE_STORAGE_API_BASE_URL
-          VITE_AUTH_API_BASE_URL=$VITE_AUTH_API_BASE_URL
-          JWT_SECRET=$JWT_SECRET
-          LOG_FILE=$LOG_FILE
-          DB_HOST=$DB_HOST
-          DB_PORT=$DB_PORT
-          DB_USER=$DB_USER
-          DB_PASSWORD=$DB_PASSWORD
-          DB_NAME=$DB_NAME
-          DB_SSLMODE=$DB_SSLMODE
-          GF_SECURITY_ADMIN_USER=$GF_SECURITY_ADMIN_USER
-          GF_SECURITY_ADMIN_PASSWORD=$GF_SECURITY_ADMIN_PASSWORD
-          EOF
+          printenv | grep -E '^(BACKEND_HOST|BACKEND_PORT|AUTH_HOST|AUTH_PORT|FRONTEND_HOST|FRONTEND_PORT|VITE_STORAGE_API_BASE_URL|VITE_AUTH_API_BASE_URL|JWT_SECRET|LOG_FILE|DB_HOST|DB_PORT|DB_USER|DB_PASSWORD|DB_NAME|DB_SSLMODE|GF_SECURITY_ADMIN_USER|GF_SECURITY_ADMIN_PASSWORD)=' > .env
 
       - name: Deploy with Docker Compose
         run: |
           docker compose down --remove-orphans
           docker compose up -d --build
 
-      - name: Verify deployment
+      - name: Verify health of services
         run: |
           sleep 15
           docker compose ps
@@ -274,41 +169,49 @@ jobs:
             exit 1
           fi
 
-          echo "Checking backend health at https://$BACKEND_HOST:$BACKEND_PORT/health"
-          if ! curl -k -f -v -s -S -o /dev/null -w "HTTPS Status: %{http_code}\n" "https://$BACKEND_HOST:$BACKEND_PORT/health"; 
-          then
-            echo "ERROR: Backend health check failed!"
-            echo "Backend logs:"
-            docker compose logs backend --tail=35
-            exit 1
-          else
-            echo "Backend health check passed!"
-          fi
+          declare -A services=(
+            ["backend"]="https://$BACKEND_HOST:$BACKEND_PORT/health"
+            ["auth"]="https://$AUTH_HOST:$AUTH_PORT/health"
+            ["frontend"]="https://$FRONTEND_HOST:$FRONTEND_PORT"
+          )
 
-          echo "Checking auth health at https://$AUTH_HOST:$AUTH_PORT/health"
-          if ! curl -k -f -v -s -S -o /dev/null -w "HTTPS Status: %{http_code}\n" "https://$AUTH_HOST:$AUTH_PORT/health"; 
-          then
-            echo "ERROR: Auth health check failed!"
-            echo "Auth logs:"
-            docker compose logs auth --tail=35
-            exit 1
-          else
-            echo "Auth health check passed!"
-          fi
-
-          echo "Checking frontend availability at http://$FRONTEND_HOST:$FRONTEND_PORT"
-          if ! curl -k -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "https://$FRONTEND_HOST:$FRONTEND_PORT"; 
-          then
-            echo "ERROR: Frontend availability check failed!"
-            echo "Frontend logs:"
-            docker compose logs frontend --tail=35
-            exit 1
-          else
-            echo "Frontend availability check passed!"
-            docker compose logs frontend --tail=35
-          fi
+          for service in "${!services[@]}"; do
+            url="${services[$service]}"
+            echo "Checking $service health at $url"
+            if ! curl -k -f -v -s -S -o /dev/null -w "HTTP Status: %{http_code}\n" "$url"; then
+              echo "ERROR: $service health check failed!"
+              echo "$service logs:"
+              docker compose logs "$service" --tail=35
+              exit 1
+            else
+              echo "$service health check passed!"
+              docker compose logs "$service" --tail=35
+            fi
+          done
 
           echo "All services are healthy and responding!"
+
+      - name: Save images to artifact (backend, auth, frontend)
+        run: |
+          USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
+          declare -A repos=(
+            ["backend"]="${USERNAME}/markdown-backend:latest"
+            ["auth"]="${USERNAME}/markdown-auth:latest"
+            ["frontend"]="${USERNAME}/markdown-frontend:latest"
+          )
+
+          mkdir -p images
+          for svc in "${!repos[@]}"; do
+            img="${repos[$svc]}"
+            echo "Saving $img -> images/${svc}.tar"
+            docker save "$img" -o "images/${svc}.tar"
+          done
+
+      - name: Upload images artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: images
+          path: images
 
   build-and-push-docker-images:
     if: github.ref == 'refs/heads/main'
@@ -328,26 +231,30 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push backend image
-        uses: docker/build-push-action@v4
+      - name: Download images artifact
+        uses: actions/download-artifact@v4
         with:
-          context: ./backend
-          file: ./docker/backend/Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-backend:latest
+          name: images
+          path: ./artifact/images
 
-      - name: Build and push auth-service image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./auth
-          file: ./docker/auth/Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-auth:latest
+      - name: Load and push images (backend, auth, frontend)
+        run: |
+          set -euo pipefail
+          USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
+          declare -A repos=(
+            ["backend"]="${USERNAME}/markdown-backend:latest"
+            ["auth"]="${USERNAME}/markdown-auth:latest"
+            ["frontend"]="${USERNAME}/markdown-frontend:latest"
+          )
 
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./frontend
-          file: ./docker/frontend/Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-frontend:latest
+          for svc in backend auth frontend; do
+            tar="./artifact/images/${svc}.tar"
+            echo "Loading image from $tar"
+            docker load -i "$tar"
+          done
+
+          for svc in "${!repos[@]}"; do
+            img="${repos[$svc]}"
+            echo "Pushing $img"
+            docker push "$img"
+          done
