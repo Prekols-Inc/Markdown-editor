@@ -86,73 +86,6 @@ jobs:
           name: go-backend
           path: ./backend/app
 
-  backend-health-check:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
-    needs: test-backend
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: go-backend
-          path: ./backend
-
-      - name: Make binary executable
-        run: chmod +x app
-
-      - name: Generate TLS certificates
-        run: |
-          mkdir -p tls
-          openssl req -x509 -newkey rsa:4096 -keyout tls/key.crt -out tls/cert_backend.crt -days 365 -nodes -subj "/CN=localhost"
-
-      - name: Create .env file
-        run: |
-          cat << EOF > .env
-          JWT_SECRET=$JWT_SECRET
-          LOG_DIR=$LOG_DIR
-          EOF
-
-      - name: Create logs directory and set permissions
-        run: |
-          sudo mkdir -p $LOG_DIR
-          sudo chown -R $USER $LOG_DIR
-          sudo chmod -R 775 $LOG_DIR
-
-      - name: Start application
-        run: |
-          ./app --host=$BACKEND_HOST --port=$BACKEND_PORT &
-          echo $! > app.pid
-          sleep 7
-
-      - name: Check backend health with retry
-        run: |
-          for i in {1..5}; do
-            echo "Attempt $i"
-            status_code=$(curl -k -s -o /dev/null -w "%{http_code}" $VITE_STORAGE_API_BASE_URL/health || echo "000")
-            if [ "$status_code" -eq 200 ]; then
-              echo "Health check passed"
-              exit 0
-            else
-              echo "Health check attempt $i failed: HTTPS $status_code"
-              sleep 3
-            fi
-          done
-          echo "Health check failed after 5 attempts"
-          exit 1
-
-      - name: Stop application
-        run: |
-          if [ -f app.pid ]; then
-            kill $(cat app.pid) 2>/dev/null || true
-            rm -f app.pid
-          fi
-
   test-auth-service:
     runs-on: ubuntu-latest
     defaults:
@@ -328,26 +261,17 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push backend image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./backend
-          file: ./docker/backend/Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-backend:latest
+      - name: Push backend image
+        run: |
+          docker tag ${{ needs.test-docker-compose.outputs.backend-image }} ${{ secrets.DOCKERHUB_USERNAME }}/markdown-backend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/markdown-backend:latest
 
-      - name: Build and push auth-service image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./auth
-          file: ./docker/auth/Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-auth:latest
+      - name: Push auth-service image
+        run: |
+          docker tag ${{ needs.test-docker-compose.outputs.auth-image }} ${{ secrets.DOCKERHUB_USERNAME }}/markdown-auth:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/markdown-auth:latest
 
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./frontend
-          file: ./docker/frontend/Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/markdown-frontend:latest
+      - name: Push frontend image
+        run: |
+          docker tag ${{ needs.test-docker-compose.outputs.frontend-image }} ${{ secrets.DOCKERHUB_USERNAME }}/markdown-frontend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/markdown-frontend:latest
