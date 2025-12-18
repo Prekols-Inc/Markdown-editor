@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import LoginPage from './components/LoginPage';
 import MarkdownApp from './components/MarkdownApp';
+import MarkdownAppUnauth from './components/MarkdownAppUnauth';
 import API from './API';
 
 export default function App() {
@@ -43,6 +44,10 @@ export default function App() {
       <Route
         path="/editor"
         element={isAuth ? <MarkdownApp /> : <Navigate to="/login" replace />}
+      />
+      <Route
+        path="/editor-unauth"
+        element={<MarkdownAppUnauth />}
       />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

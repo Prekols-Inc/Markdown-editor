@@ -84,6 +84,10 @@ export default function AuthPage({ onLogin }) {
         }
     };
 
+    const handleUnauthMode = () => {
+        navigate('/editor-unauth');
+    };
+
     return (
         <div className="login-page">
             <Toaster position="top-right" reverseOrder={false} />
@@ -150,6 +154,24 @@ export default function AuthPage({ onLogin }) {
                         : mode === 'login'
                             ? 'Войти'
                             : 'Зарегистрироваться'}
+                </button>
+
+                <button
+                    type="button"
+                    onClick={handleUnauthMode}
+                    className="unauth-mode-btn"
+                    style={{
+                        marginTop: '0.5rem',
+                        backgroundColor: '#6c757d',
+                        border: 'none',
+                        padding: '10px 20px',
+                        borderRadius: '4px',
+                        color: 'white',
+                        cursor: 'pointer',
+                        width: '100%'
+                    }}
+                >
+                    Войти без регистрации
                 </button>
 
                 <p style={{ marginTop: '0.75rem', fontSize: '0.9rem', textAlign: 'center' }}>
