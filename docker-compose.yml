@@ -40,16 +40,6 @@ services:
       - storage:/root/storage
       - ${LOG_DIR}:${LOG_DIR}
     restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "timeout 5 bash -c 'echo > /dev/tcp/localhost/${BACKEND_PORT}' || exit 1",
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
 
   auth:
     image: sid00r/markdown-auth:latest
@@ -74,16 +64,6 @@ services:
     volumes:
      - ${LOG_DIR}:${LOG_DIR}
     restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "timeout 5 bash -c 'echo > /dev/tcp/localhost/${AUTH_PORT}' || exit 1",
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
 
   gigachat_proxy:
     image: sid00r/markdown-gigachat-proxy:latest
@@ -102,16 +82,6 @@ services:
     networks:
       - markdown-network
     restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "timeout 5 bash -c 'echo > /dev/tcp/localhost/${GIGACHAT_PROXY_PORT}' || exit 1",
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
 
   frontend:
     image: sid00r/markdown-frontend:latest
