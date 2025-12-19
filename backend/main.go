@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"os"
 	"runtime/debug"
 	"strconv"
 	"time"
@@ -86,7 +87,7 @@ func main() {
 	r := gin.New()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://localhost:5173", "http://localhost:5173"},
+		AllowOrigins:     []string{"https://localhost:5173", "http://localhost:5173", fmt.Sprintf("https://%s:%s", os.Getenv("FRONTEND_HOST"), os.Getenv("FRONTEND_PORT"))},
 		AllowMethods:     []string{"POST", "GET", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},

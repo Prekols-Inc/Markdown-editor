@@ -10,6 +10,9 @@ on:
   workflow_dispatch:
 
 env:
+  REMOTE_HOST: "87.228.113.72"
+  BUILD_HOST: "localhost"
+
   BACKEND_HOST: ${{ secrets.BACKEND_HOST }}
   BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
   AUTH_HOST: ${{ secrets.AUTH_HOST }}
@@ -19,9 +22,6 @@ env:
   GIGACHAT_AUTH_KEY: ${{ secrets.GIGACHAT_AUTH_KEY }}
   FRONTEND_HOST: ${{ secrets.FRONTEND_HOST }}
   FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
-  VITE_STORAGE_API_BASE_URL: https://localhost:${{ secrets.BACKEND_PORT }}
-  VITE_AUTH_API_BASE_URL: https://localhost:${{ secrets.AUTH_PORT }}
-  VITE_GIGACHAT_PROXY_API_BASE_URL: https://localhost:${{ secrets.GIGACHAT_PROXY_PORT }}
 
   DB_HOST: markdown-db
   DB_PORT: ${{ secrets.DB_PORT }}
@@ -36,8 +36,6 @@ env:
 
   GF_SECURITY_ADMIN_USER: ${{ secrets.GF_SECURITY_ADMIN_USER }}
   GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
-
-  REMOTE_HOST: "87.228.113.72"
 
 jobs:
   test-backend:
@@ -140,6 +138,10 @@ jobs:
   test-docker-compose:
     runs-on: ubuntu-latest
     needs: [test-backend, build-frontend, test-auth-service]
+    env:
+      VITE_STORAGE_API_BASE_URL: https://$BUILD_HOST:${{ secrets.BACKEND_PORT }}
+      VITE_AUTH_API_BASE_URL: https://$BUILD_HOST:${{ secrets.AUTH_PORT }}
+      VITE_GIGACHAT_PROXY_API_BASE_URL: https://$BUILD_HOST:${{ secrets.GIGACHAT_PROXY_PORT }}
 
     steps:
       - name: Checkout code
@@ -170,7 +172,7 @@ jobs:
         run: |
           sleep 25
           docker compose ps
-          if [ $(docker compose ps --services | grep -c 'backend\|frontend\|auth\|gigachat_proxy') -ne 3 ]; then
+          if [ $(docker compose ps --services | grep -c 'backend\|frontend\|auth\|gigachat_proxy') -ne 4 ]; then
             echo "Not all services are running"
             docker compose logs --tail=50
             exit 1
@@ -180,7 +182,7 @@ jobs:
             ["backend"]="https://$BACKEND_HOST:$BACKEND_PORT/health"
             ["auth"]="https://$AUTH_HOST:$AUTH_PORT/health"
             ["frontend"]="https://$FRONTEND_HOST:$FRONTEND_PORT"
-            ["gigachat_proxy"]="https://$GIGACHAT_PROXY_HOST:GIGACHAT_PROXY_PORT"
+            ["gigachat_proxy"]="https://$GIGACHAT_PROXY_HOST:$GIGACHAT_PROXY_PORT/health"
           )
 
           for service in "${!services[@]}"; do
@@ -223,7 +225,7 @@ jobs:
           path: images
 
   build-and-push-docker-images:
-    if: github.ref == 'refs/heads/main'
+    #if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: [test-docker-compose]
 
@@ -271,7 +273,11 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    #needs: [build-and-push-docker-images]
+    needs: [build-and-push-docker-images]
+    env:
+      VITE_STORAGE_API_BASE_URL: https://$REMOTE_HOST:${{ secrets.BACKEND_PORT }}
+      VITE_AUTH_API_BASE_URL: https://$REMOTE_HOST:${{ secrets.AUTH_PORT }}
+      VITE_GIGACHAT_PROXY_API_BASE_URL: https://$REMOTE_HOST:${{ secrets.GIGACHAT_PROXY_PORT }}
 
     steps:
       - name: Checkout code

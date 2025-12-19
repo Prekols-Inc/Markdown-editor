@@ -30,6 +30,8 @@ services:
       - BACKEND_PORT=${BACKEND_PORT}
       - JWT_SECRET=${JWT_SECRET}
       - LOG_DIR=${LOG_DIR}
+      - FRONTEND_HOST=${FRONTEND_HOST}
+      - FRONTEND_PORT=${FRONTEND_PORT}
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     networks:
@@ -61,6 +63,8 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - LOG_DIR=${LOG_DIR}
       - AUTH_DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}
+      - FRONTEND_HOST=${FRONTEND_HOST}
+      - FRONTEND_PORT=${FRONTEND_PORT}
     ports:
       - "${AUTH_PORT}:${AUTH_PORT}"
     depends_on:
