@@ -59,7 +59,7 @@ func main() {
 
 	r := gin.New()
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://localhost:5173", "http://localhost:5173", fmt.Sprintf("https://%s:%s", os.Getenv("FRONTEND_HOST"), os.Getenv("FRONTEND_PORT"))},
+		AllowOrigins:     []string{"https://localhost:5173", "http://localhost:5173", fmt.Sprintf("https://%s:%s", os.Getenv("REMOTE_HOST"), os.Getenv("FRONTEND_PORT"))},
 		AllowMethods:     []string{"POST", "GET", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length", "Content-Disposition"},
