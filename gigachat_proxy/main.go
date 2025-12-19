@@ -210,6 +210,7 @@ func corsMiddleware() gin.HandlerFunc {
 	allowedOrigins := map[string]bool{
 		"http://localhost:5173":  true,
 		"https://localhost:5173": true,
+		fmt.Sprintf("https://%s:%s", os.Getenv("REMOTE_HOST"), os.Getenv("FRONTEND_PORT")): true,
 	}
 
 	return func(c *gin.Context) {
