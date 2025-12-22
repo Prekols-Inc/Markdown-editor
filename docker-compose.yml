@@ -30,6 +30,8 @@ services:
       - BACKEND_PORT=${BACKEND_PORT}
       - JWT_SECRET=${JWT_SECRET}
       - LOG_DIR=${LOG_DIR}
+      - REMOTE_HOST=${REMOTE_HOST}
+      - FRONTEND_PORT=${FRONTEND_PORT}
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     networks:
@@ -38,16 +40,6 @@ services:
       - storage:/root/storage
       - ${LOG_DIR}:${LOG_DIR}
     restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "timeout 5 bash -c 'echo > /dev/tcp/localhost/${BACKEND_PORT}' || exit 1",
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
 
   auth:
     image: sid00r/markdown-auth:latest
@@ -61,6 +53,8 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - LOG_DIR=${LOG_DIR}
       - AUTH_DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}
+      - REMOTE_HOST=${REMOTE_HOST}
+      - FRONTEND_PORT=${FRONTEND_PORT}
     ports:
       - "${AUTH_PORT}:${AUTH_PORT}"
     depends_on:
@@ -70,48 +64,30 @@ services:
     volumes:
      - ${LOG_DIR}:${LOG_DIR}
     restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "timeout 5 bash -c 'echo > /dev/tcp/localhost/${AUTH_PORT}' || exit 1",
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
 
   gigachat_proxy:
     image: sid00r/markdown-gigachat-proxy:latest
     build: 
-      context: ./gigachat_proxy
-      dockerfile: ../docker/gigachat_proxy/Dockerfile
+      context: .
+      dockerfile: ./docker/gigachat_proxy/Dockerfile
     container_name: markdown-gigachat-proxy
     environment:
       - GIGACHAT_PROXY_PORT=${GIGACHAT_PROXY_PORT}
       - GIGACHAT_PROXY_HOST=${GIGACHAT_PROXY_HOST}
       - GIGACHAT_AUTH_KEY=${GIGACHAT_AUTH_KEY}
+      - REMOTE_HOST=${REMOTE_HOST}
+      - FRONTEND_PORT=${FRONTEND_PORT}
     ports:
       - "${GIGACHAT_PROXY_PORT}:${GIGACHAT_PROXY_PORT}"
     networks:
       - markdown-network
     restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "timeout 5 bash -c 'echo > /dev/tcp/localhost/${GIGACHAT_PROXY_PORT}' || exit 1",
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
 
   frontend:
     image: sid00r/markdown-frontend:latest
     build: 
-      context: ./frontend
-      dockerfile: ../docker/frontend/Dockerfile
+      context: .
+      dockerfile: ./docker/frontend/Dockerfile
     container_name: markdown-frontend
     environment:
       - FRONTEND_HOST=${FRONTEND_HOST}

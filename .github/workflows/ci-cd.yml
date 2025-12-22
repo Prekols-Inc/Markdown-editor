@@ -10,6 +10,9 @@ on:
   workflow_dispatch:
 
 env:
+  REMOTE_HOST: "87.228.113.72"
+  BUILD_HOST: "localhost"
+
   BACKEND_HOST: ${{ secrets.BACKEND_HOST }}
   BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
   AUTH_HOST: ${{ secrets.AUTH_HOST }}
@@ -19,9 +22,6 @@ env:
   GIGACHAT_AUTH_KEY: ${{ secrets.GIGACHAT_AUTH_KEY }}
   FRONTEND_HOST: ${{ secrets.FRONTEND_HOST }}
   FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
-  VITE_STORAGE_API_BASE_URL: https://localhost:${{ secrets.BACKEND_PORT }}
-  VITE_AUTH_API_BASE_URL: https://localhost:${{ secrets.AUTH_PORT }}
-  VITE_GIGACHAT_PROXY_API_BASE_URL: https://localhost:${{ secrets.GIGACHAT_PROXY_PORT }}
 
   DB_HOST: markdown-db
   DB_PORT: ${{ secrets.DB_PORT }}
@@ -138,6 +138,10 @@ jobs:
   test-docker-compose:
     runs-on: ubuntu-latest
     needs: [test-backend, build-frontend, test-auth-service]
+    env:
+      VITE_STORAGE_API_BASE_URL: https://$BUILD_HOST:${{ secrets.BACKEND_PORT }}
+      VITE_AUTH_API_BASE_URL: https://$BUILD_HOST:${{ secrets.AUTH_PORT }}
+      VITE_GIGACHAT_PROXY_API_BASE_URL: https://$BUILD_HOST:${{ secrets.GIGACHAT_PROXY_PORT }}
 
     steps:
       - name: Checkout code
@@ -152,18 +156,23 @@ jobs:
 
       - name: Create .env file for Docker Compose
         run: |
-          printenv | grep -E '^(BACKEND_HOST|BACKEND_PORT|AUTH_HOST|AUTH_PORT|FRONTEND_HOST|FRONTEND_PORT|VITE_STORAGE_API_BASE_URL|VITE_AUTH_API_BASE_URL|JWT_SECRET|LOG_FILE|DB_HOST|DB_PORT|DB_USER|DB_PASSWORD|DB_NAME|DB_SSLMODE|GF_SECURITY_ADMIN_USER|GF_SECURITY_ADMIN_PASSWORD)=' > .env
+          printenv > .env
 
-      - name: Deploy with Docker Compose
+      - name: Change rights
+        run: |
+          sudo mkdir -p /var/lib/grafana
+          sudo chown -R $(whoami) /var/lib/grafana
+
+      - name: Run Docker Compose
         run: |
           docker compose down --remove-orphans
           docker compose up -d --build
 
       - name: Verify health of services
         run: |
-          sleep 15
+          sleep 25
           docker compose ps
-          if [ $(docker compose ps --services | grep -c 'backend\|frontend\|auth') -ne 3 ]; then
+          if [ $(docker compose ps --services | grep -c 'backend\|frontend\|auth\|gigachat_proxy') -ne 4 ]; then
             echo "Not all services are running"
             docker compose logs --tail=50
             exit 1
@@ -173,6 +182,7 @@ jobs:
             ["backend"]="https://$BACKEND_HOST:$BACKEND_PORT/health"
             ["auth"]="https://$AUTH_HOST:$AUTH_PORT/health"
             ["frontend"]="https://$FRONTEND_HOST:$FRONTEND_PORT"
+            ["gigachat_proxy"]="https://$GIGACHAT_PROXY_HOST:$GIGACHAT_PROXY_PORT/health"
           )
 
           for service in "${!services[@]}"; do
@@ -191,13 +201,14 @@ jobs:
 
           echo "All services are healthy and responding!"
 
-      - name: Save images to artifact (backend, auth, frontend)
+      - name: Save images to artifact
         run: |
           USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
           declare -A repos=(
             ["backend"]="${USERNAME}/markdown-backend:latest"
             ["auth"]="${USERNAME}/markdown-auth:latest"
             ["frontend"]="${USERNAME}/markdown-frontend:latest"
+            ["gigachat_proxy"]=${USERNAME}/markdown-gigachat-proxy:latest
           )
 
           mkdir -p images
@@ -214,7 +225,7 @@ jobs:
           path: images
 
   build-and-push-docker-images:
-    if: github.ref == 'refs/heads/main'
+    #if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: [test-docker-compose]
 
@@ -237,7 +248,7 @@ jobs:
           name: images
           path: ./artifact/images
 
-      - name: Load and push images (backend, auth, frontend)
+      - name: Load and push images
         run: |
           set -euo pipefail
           USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
@@ -245,9 +256,10 @@ jobs:
             ["backend"]="${USERNAME}/markdown-backend:latest"
             ["auth"]="${USERNAME}/markdown-auth:latest"
             ["frontend"]="${USERNAME}/markdown-frontend:latest"
+            ["gigachat_proxy"]=${USERNAME}/markdown-gigachat-proxy:latest
           )
 
-          for svc in backend auth frontend; do
+          for svc in backend auth frontend gigachat_proxy; do
             tar="./artifact/images/${svc}.tar"
             echo "Loading image from $tar"
             docker load -i "$tar"
@@ -258,3 +270,33 @@ jobs:
             echo "Pushing $img"
             docker push "$img"
           done
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build-and-push-docker-images]
+    env:
+      VITE_STORAGE_API_BASE_URL: https://$REMOTE_HOST:${{ secrets.BACKEND_PORT }}
+      VITE_AUTH_API_BASE_URL: https://$REMOTE_HOST:${{ secrets.AUTH_PORT }}
+      VITE_GIGACHAT_PROXY_API_BASE_URL: https://$REMOTE_HOST:${{ secrets.GIGACHAT_PROXY_PORT }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file for Docker Compose
+        run: |
+          printenv > .env
+
+      - name: Prepare SSH key folder and save key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$REMOTE_HOST" >> ~/.ssh/known_hosts
+
+      - name: Run deployment script
+        env:
+          SSH_KEY_PATH: ~/.ssh/deploy_key
+        run: |
+          chmod +x ./deploy.sh
+          ./deploy.sh "$REMOTE_HOST" "$SSH_KEY_PATH"
