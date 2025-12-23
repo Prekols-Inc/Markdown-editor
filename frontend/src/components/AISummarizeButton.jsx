@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { BrainCircuit } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { summarizeWithGigachat } from "../gigachat";
 
 export default function AISummarizeButton({ current }) {
@@ -32,7 +34,7 @@ export default function AISummarizeButton({ current }) {
                     justifyContent: "center",
                     gap: 8,
                     opacity: loading ? 0.5 : 1,
-                    animation: loading ? "pulse 1.2s infinite" : "none"
+                    animation: loading ? "pulse 1.2s infinite" : "none",
                 }}
                 disabled={loading || !current}
                 onClick={handleSummarize}
@@ -53,7 +55,6 @@ export default function AISummarizeButton({ current }) {
 
             {showModal && (
                 <div
-                    className="modal-overlay"
                     style={{
                         position: "fixed",
                         inset: 0,
@@ -65,13 +66,12 @@ export default function AISummarizeButton({ current }) {
                     }}
                 >
                     <div
-                        className="modal-window"
                         style={{
                             background: "#fff",
                             padding: 24,
                             borderRadius: 12,
-                            width: "600px",
-                            maxHeight: "70vh",
+                            width: 800,
+                            maxHeight: "80vh",
                             overflowY: "auto",
                             position: "relative",
                             boxShadow: "0 16px 40px rgba(0,0,0,0.15)",
@@ -94,26 +94,24 @@ export default function AISummarizeButton({ current }) {
                             ×
                         </button>
 
-                        <h2 style={{ fontSize: "20px", marginBottom: "16px" }}>AI Summary</h2>
+                        <h2 style={{ fontSize: 20, marginBottom: 16 }}>
+                            AI Summary
+                        </h2>
 
                         <div
                             style={{
                                 lineHeight: 1.6,
-                                fontSize: 14,
+                                fontSize: 16,
                                 color: "#333",
                             }}
                         >
-                            {summary.split("\n").map((line, idx) => {
-                                if (line.startsWith("# ")) return <h1 key={idx}>{line.replace("# ", "")}</h1>;
-                                if (line.startsWith("## ")) return <h2 key={idx}>{line.replace("## ", "")}</h2>;
-                                if (line.startsWith("- ")) return <li key={idx}>{line.replace("- ", "")}</li>;
-                                return <p key={idx}>{line}</p>;
-                            })}
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {summary}
+                            </ReactMarkdown>
                         </div>
                     </div>
                 </div>
             )}
-
         </div>
     );
 }
