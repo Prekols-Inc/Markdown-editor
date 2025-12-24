@@ -21,8 +21,8 @@ import (
 
 const (
 	DB_PATH       = "storage"
-	TLS_CERT_FILE = "tls/cert_backend.crt"
-	TLS_KEY_FILE  = "tls/key.crt"
+	TLS_CERT_FILE = "cert.crt"
+	TLS_KEY_FILE  = "key.crt"
 )
 
 var (
@@ -124,7 +124,8 @@ func main() {
 
 	serverAddr := fmt.Sprintf("%s:%s", host, port)
 	Logger.Info("Server started on", slog.String("address", serverAddr))
-	if err := r.RunTLS(serverAddr, TLS_CERT_FILE, TLS_KEY_FILE); err != nil {
+	tlsDir := os.Getenv("CERT_DIR_PATH")
+	if err := r.RunTLS(serverAddr, tlsDir+TLS_CERT_FILE, tlsDir+TLS_KEY_FILE); err != nil {
 		panic(fmt.Sprintf("Failed to run server: %v", err))
 	}
 }

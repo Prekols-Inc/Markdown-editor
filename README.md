@@ -18,7 +18,7 @@ for svc in backend auth frontend gigachat_proxy; do
   openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes \
     -subj "/CN=localhost" \
     -keyout "$svc/tls/key.crt" \
-    -out "$svc/tls/cert_${svc}.crt"
+    -out "$svc/tls/cert.crt"
 done
 ```
 3. Go to https://localhost:<AUTH_PORT>/health. You`ll see "Your connection not private". Click Advanced > proceed to localhost. Repeat for backend

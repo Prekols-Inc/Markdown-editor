@@ -37,6 +37,8 @@ env:
   GF_SECURITY_ADMIN_USER: ${{ secrets.GF_SECURITY_ADMIN_USER }}
   GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
 
+  CERT_DIR_PATH: /etc/nginx/ssl/markdown-editor/
+
 jobs:
   test-backend:
     runs-on: ubuntu-latest
@@ -126,8 +128,9 @@ jobs:
 
       - name: Generate TLS certificate
         run: |
-          mkdir -p tls
-          openssl req -x509 -newkey rsa:4096 -keyout tls/key.crt -out tls/cert_frontend.crt -days 365 -nodes -subj "/CN=localhost"
+          sudo mkdir -p ${CERT_DIR_PATH}
+          sudo chown -R $USER ${CERT_DIR_PATH}
+          openssl req -x509 -newkey rsa:4096 -keyout ${CERT_DIR_PATH}key.crt -out ${CERT_DIR_PATH}cert.crt -days 365 -nodes -subj "/CN=localhost"
 
       - name: Install frontend dependencies
         run: npm install
@@ -147,12 +150,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Generate TLS certificates
+      - name: Generate TLS certificate
         run: |
-          for service in backend auth gigachat_proxy frontend; do
-            mkdir -p $service/tls
-            openssl req -x509 -newkey rsa:4096 -keyout $service/tls/key.crt -out $service/tls/cert_${service}.crt -days 365 -nodes -subj "/CN=localhost"
-          done
+          sudo mkdir -p ${CERT_DIR_PATH}
+          sudo chown -R $USER ${CERT_DIR_PATH}
+          openssl req -x509 -newkey rsa:4096 -keyout ${CERT_DIR_PATH}key.crt -out ${CERT_DIR_PATH}cert.crt -days 365 -nodes -subj "/CN=localhost"
+
 
       - name: Create .env file for Docker Compose
         run: |

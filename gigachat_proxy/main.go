@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	TLS_CERT_FILE = "tls/cert_gigachat_proxy.crt"
-	TLS_KEY_FILE  = "tls/key.crt"
+	TLS_CERT_FILE = "cert.crt"
+	TLS_KEY_FILE  = "key.crt"
 )
 
 var gigaToken string
@@ -34,7 +34,8 @@ func main() {
 	port := os.Getenv("GIGACHAT_PROXY_PORT")
 
 	serverAddr := fmt.Sprintf("%s:%s", host, port)
-	if err := r.RunTLS(serverAddr, TLS_CERT_FILE, TLS_KEY_FILE); err != nil {
+	tlsDir := os.Getenv("CERT_DIR_PATH")
+	if err := r.RunTLS(serverAddr, tlsDir+TLS_CERT_FILE, tlsDir+TLS_KEY_FILE); err != nil {
 		panic(fmt.Sprintf("Failed to run proxy: %v", err))
 	}
 	fmt.Printf("Gigachat Proxy is running on %s\n", serverAddr)
