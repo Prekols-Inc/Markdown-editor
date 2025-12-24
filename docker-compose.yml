@@ -32,6 +32,7 @@ services:
       - LOG_DIR=${LOG_DIR}
       - REMOTE_HOST=${REMOTE_HOST}
       - FRONTEND_PORT=${FRONTEND_PORT}
+      - CERT_DIR_PATH=${CERT_DIR_PATH}
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     networks:
@@ -39,6 +40,7 @@ services:
     volumes:
       - storage:/root/storage
       - ${LOG_DIR}:${LOG_DIR}
+      - ${CERT_DIR_PATH}:${CERT_DIR_PATH}
     restart: unless-stopped
 
   auth:
@@ -55,6 +57,7 @@ services:
       - AUTH_DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}
       - REMOTE_HOST=${REMOTE_HOST}
       - FRONTEND_PORT=${FRONTEND_PORT}
+      - CERT_DIR_PATH=${CERT_DIR_PATH}
     ports:
       - "${AUTH_PORT}:${AUTH_PORT}"
     depends_on:
@@ -63,6 +66,7 @@ services:
       - markdown-network
     volumes:
      - ${LOG_DIR}:${LOG_DIR}
+     - ${CERT_DIR_PATH}:${CERT_DIR_PATH}
     restart: unless-stopped
 
   gigachat_proxy:
@@ -77,10 +81,13 @@ services:
       - GIGACHAT_AUTH_KEY=${GIGACHAT_AUTH_KEY}
       - REMOTE_HOST=${REMOTE_HOST}
       - FRONTEND_PORT=${FRONTEND_PORT}
+      - CERT_DIR_PATH=${CERT_DIR_PATH}
     ports:
       - "${GIGACHAT_PROXY_PORT}:${GIGACHAT_PROXY_PORT}"
     networks:
       - markdown-network
+    volumes:
+      - ${CERT_DIR_PATH}:${CERT_DIR_PATH}
     restart: unless-stopped
 
   frontend:
@@ -95,6 +102,7 @@ services:
       - VITE_STORAGE_API_BASE_URL=${VITE_STORAGE_API_BASE_URL}
       - VITE_AUTH_API_BASE_URL=${VITE_AUTH_API_BASE_URL}
       - VITE_GIGACHAT_PROXY_API_BASE_URL=${VITE_GIGACHAT_PROXY_API_BASE_URL}
+      - CERT_DIR_PATH=${CERT_DIR_PATH}
     ports:
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     depends_on:
@@ -102,6 +110,8 @@ services:
       - auth
     networks:
       - markdown-network
+    volumes:
+      - ${CERT_DIR_PATH}:${CERT_DIR_PATH}
     restart: unless-stopped
 
   prometheus:
